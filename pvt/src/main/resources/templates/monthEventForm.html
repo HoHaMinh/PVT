@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Thêm mới việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row text-center header">
+        <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+    </div>
+    <div class="row">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 20%">
+            <div class="container-fluid" style="height: 100%">
+                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
+                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
+                </a>
+                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
+                     id="navbarNavDropdown">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Nhắc nhở lịch cần làm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
+                        </li>
+                        <li class="nav-item ">
+                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
+                        </li>
+                        <li class="nav-item dropdown active">
+                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
+                               id="navbarDropdownMenuLink"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Giao việc (chỉ quản lý)
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá nhân</a></li>
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc cá nhân lặp lại định kỳ</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div style="height: 65%" class="row smaller-font">
+            <div style="height: 20%; width: 100%">
+                <h10 style="text-align: left" class="text-danger" th:if="${mess != null}" th:text="${mess}">
+                </h10>
+                <h3 style="text-align: center; height: 10%" class="text-primary">Lịch công việc tháng/cá nhân</h3>
+                <a href="" id="addMonthEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới công việc tháng/cá nhân</button>
+                </a>
+                <!--                <a th:href="@{/home/manager/task/settime}" href="" style="text-decoration: none">-->
+                <!--                    <button type="button" class="btn btn-primary">Cài đặt thời gian đầu ngày</button>-->
+                <!--                </a>-->
+            </div>
+            <div style="height: 90%; width: 100%">
+                <form class="row" method="post" th:action="@{/home/manager/task/addMonthEvent}"
+                      th:object="${monthEventManager}">
+                    <table>
+                        <thead id="navbar-sticky">
+                        <tr>
+                            <td class="col-8 col-md-8 col-lg-8">
+                                Nội dung
+                            </td>
+                            <td class="col-4 col-md-4 col-lg-4">
+                                Deadline
+                            </td>
+                        </tr>
+                        </thead>
+                        <tr th:each="monthEvent, stat : ${monthEvents}">
+                            <td>
+                                <input type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                                       th:name="|monthEvents[${stat.index}]|"
+                                       style="height:30px; width:100%; word-break: break-word;">
+                            </td>
+                            <td>
+                                <input type="datetime-local"
+                                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                                       th:name="|monthEvents[${stat.index}]|">
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Thêm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 ">
+        <button class="btn btn-outline-primary smaller-button2" style="float: right">
+            <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+    </div>
+</div>
+
+<!--<div style="width: 100%;height: 80%">-->
+<!--    <div class="container border" style="width: 100%; height: 90%">-->
+<!--        <div class="row text-center header">-->
+<!--            <h2 style="margin-top: 15px; margin-bottom: 15px">Danh sách sản phẩm</h2>-->
+<!--        </div>-->
+<!--        <div class="row mt-0 mb-3">-->
+<!--            <form action="" class="row g-3 mt-0 align-items-center">-->
+<!--                <div class="col-6 col-md-6 col-lg-2 dropdown mt-2">-->
+<!--                    <select class="btn dropdown-toggle w-100 smaller-font" id="brandName" name="brandName"-->
+<!--                            aria-expanded="false" style="font-weight: bold">-->
+<!--                        <option value="">Hãng</option>-->
+<!--                        <option value="Samsung">Samsung</option>-->
+<!--                        <option value="Apple">Apple</option>-->
+<!--                        <option value="Xiaomi">Xiaomi</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+<!--                <div class="col-6 col-md-6 col-lg-3 dropdown mt-2">-->
+<!--                    <select class="btn dropdown-toggle w-100 smaller-font" id="sellingPrice" name="sellingPrice"-->
+<!--                            aria-expanded="false" style="font-weight: bold">-->
+<!--                        <option value="">Mức giá (VND)</option>-->
+<!--                        <option value="0-1999999">Mức giá: 0 - 1,999,999</option>-->
+<!--                        <option value="2000000-4999999">Mức giá: 2,000,000 - 4,999,999</option>-->
+<!--                        <option value="5000000-9999999">Mức giá: 5,000,000 - 9,999,999</option>-->
+<!--                        <option value="10000000-19999999">Mức giá: 10,000,000 - 19,999,999</option>-->
+<!--                        <option value="20000000-29999999">Mức giá: 20,000,000 - 29,999,999</option>-->
+<!--                        <option value="30000000-100000000">Mức giá: 30,000,000 trở lên</option>-->
+<!--                    </select>-->
+<!--                </div>-->
+<!--                <div class="col-10 col-md-8 col-lg-4 mt-2">-->
+<!--                    <input type="text" placeholder="Nhập tên cần tìm và ấn tìm kiếm" class="form-control smaller-font"-->
+<!--                           aria-label="Product search" id="productName" name="productName">-->
+<!--                </div>-->
+<!--                <div class="col-2 col-md-1 col-lg-1 mt-2 text-end">-->
+<!--                    <button class="ms-2 search-icon" style="float: left">-->
+<!--                        <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor"-->
+<!--                             class="bi bi-search" viewBox="0 0 16 16">-->
+<!--                            <path-->
+<!--                                    d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>-->
+<!--                        </svg>-->
+<!--                    </button>-->
+<!--                </div>-->
+<!--                <div class="col-12 col-md-3 col-lg-2 mt-2">-->
+<!--                    <button type="button" class="btn btn-outline-warning w-100 smaller-button2">-->
+<!--                        Thêm mới hàng hóa-->
+<!--                    </button>-->
+<!--                </div>-->
+<!--            </form>-->
+<!--        </div>-->
+<!--        <div class="row smaller-font">-->
+<!--            <div class="table-responsive">-->
+<!--                <table class="table table-striped table-bordered" id="new-material">-->
+<!--                    <thead id="navbar-sticky">-->
+<!--                    <tr>-->
+<!--                        <th class="col-1 col-md-1 col-lg-1">STT</th>-->
+<!--                        <th class="col-2 col-md-2 col-lg-2">Tên hàng hóa</th>-->
+<!--                        <th class="col-1 col-md-1 col-lg-1">Hãng</th>-->
+<!--                        <th class="col-2 col-md-2 col-lg-2">Giá thành (VND)</th>-->
+<!--                        <th class="col-2 col-md-2 col-lg-2">CPU</th>-->
+<!--                        <th class="col-1 col-md-1 col-lg-1">Lưu trữ</th>-->
+<!--                        <th class="col-1 col-md-1 col-lg-1">Số lượng</th>-->
+<!--                        <th class="col-2 col-md-2 col-lg-2">Hành động</th>-->
+<!--                    </tr>-->
+<!--                    </thead>-->
+<!--                    <tbody>-->
+<!--                    <tr>-->
+<!--                        <td>{{i + 1}}</td>-->
+<!--                        <td>{{product.productName}}</td>-->
+<!--                        <td>{{product.brand.brandName}}</td>-->
+<!--                        <td>{{product.sellingPrice}}</td>-->
+<!--                        <td>{{product.productCpu}}</td>-->
+<!--                        <td>{{product.productStorage}}</td>-->
+<!--                        <td>{{product.quantity}}</td>-->
+<!--                        <td>-->
+<!--                            <div class="d-flex flex-column flex-md-row">-->
+<!--                                <button type="button" class="btn btn-outline-danger smaller-button me-md-2 mb-2 mb-md-0"-->
+<!--                                        data-bs-toggle="modal"-->
+<!--                                        data-bs-target="#exampleModal">-->
+<!--                                    Xóa-->
+<!--                                </button>-->
+<!--                                <button type="button" class="btn btn-outline-secondary smaller-button me-md-2 mb-2 mb-md-0">Chỉnh sửa-->
+<!--                                </button>-->
+<!--                            </div>-->
+<!--                        </td>-->
+<!--                    </tr>-->
+<!--                    </tbody>-->
+<!--                </table>-->
+<!--            </div>-->
+<!--            <div class="row smaller-font">-->
+<!--                <div class="col-5">-->
+<!--                </div>-->
+<!--                <div class="col-5">-->
+<!--                    <button class="btn btn-outline-primary smaller-button2">-->
+<!--                        Trước-->
+<!--                    </button>-->
+<!--                    <a></a>-->
+<!--                    <button class="btn btn-outline-primary smaller-button2">Sau-->
+<!--                    </button>-->
+<!--                </div>-->
+<!--                <div class="col-2 ">-->
+<!--                    <button class="btn btn-outline-dark smaller-button2" style="float: right">Thoát</button>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+<!--&lt;!&ndash; Modal &ndash;&gt;-->
+<!--<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">-->
+<!--    <div class="modal-dialog">-->
+<!--        <div class="modal-content">-->
+<!--            <div class="modal-header">-->
+<!--                <h5 class="modal-title" id="exampleModalLabel">Xác nhận: </h5>-->
+<!--                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>-->
+<!--            </div>-->
+<!--            <div class="modal-body">-->
+<!--                Bạn có chắc chắn xóa sản phẩm <strong></strong> ?-->
+<!--            </div>-->
+<!--            <div class="modal-footer">-->
+<!--                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Đóng</button>-->
+<!--                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Xóa</button>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</div>-->
+<script>
+    function showDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
+            document.getElementById("addMonthEvent").setAttribute("href", url);
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>

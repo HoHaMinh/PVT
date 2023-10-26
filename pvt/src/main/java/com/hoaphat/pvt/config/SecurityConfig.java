@@ -29,15 +29,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests().antMatchers("/", "/login","/js/**","/css/**").permitAll();
-        http.authorizeHttpRequests().antMatchers("/employee/**").hasAnyRole("EMPLOYEE", "MANAGER");
-        http.authorizeHttpRequests().antMatchers("/manager/**").hasRole("MANAGER");
+        http.authorizeHttpRequests().antMatchers("/home/employee/**").hasAnyRole("EMPLOYEE", "MANAGER");
+        http.authorizeHttpRequests().antMatchers("/home/manager/**").hasRole("MANAGER");
         http.authorizeHttpRequests().and().exceptionHandling().accessDeniedPage("/deny");
         http.authorizeHttpRequests().and().formLogin()
                 .loginPage("/login")
                 .loginProcessingUrl("/doLogin")
                 .usernameParameter("accountname")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/employee/home")
+                .defaultSuccessUrl("/home")
                 .failureUrl("/?error=true")
                 .and()
                 .logout().logoutUrl("/logout");

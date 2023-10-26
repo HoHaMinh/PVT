@@ -1,0 +1,156 @@
+.header, .footer {
+    background-color: #05428c;
+    height: 15%;
+}
+
+.font-style {
+    font-family: 'Open Sans', 'sans-serif';
+    color: #05428c;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+thead, th {
+    text-align: center;
+}
+
+.justify {
+    text-align: justify;
+}
+.center {
+    text-align: center;
+}
+
+td, th {
+    vertical-align: middle;
+}
+
+div.search-bar input.col {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+button.add-new.responsive-icon {
+    margin-top: 11px;
+}
+
+div.paging-bar button {
+    width: 100px;
+    margin: 0 5px;
+}
+
+.footer {
+    height: 30px;
+}
+
+button.search-icon:hover svg {
+    height: 35px;
+    width: 35px;
+}
+
+.search-icon {
+    border: none;
+    background: white;
+    width: 30px;
+    height: 30px;
+}
+
+button.responsive-icon,
+button.responsive-icon-add,
+button.responsive-button-search {
+    display: none;
+}
+
+.responsive-button-add,
+.responsive-button-search {
+    width: 140px;
+}
+
+button.responsive-icon-search {
+    display: inline-block;
+    border: none;
+    background-color: white;
+    width: 10px;
+    height: 10px;
+}
+
+button.responsive-icon-search:hover svg {
+    height: 35px;
+    width: 35px;
+}
+
+@media screen and (max-width: 1200px) {
+    td {
+        height: 60px;
+    }
+
+    button.responsive-button {
+        display: none;
+    }
+
+    button.responsive-icon {
+        display: inline-block;
+        border: none;
+        background-color: white;
+        margin: 10px 10px;
+    }
+
+    button.responsive-icon:hover svg {
+        height: 35px;
+        width: 35px;
+    }
+}
+
+strong {
+    color: red;
+}
+
+@media screen and (max-width: 992px) {
+    td {
+        height: 50px;
+    }
+
+    button.responsive-icon-search {
+        display: none;
+    }
+
+    button.responsive-button-search {
+        display: inline-block;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    td.responsive-field,
+    th.responsive-field {
+        display: none;
+    }
+
+    button.responsive-button-add {
+        display: none;
+    }
+
+    button.responsive-icon-add {
+        display: inline-block;
+    }
+
+    button.responsive-icon-add {
+        display: inline-block;
+        border: none;
+        background-color: white;
+        margin: 10px 10px;
+    }
+
+    .smaller-font {
+        font-size: 0.68rem;
+    }
+
+    .smaller-button {
+        font-size: 0.7rem;
+        padding: 1px 1px;
+    }
+
+    .smaller-button2 {
+        font-size: 0.7rem;
+        padding: 5px 10px;
+    }
+}

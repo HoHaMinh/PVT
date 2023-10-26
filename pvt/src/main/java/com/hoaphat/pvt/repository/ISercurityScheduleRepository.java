@@ -1,0 +1,9 @@
+package com.hoaphat.pvt.repository;
+
+import com.hoaphat.pvt.model.event.SercuritySchedule;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ISercurityScheduleRepository extends CrudRepository<SercuritySchedule,Integer> {
+}
