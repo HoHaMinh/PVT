@@ -1,6 +1,23 @@
 .header, .footer {
     background-color: #05428c;
-    height: 15%;
+    height: 5%;
+}
+
+.center {
+    text-align: center;
+}
+
+.justify {
+    text-align: justify;
+}
+
+body {
+    height: 100vh;
+    margin: 0;
+}
+
+.container-fluid {
+    height: 100%;
 }
 
 .font-style {
@@ -11,13 +28,6 @@
 }
 
 thead, th {
-    text-align: center;
-}
-
-.justify {
-    text-align: justify;
-}
-.center {
     text-align: center;
 }
 
@@ -37,10 +47,6 @@ button.add-new.responsive-icon {
 div.paging-bar button {
     width: 100px;
     margin: 0 5px;
-}
-
-.footer {
-    height: 30px;
 }
 
 button.search-icon:hover svg {

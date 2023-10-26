@@ -1,5 +1,6 @@
 package com.hoaphat.pvt.controller;
 
+import com.hoaphat.pvt.model.ResponseFilter;
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.model.event.MonthEventManager;
 import com.hoaphat.pvt.model.event.SercuritySchedule;
@@ -35,10 +36,10 @@ public class EventController {
 
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page,
-                                 @RequestParam("size") Optional<Integer> size,
-                                 @RequestParam("sort") Optional<String> sort) {
+                           @RequestParam("size") Optional<Integer> size,
+                           @RequestParam("sort") Optional<String> sort) {
         int currentPage = page.orElse(1);
-        int pageSize = size.orElse(12);
+        int pageSize = size.orElse(11);
         String sortField = sort.orElse("monthEventDeadline");
         model.addAttribute("currentPage", currentPage);
         Page<MonthEvent> monthEventList = monthEventService.getMonthEventListWithPaging(PageRequest.of(currentPage - 1, pageSize, Sort.by(sortField).ascending()));
@@ -87,32 +88,41 @@ public class EventController {
         redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công");
         return "redirect:/home/manager/task";
     }
+
     LocalDateTime timeSetToday;
 
     @Scheduled(fixedRate = 1)
-    public  void setTime() {
+    public void setTime() {
         timeSetToday = LocalDateTime.now();
     }
 
     @GetMapping("/home/employee/private")
     public ModelAndView showPrivate(Model model) {
         monthEventService.checkWeekEventDeadline(timeSetToday);
-        model.addAttribute("sercuritySchedule",sercurityScheduleService.getAll());
+        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
         return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByTime(timeSetToday));
     }
 
     @GetMapping("/home/employee/private/search")
     public ModelAndView showFilter(@RequestParam(value = "value", required = false) String name, Model model) {
         monthEventService.checkWeekEventDeadline(timeSetToday);
-        model.addAttribute("sercuritySchedule",sercurityScheduleService.getAll());
+        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
+        model.addAttribute("selectedName", name);
         String nameFilter = "".equals(name) ? null : name;
-        return new ModelAndView("filter", "monthEventListByFilter", monthEventService.getMonthEventListByFilter(timeSetToday,nameFilter));
+        return new ModelAndView("filter", "monthEventListByFilter", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
     }
 
     @GetMapping("/home/employee/privateRestful")
     public ResponseEntity<List<MonthEvent>> showPrivateRestful() {
         List<MonthEvent> list = monthEventService.getMonthEventListByTime(timeSetToday);
         return new ResponseEntity<>(list, HttpStatus.OK);
+    }
+
+    @GetMapping("/home/employee/filterRestful")
+    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
+        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
+        ResponseFilter responseFilter = new ResponseFilter(list, nameFilter);
+        return new ResponseEntity<>(responseFilter, HttpStatus.OK);
     }
 
     @GetMapping("/home/manager/task/deleteTask")
