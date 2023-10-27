@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Nhắc lịch PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script type="text/javascript">
+        // function loadData() {
+        //   var selectedValue = document.getElementById('name').value;
+        //   $.ajax({
+        //     url: "/home/employee/filterRestful",
+        //     data: { selectedValue: selectedValue },
+        //     type: "get",
+        //     dataType: "json",
+        //     success: function (data) {
+        //       let result = '';
+        //       for (let i = 0; i < data.monthEventList.length; i++) {
+        //         result += `
+        //                 <tr>
+        //                     <td class="center">${i + 1}</td>
+        //                     <td class="justify">${data.monthEventList[i].monthEventDescription}</td>
+        //                     <td class="center">${data.monthEventList[i].monthEventDeadline}</td>
+        //                 </tr>
+        //             `;
+        //       }
+        //       $("#result").html(result);
+        //       var selectedValue = data.nameFilter;
+        //     },
+        //     error: function (e) {
+        //     }
+        //   });
+        // }
+
+        function loadData() {
+           var selectedValue = $("input[name='options-outlined']:checked").val();
+                $.ajax({
+                    url: "/home/employee/filterRestful",
+                    type: 'get',
+                    data: {selectedValue: selectedValue},
+                    dataType: "json",
+                    success: function (data) {
+                        let result = '';
+                        for (let i = 0; i < data.monthEventList.length; i++) {
+                            result += `
+                    <tr>
+                        <td class="center">${i + 1}</td>
+                        <td class="justify">${data.monthEventList[i].monthEventDescription}</td>
+                        <td class="center">${data.monthEventList[i].monthEventDeadline}</td>
+                    </tr>
+                `;
+                        }
+                        $("#result").html(result);
+                        var selectedValue = data.nameFilter;
+                    },
+                    error: function (e) {
+                    }
+                });
+        }
+
+        $(document).ready(function () {
+            $("input[name='options-outlined']").change(loadData);
+            loadData();
+            setInterval(loadData, 500);
+        });
+        // Set an interval to call the loadData function every 1 seconds
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row text-center header">
+        <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+    </div>
+    <div class="row" style="height: 95%">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 8%">
+            <div class="container-fluid" style="height: 100%">
+                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
+                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
+                </a>
+                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
+                     id="navbarNavDropdown">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Nhắc
+                                nhở lịch cần làm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
+                        </li>
+                        <li class="nav-item ">
+                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
+                               id="navbarDropdownMenuLink"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Giao việc (chỉ quản lý)
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
+                                    nhân</a></li>
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
+                                    cá nhân lặp lại định kỳ</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div style="height: 92%" class="row smaller-font">
+            <div style="height: 100%; width: 100%">
+                <div th:each="security: ${sercuritySchedule}" class="mb-2">
+                    <h5 th:text="${security.getStr1()}"></h5>
+                    <strong th:text="${security.getStr2()} + '. '"></strong><strong
+                        th:text="${security.getStr3()} + '. '"></strong><strong
+                        th:text="${security.getStr4()}"></strong>
+                </div>
+                <h3 style="text-align: center; height: 3%" class="text-primary">Nhắc nhở lịch cần làm</h3>
+                <div class="row mb-3 mt-3" style="height: 4%">
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="1" autocomplete="off" value=""
+                               th:checked="${selectedValue == ''}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="1" style="flex-grow: 1;">Cả phòng</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="2" autocomplete="off"
+                               value="Tín" th:checked="${selectedValue == 'Tín'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="2" style="flex-grow: 1;">Tín</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="3" autocomplete="off"
+                               value="Nguyên" th:checked="${selectedValue == 'Nguyên'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="3" style="flex-grow: 1;">Nguyên</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="4" autocomplete="off"
+                               value="A Trầm" th:checked="${selectedValue == 'A Trầm'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="4" style="flex-grow: 1;">A Trầm</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="5" autocomplete="off"
+                               value="Thắm" th:checked="${selectedValue == 'Thắm'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="5" style="flex-grow: 1;">Thắm</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="6" autocomplete="off"
+                               value="Mơ" th:checked="${selectedValue == 'Mơ'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="6" style="flex-grow: 1;">Mơ</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="7" autocomplete="off"
+                               value="Hảo" th:checked="${selectedValue == 'Hảo'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="7" style="flex-grow: 1;">Hảo</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="8" autocomplete="off"
+                               value="A Trọng" th:checked="${selectedValue == 'A Trọng'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="8" style="flex-grow: 1;">A Trọng</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="9" autocomplete="off"
+                               value="Minh" th:checked="${selectedValue == 'Minh'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="9" style="flex-grow: 1;">Minh</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="10" autocomplete="off"
+                               value="C Đào" th:checked="${selectedValue == 'C Đào'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="10" style="flex-grow: 1;">C Đào</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered" id="new-material"
+                           th:if="${monthEventListByTime != null}">
+                        <thead id="navbar-sticky">
+                        <tr>
+                            <th class="col-1 col-md-1 col-lg-1">STT</th>
+                            <th class="col-9 col-md-7 col-lg-9">Nội dung công việc</th>
+                            <th class="col-2 col-md-2 col-lg-2">Deadline</th>
+                        </tr>
+                        </thead>
+                        <tbody id="result">
+                        <tr th:each="list,iter: ${monthEventListByTime}">
+                            <td class="center" th:text="${iter.count}"></td>
+                            <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+                            <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                        </tr>
+                        </tbody>
+
+                    </table>
+                </div>
+                <div class="row smaller-font">
+                    <!--                    <div class="col-5">-->
+                    <!--                    </div>-->
+                    <!--                    <div class="col-5">-->
+                    <!--                        <button class="btn btn-outline-primary smaller-button2">-->
+                    <!--                            Trước-->
+                    <!--                        </button>-->
+                    <!--                        <a></a>-->
+                    <!--                        <button class="btn btn-outline-primary smaller-button2">Sau-->
+                    <!--                        </button>-->
+                    <!--                    </div>-->
+                    <div class="col-12 ">
+                        <button class="btn btn-outline-primary smaller-button2" style="float: right">
+                            <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>

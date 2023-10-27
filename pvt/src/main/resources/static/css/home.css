@@ -1,6 +1,9 @@
 .header, .footer {
     background-color: #05428c;
     height: 5%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .center {
