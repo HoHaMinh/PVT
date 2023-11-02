@@ -3,7 +3,6 @@ package com.hoaphat.pvt.controller;
 import com.hoaphat.pvt.model.ResponseFilter;
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.model.event.MonthEventManager;
-import com.hoaphat.pvt.model.event.SercuritySchedule;
 import com.hoaphat.pvt.service.ISercurityScheduleService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,47 +95,14 @@ public class EventController {
         timeSetToday = LocalDateTime.now();
     }
 
-//*Template cho private
-//    @GetMapping("/home/employee/private")
-//    public ModelAndView showPrivate(Model model) {
-//        monthEventService.checkWeekEventDeadline(timeSetToday);
-//        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
-//        return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByTime(timeSetToday));
-//    }
-
     @GetMapping("/home/employee/private")
     public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> name) {
         String nameFilter = name.orElse("");
         monthEventService.checkWeekEventDeadline(timeSetToday);
         model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
         model.addAttribute("selectedValue", nameFilter);
-        return new ModelAndView("private2", "monthEventListByTime", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
+        return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
     }
-
-//*Template cho private
-//    @GetMapping("/home/employee/private/search")
-//    public ModelAndView showFilter(@RequestParam(value = "value", required = false) String name, Model model) {
-//        monthEventService.checkWeekEventDeadline(timeSetToday);
-//        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
-//        model.addAttribute("selectedName", name);
-//        String nameFilter = "".equals(name) ? null : name;
-//        return new ModelAndView("filter", "monthEventListByFilter", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
-//    }
-
-//*Template cho private
-//    @GetMapping("/home/employee/privateRestful")
-//    public ResponseEntity<List<MonthEvent>> showPrivateRestful() {
-//        List<MonthEvent> list = monthEventService.getMonthEventListByTime(timeSetToday);
-//        return new ResponseEntity<>(list, HttpStatus.OK);
-//    }
-
-//*Template cho private
-//    @GetMapping("/home/employee/filterRestful")
-//    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
-//        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
-//        ResponseFilter responseFilter = new ResponseFilter(list, nameFilter);
-//        return new ResponseEntity<>(responseFilter, HttpStatus.OK);
-//    }
 
     @GetMapping("/home/employee/filterRestful")
     public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {

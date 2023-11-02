@@ -14,8 +14,8 @@
     <div class="row text-center header">
         <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
     </div>
-    <div class="row" style="height: 95%">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 8%">
+    <div>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid" style="height: 100%">
                 <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
                     <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
@@ -24,8 +24,7 @@
                      id="navbarNavDropdown">
                     <ul class="navbar-nav">
                         <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Nhắc
-                                nhở lịch cần làm</a>
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
@@ -50,11 +49,11 @@
                 </div>
             </div>
         </nav>
-        <div style="height: 92%" class="row smaller-font">
+        <div>
             <h10 style="text-align: left; height: 3%" class="text-danger" th:if="${mess != null}"
                  th:text="${mess}"></h10>
             <div style="height: 8%; width: 100%">
-                <h3 style="text-align: center" class="text-primary">Lịch công việc tháng/cá nhân</h3>
+                <h3 class="text-primary">Lịch công việc tháng/cá nhân</h3>
                 <a href="" id="addMonthEvent" style="text-decoration: none">
                     <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới công việc tháng/cá
                         nhân

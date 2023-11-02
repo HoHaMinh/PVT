@@ -11,37 +11,37 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script type="text/javascript">
         function loadData() {
-            var selectedValue = document.getElementById('name').value;
-            $.ajax({
-                url: "/home/employee/filterRestful",
-                data: { selectedValue: selectedValue },
-                type: "get",
-                dataType: "json",
-                success: function (data) {
-                    let result = '';
-                    for (let i = 0; i < data.monthEventList.length; i++) {
-                        result += `
+           var selectedValue = $("input[name='options-outlined']:checked").val();
+                $.ajax({
+                    url: "/home/employee/filterRestful",
+                    type: 'get',
+                    data: {selectedValue: selectedValue},
+                    dataType: "json",
+                    success: function (data) {
+                        let result = '';
+                        for (let i = 0; i < data.monthEventList.length; i++) {
+                            result += `
                     <tr>
                         <td class="center">${i + 1}</td>
                         <td class="justify">${data.monthEventList[i].monthEventDescription}</td>
                         <td class="center">${data.monthEventList[i].monthEventDeadline}</td>
                     </tr>
                 `;
+                        }
+                        $("#result").html(result);
+                        var selectedValue = data.nameFilter;
+                    },
+                    error: function (e) {
                     }
-                    $("#result").html(result);
-                    var selectedValue = data.nameFilter;
-                },
-                error: function (e) {
-                }
-            });
+                });
         }
 
         $(document).ready(function () {
+            $("input[name='options-outlined']").change(loadData);
             loadData();
+            setInterval(loadData, 500);
         });
-
         // Set an interval to call the loadData function every 1 seconds
-        setInterval(loadData, 500);
     </script>
 </head>
 <body>
@@ -49,8 +49,8 @@
     <div class="row text-center header">
         <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
     </div>
-    <div class="row" style="height: 95%">
-        <nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 8%">
+    <div>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container-fluid" style="height: 100%">
                 <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
                     <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
@@ -59,8 +59,7 @@
                      id="navbarNavDropdown">
                     <ul class="navbar-nav">
                         <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Nhắc
-                                nhở lịch cần làm</a>
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
@@ -85,7 +84,7 @@
                 </div>
             </div>
         </nav>
-        <div style="height: 92%" class="row smaller-font">
+        <div>
             <div style="height: 100%; width: 100%">
                 <div th:each="security: ${sercuritySchedule}" class="mb-2">
                     <h5 th:text="${security.getStr1()}"></h5>
@@ -93,27 +92,61 @@
                         th:text="${security.getStr3()} + '. '"></strong><strong
                         th:text="${security.getStr4()}"></strong>
                 </div>
-                <h3 style="text-align: center; height: 3%" class="text-primary">Nhắc nhở lịch cần làm</h3>
-                <div class="row mb-2 mt-3">
-                    <div class="col-6 col-md-6 col-lg-6">
-                        <p style="font-weight: bolder; float: right" class="text-primary">
-                            Lọc công việc theo cá nhân (có gồm việc chung cả phòng):
-                        </p>
+                <h3 class="text-primary">Nhắc nhở lịch cần làm</h3>
+                <div class="row mb-3 mt-3" style="height: 4%">
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
                     </div>
-                    <div class="col-3 col-md-3 col-lg-3 dropdown">
-                        <select class="btn dropdown-toggle w-100 smaller-font" id="name" name="name"
-                                aria-expanded="false" style="font-weight: bold; padding-top: 0" #name>
-                            <option value="">Cả phòng</option>
-                            <option value="Tín">Tín</option>
-                            <option value="Nguyên">Nguyên</option>
-                            <option value="A Trầm">A Trầm</option>
-                            <option value="Thắm">Thắm</option>
-                            <option value="Mơ">Mơ</option>
-                            <option value="Hảo">Hảo</option>
-                            <option value="A Trọng">A Trọng</option>
-                            <option value="Minh">Minh</option>
-                            <option value="C Đào">C Đào</option>
-                        </select>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="1" autocomplete="off" value=""
+                               th:checked="${selectedValue == ''}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="1" style="flex-grow: 1;">All</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="2" autocomplete="off"
+                               value="Tín" th:checked="${selectedValue == 'Tín'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="2" style="flex-grow: 1;">Tín</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="3" autocomplete="off"
+                               value="Nguyên" th:checked="${selectedValue == 'Nguyên'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="3" style="flex-grow: 1;">Nguyên</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="4" autocomplete="off"
+                               value="A Trầm" th:checked="${selectedValue == 'A Trầm'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="4" style="flex-grow: 1;">A Trầm</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="5" autocomplete="off"
+                               value="Thắm" th:checked="${selectedValue == 'Thắm'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="5" style="flex-grow: 1;">Thắm</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="6" autocomplete="off"
+                               value="Mơ" th:checked="${selectedValue == 'Mơ'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="6" style="flex-grow: 1;">Mơ</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="7" autocomplete="off"
+                               value="Hảo" th:checked="${selectedValue == 'Hảo'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="7" style="flex-grow: 1;">Hảo</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="8" autocomplete="off"
+                               value="A Trọng" th:checked="${selectedValue == 'A Trọng'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="8" style="flex-grow: 1;">A Trọng</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="9" autocomplete="off"
+                               value="Minh" th:checked="${selectedValue == 'Minh'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="9" style="flex-grow: 1;">Minh</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
+                        <input type="radio" class="btn-check" name="options-outlined" id="10" autocomplete="off"
+                               value="C Đào" th:checked="${selectedValue == 'C Đào'}" style="flex-grow: 1;">
+                        <label class="btn btn-outline-primary" for="10" style="flex-grow: 1;">C Đào</label>
+                    </div>
+                    <div class="col-1 col-md-1 col-lg-1" style="display: flex; flex-direction: column;">
                     </div>
                 </div>
                 <div class="table-responsive">
