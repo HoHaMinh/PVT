@@ -16,7 +16,7 @@
     </div>
     <div>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid" style="height: 100%">
+            <div class="container-fluid">
                 <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
                     <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
                 </a>
@@ -50,16 +50,16 @@
             </div>
         </nav>
         <div>
-            <div style="height: 8%; width: 100%">
+            <div class="mb-1">
                 </h10>
-                <h3 class="text-primary">Lịch công việc cá nhân có lặp lại</h3>
+                <h3 class="text-primary mb-2">Lịch công việc cá nhân có lặp lại</h3>
                 <a href="" id="addWeekEvent" style="text-decoration: none">
                     <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới việc cá nhân có lặp
                         lại
                     </button>
                 </a>
             </div>
-            <div style="height: 87%; width: 100%">
+            <div>
                 <form class="row" method="post" th:action="@{/home/manager/weeklyTask/addWeekEvent}"
                       th:object="${monthEventManager}">
                     <table>
@@ -107,10 +107,10 @@
                     </div>
                 </form>
             </div>
-        </div>
-        <div class="col-12" style="height: 5%">
-            <button class="btn btn-outline-primary smaller-button2" style="float: right">
-                <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+            <div class="col-12">
+                <button class="btn btn-outline-primary smaller-button2" style="float: right">
+                    <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+            </div>
         </div>
     </div>
 </div>

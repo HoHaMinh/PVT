@@ -16,7 +16,7 @@
     </div>
     <div>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid" style="height: 100%">
+            <div class="container-fluid">
                 <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
                     <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
                 </a>
@@ -50,15 +50,15 @@
             </div>
         </nav>
         <div>
-            <div style="height: 8%; width: 100%">
-                <h3 class="text-primary">Lịch công việc cá nhân có lặp lại</h3>
+            <div class="mb-1">
+                <h3 class="text-primary mb-2">Lịch công việc cá nhân có lặp lại</h3>
                 <a href="" id="addWeekEvent" style="text-decoration: none">
                     <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới việc cá nhân có lặp
                         lại
                     </button>
                 </a>
             </div>
-            <div class="table-responsive" style="height: 87%">
+            <div class="table-responsive">
                 <table class="table table-striped table-bordered" id="new-material" th:if="${weekEventList != null}">
                     <thead id="navbar-sticky">
                     <tr>
@@ -83,7 +83,7 @@
                     </tr>
                     </tbody>
                 </table>
-                <div class="col-12" style="height: 5%">
+                <div class="col-12">
                     <button class="btn btn-outline-primary smaller-button2" style="float: right">
                         <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
                 </div>

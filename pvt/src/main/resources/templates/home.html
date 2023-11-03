@@ -46,12 +46,12 @@
                 </div>
             </div>
         </nav>
-        <div>
-            <div th:each="mess: ${message}" th:if="${message!=null}">
+        <div class="mt-2">
+            <div th:each="mess: ${message}" th:if="${message!=null}" style="display: flex; align-items: center;justify-content: center;">
                 <h3 style="color: red" th:text="${mess.getMessage()}"></h3>
             </div>
-            <div style="height: 89%; overflow: hidden;">
-                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg" style="width: 100%; height: 100%; object-fit: contain; object-position: top;">
+            <div style="height: 600px; overflow: hidden">
+                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg" style="width: 100%; height: 600px; object-fit: fill; object-position: top;">
             </div>
         </div>
     </div>
