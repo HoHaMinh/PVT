@@ -1,4 +1,6 @@
-package com.hoaphat.pvt.model.event;
+package com.hoaphat.pvt.model.dto;
+
+import com.hoaphat.pvt.model.event.MonthEvent;
 
 import java.util.ArrayList;
 import java.util.List;

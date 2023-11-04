@@ -1,4 +1,4 @@
-package com.hoaphat.pvt.model;
+package com.hoaphat.pvt.model.dto;
 
 import com.hoaphat.pvt.model.event.MonthEvent;
 

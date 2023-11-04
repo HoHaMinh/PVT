@@ -18,6 +18,8 @@ public class MonthEvent {
     private LocalDateTime monthEventDeadline;
     @Column(columnDefinition = "int default 0")
     private Integer monthEventStatus = 0;
+    @Column(columnDefinition = "int default 0")
+    private Integer responseStatus = 0;
 
     private Integer extendDay;
 
@@ -87,5 +89,13 @@ public class MonthEvent {
 
     public void setExtendDay(Integer extendDay) {
         this.extendDay = extendDay;
+    }
+
+    public Integer getResponseStatus() {
+        return responseStatus;
+    }
+
+    public void setResponseStatus(Integer responseStatus) {
+        this.responseStatus = responseStatus;
     }
 }

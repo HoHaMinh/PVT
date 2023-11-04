@@ -1,10 +1,15 @@
 package com.hoaphat.pvt.controller;
 
-import com.hoaphat.pvt.model.ResponseFilter;
+import com.hoaphat.pvt.model.dto.ResponseFilter;
 import com.hoaphat.pvt.model.event.MonthEvent;
-import com.hoaphat.pvt.model.event.MonthEventManager;
+import com.hoaphat.pvt.model.dto.MonthEventManager;
+import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import com.hoaphat.pvt.service.ISercurityScheduleService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
+import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +33,15 @@ import java.util.stream.IntStream;
 
 @Controller
 public class EventController {
+    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
     @Autowired
     private IMonthEventService monthEventService;
 
     @Autowired
     private ISercurityScheduleService sercurityScheduleService;
+
+    @Autowired
+    private IResponseEventInformationService responseEventInformationService;
 
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page,
@@ -109,6 +119,24 @@ public class EventController {
         List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
         ResponseFilter responseFilter = new ResponseFilter(list, nameFilter);
         return new ResponseEntity<>(responseFilter, HttpStatus.OK);
+    }
+
+    @GetMapping("/home/employee/private/showEventResponseForm/{id}")
+    private String showEventResponseForm(@PathVariable("id") Integer id, Model model) {
+        MonthEvent eventResponse = monthEventService.findById(id);
+        model.addAttribute("monthEvent", eventResponse);
+        model.addAttribute("response", new ResponseEventInformation(eventResponse));
+        model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
+        return ("eventResponse");
+    }
+
+    @PostMapping("/home/employee/private/addEventResponse")
+    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, RedirectAttributes redirectAttributes, Principal principal) {
+        String name = principal.getName();
+        responseEventInformation.setCreatedByUser(name);
+        responseEventInformationService.addResponseEventInformation(responseEventInformation);
+        redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
+        return "redirect:/home/employee/private/showEventResponseForm/" + responseEventInformation.getMonthEvent().getMonthEventId();
     }
 
     @GetMapping("/home/manager/task/deleteTask")

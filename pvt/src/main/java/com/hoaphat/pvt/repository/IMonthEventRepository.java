@@ -28,6 +28,16 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
 
     @Transactional
     @Modifying
+    @Query("update MonthEvent m set m.responseStatus = 1 where m.monthEventId = :id")
+    void updateResponseStatus1(Integer id);
+
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.responseStatus = 2 where m.monthEventId = :id")
+    void updateResponseStatus2(Integer id);
+
+    @Transactional
+    @Modifying
     @Query("delete MonthEvent m where m.monthEventStatus = 1")
     void deleteMonthEventByStatus();
 

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Phản hồi công việc</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row text-center header">
+        <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+    </div>
+    <div>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <div class="container-fluid">
+                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
+                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
+                </a>
+                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
+                     id="navbarNavDropdown">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
+                        </li>
+                        <li class="nav-item ">
+                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
+                        </li>
+                        <li class="nav-item dropdown active">
+                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
+                               id="navbarDropdownMenuLink"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Giao việc (chỉ quản lý)
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
+                                    nhân</a></li>
+                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
+                                    cá nhân lặp lại định kỳ</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div>
+            <h10 style="text-align: left" class="text-danger" th:if="${mess != null}"
+                 th:text="${mess}"></h10>
+            <div class="mb-1">
+                <h3 class="text-primary">Danh sách phản hồi cho công việc:</h3>
+                <p th:text="${monthEvent.getMonthEventDescription()}" class="mb-2"></p>
+                <button type="button" class="btn btn-outline-primary col-2 col-md-2 col-lg-2"
+                        data-bs-toggle="modal"
+                        data-bs-target="#exampleModal">
+                    Thêm mới phản hồi
+                </button>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered" id="new-material"
+                       th:if="${listResponse != null}">
+                    <thead id="navbar-sticky">
+                    <tr>
+                        <th class="col-1 col-md-1 col-lg-1">STT</th>
+                        <th class="col-8 col-md-8 col-lg-8">Nội dung</th>
+                        <th class="col-2 col-md-2 col-lg-2">Thời gian</th>
+                        <th class="col-1 col-md-1 col-lg-1">User</th>
+                    </tr>
+                    </thead>
+                    <tbody id="result">
+                    <tr th:each="list,iter: ${listResponse}">
+                        <td class="center" th:text="${iter.count}"></td>
+                        <td class="justify" th:text="${list.getEventInformationResponse()}"></td>
+                        <td class="center" th:text="${list.getFormattedCreatedByDate()}"></td>
+                        <td class="center" th:text="${list.getCreatedByUser()}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-12 ">
+            <button class="btn btn-outline-primary smaller-button2" style="float: right">
+                <a th:href="@{/home/employee/private}" style="text-decoration: none">Trở về trang lịch cần làm</a></button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header pb-0">
+                <h2 class="modal-title pb-0 mb-0" id="exampleModalLabel">Thêm mới phản hồi </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form class="row" method="post" th:action="@{/home/employee/private/addEventResponse}"
+                      th:object="${response}">
+                    <table>
+                        <thead>
+                        <tr>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Id Event
+                            </td>
+                            <td class="col-12 col-md-12 col-lg-12" style="font-weight: bolder; font-size: larger">
+                                Nội dung
+                            </td>
+                        </tr>
+                        </thead>
+                        <tr>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{monthEvent}"
+                                       th:value="${response.getMonthEvent()}"
+                                       th:placeholder="${response.getMonthEvent()}">
+                            </td>
+                            <td>
+                                <textarea type="text" th:field="*{eventInformationResponse}"
+                                          style="width:100%" rows="5"></textarea>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark" data-bs-dismiss="modal">
+                            Thêm
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+                            Hủy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!--    end modal-->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
