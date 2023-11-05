@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -15,7 +16,8 @@ import java.time.format.DateTimeFormatter;
 public class ResponseEventInformation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer idRespose;
+    private Integer idResponse;
+    @Column(columnDefinition = "LONGTEXT")
     private String eventInformationResponse;
     @ManyToOne
     @JoinColumn(name = "month_event_id", referencedColumnName = "monthEventId")
@@ -30,8 +32,8 @@ public class ResponseEventInformation {
     public ResponseEventInformation() {
     }
 
-    public ResponseEventInformation(Integer idRespose, String eventInformationResponse, MonthEvent monthEvent, String createdByUser, LocalDateTime createdByDate) {
-        this.idRespose = idRespose;
+    public ResponseEventInformation(Integer idResponse, String eventInformationResponse, MonthEvent monthEvent, String createdByUser, LocalDateTime createdByDate) {
+        this.idResponse = idResponse;
         this.eventInformationResponse = eventInformationResponse;
         this.monthEvent = monthEvent;
         this.createdByUser = createdByUser;
@@ -49,12 +51,12 @@ public class ResponseEventInformation {
         this.monthEvent = monthEvent;
     }
 
-    public Integer getIdRespose() {
-        return idRespose;
+    public Integer getIdResponse() {
+        return idResponse;
     }
 
-    public void setIdRespose(Integer idRespose) {
-        this.idRespose = idRespose;
+    public void setIdResponse(Integer idRespose) {
+        this.idResponse = idRespose;
     }
 
     public String getEventInformationResponse() {

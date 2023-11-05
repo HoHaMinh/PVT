@@ -12,6 +12,7 @@ public class MonthEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer monthEventId;
+    @Column(columnDefinition = "MEDIUMTEXT")
     private String monthEventDescription;
     @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)

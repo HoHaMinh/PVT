@@ -1,4 +1,4 @@
-package com.hoaphat.pvt.repository;
+package com.hoaphat.pvt.repository.account;
 
 import com.hoaphat.pvt.model.account.Account;
 import org.springframework.data.repository.CrudRepository;

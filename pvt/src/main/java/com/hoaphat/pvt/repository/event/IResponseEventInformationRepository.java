@@ -1,4 +1,4 @@
-package com.hoaphat.pvt.repository;
+package com.hoaphat.pvt.repository.event;
 
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import org.springframework.data.jpa.repository.Query;

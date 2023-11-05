@@ -8,6 +8,80 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // Add an event listener for the "Thêm" button
+            $('#exampleModal').on('click', '.btn-outline-dark', function(e) {
+                if ($('#eventInformationResponse').val().trim() === '') {
+                    e.preventDefault(); // Prevent form submission
+                    swal('Bắt buộc', 'Nội dung không được bỏ trống.', 'error');
+                }
+            });
+        });
+    </script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            // Define a function to load the data from the server
+            function loadData() {
+                var currentURL = window.location.href;
+                var modifiedURL = currentURL.replace('showEventResponseForm', 'showEventResponseFormRestful');
+                $.ajax({
+                    url: modifiedURL,
+                    type: 'get',
+                    dataType: "json",
+                    success: function (data) {
+                        let result = '';
+                        for (let i = 0; i < data.length; i++) {
+                            result += `
+                    <tr>
+                        <td class="center">${i + 1}</td>
+                        <td class="justify">${data[i].eventInformationResponse}</td>
+                        <td class="center">${data[i].createdByDate}</td>
+                        <td class="center">${data[i].createdByUser}</td>
+                    </tr>
+                `;
+                        }
+                        $("#result").html(result);
+                    },
+                    error: function (e) {
+                    }
+                });
+            }
+
+            // Call the loadData function when the page loads
+            loadData();
+
+            // Add an event listener for the form submission
+            $('form').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    type: 'post',
+                    url: $(this).attr('action'),
+                    data: $(this).serialize(),
+                    success: function() {
+                        swal({
+                            title: 'Thông báo',
+                            text: 'Thêm mới thành công',
+                            icon: 'success',
+                            timer: 1500,
+                            buttons: false
+                        }).then(function() {
+                            $('#exampleModal').modal('hide');
+                            // Call the loadData function again to refresh the data
+                            loadData();
+                        });
+                    }
+                });
+            });
+
+            // Set an interval to call the loadData function every 0.1 seconds
+            setInterval(loadData, 100);
+        });
+        /*]]>*/
+    </script>
 </head>
 <body>
 <div class="container-fluid">
@@ -50,11 +124,9 @@
             </div>
         </nav>
         <div>
-            <h10 style="text-align: left" class="text-danger" th:if="${mess != null}"
-                 th:text="${mess}"></h10>
             <div class="mb-1">
-                <h3 class="text-primary">Danh sách phản hồi cho công việc:</h3>
-                <p th:text="${monthEvent.getMonthEventDescription()}" class="mb-2"></p>
+                <h3 class="text-primary">Danh sách phản hồi cho công việc</h3>
+                <p th:text="${response.getMonthEvent().getMonthEventDescription()}" class="mb-2" style="text-align: center;color: red" ></p>
                 <button type="button" class="btn btn-outline-primary col-2 col-md-2 col-lg-2"
                         data-bs-toggle="modal"
                         data-bs-target="#exampleModal">
@@ -84,8 +156,11 @@
             </div>
         </div>
         <div class="col-12 ">
-            <button class="btn btn-outline-primary smaller-button2" style="float: right">
-                <a th:href="@{/home/employee/private}" style="text-decoration: none">Trở về trang lịch cần làm</a></button>
+            <a th:href="@{/home/employee/private}" style="text-decoration: none">
+                <button class="btn btn-outline-primary" style="float: right">
+                    Trở về trang lịch cần làm
+                </button>
+            </a>
         </div>
     </div>
 </div>
@@ -94,10 +169,6 @@
 <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header pb-0">
-                <h2 class="modal-title pb-0 mb-0" id="exampleModalLabel">Thêm mới phản hồi </h2>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
             <div class="modal-body">
                 <form class="row" method="post" th:action="@{/home/employee/private/addEventResponse}"
                       th:object="${response}">
@@ -120,12 +191,12 @@
                             </td>
                             <td>
                                 <textarea type="text" th:field="*{eventInformationResponse}"
-                                          style="width:100%" rows="5"></textarea>
+                                          style="width:100%" rows="7" required></textarea>
                             </td>
                         </tr>
                     </table>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-outline-dark" data-bs-dismiss="modal">
+                        <button type="submit" class="btn btn-outline-dark">
                             Thêm
                         </button>
                         <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">

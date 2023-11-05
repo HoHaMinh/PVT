@@ -1,7 +1,7 @@
 package com.hoaphat.pvt.service;
 
 import com.hoaphat.pvt.model.event.SercuritySchedule;
-import com.hoaphat.pvt.repository.ISercurityScheduleRepository;
+import com.hoaphat.pvt.repository.event.ISercurityScheduleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;

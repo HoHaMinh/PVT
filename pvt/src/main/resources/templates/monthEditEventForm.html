@@ -84,13 +84,13 @@
                 <textarea type="text" th:field="*{monthEventDescription}"
                           th:placeholder="${monthEditEvent.getMonthEventDescription()}"
                           th:value="${monthEditEvent.getMonthEventDescription()}"
-                          style="width:100%;" rows="2"></textarea>
+                          style="width:100%;" rows="2" required></textarea>
                             </td>
                             <td>
                                 <input type="datetime-local"
                                        th:field="*{monthEventDeadline}"
                                        th:placeholder="${monthEditEvent.getMonthEventDescription()}"
-                                       th:value="${monthEditEvent.getMonthEventDescription()}">
+                                       th:value="${monthEditEvent.getMonthEventDescription()}" required>
                             </td>
                         </tr>
                     </table>
@@ -101,8 +101,11 @@
             </div>
         </div>
         <div class="col-12">
-            <button class="btn btn-outline-primary smaller-button2" style="float: right">
-                <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+            <a th:href="@{/home/manager/task}" style="text-decoration: none">
+                <button class="btn btn-outline-primary" style="float: right">
+                    Trở về trang giao việc cá nhân
+                </button>
+            </a>
         </div>
     </div>
 </div>

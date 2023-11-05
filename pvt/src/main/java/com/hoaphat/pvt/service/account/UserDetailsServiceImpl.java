@@ -1,8 +1,8 @@
 package com.hoaphat.pvt.service.account;
 
 import com.hoaphat.pvt.model.account.Account;
-import com.hoaphat.pvt.repository.IAccountRepository;
-import com.hoaphat.pvt.repository.IAccountRoleRepository;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;

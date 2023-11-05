@@ -83,17 +83,17 @@
                             <td>
                                 <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
                                           th:name="|monthEvents[${stat.index}]|"
-                                          style="width:100%" rows="2"></textarea>
+                                          style="width:100%" rows="2" required></textarea>
                             </td>
                             <td>
                                 <input type="datetime-local"
                                        th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
-                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%">
+                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%" required>
                             </td>
                             <td>
                                 <input type="number"
                                        th:field="*{monthEvents[__${stat.index}__].extendDay}"
-                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%">
+                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%" required>
                             </td>
                             <td hidden="hidden">
                                 <input th:value="2"
@@ -108,8 +108,11 @@
                 </form>
             </div>
             <div class="col-12">
-                <button class="btn btn-outline-primary smaller-button2" style="float: right">
-                    <a th:href="@{/home}" style="text-decoration: none">Trở về trang chủ</a></button>
+                <a th:href="@{/home/manager/weeklyTask}" style="text-decoration: none">
+                    <button class="btn btn-outline-primary" style="float: right">
+                        Trở về trang giao việc cá nhân lặp lại định kỳ
+                    </button>
+                </a>
             </div>
         </div>
     </div>

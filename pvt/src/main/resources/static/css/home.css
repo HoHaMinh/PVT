@@ -46,6 +46,10 @@ thead, th, td {
     vertical-align: middle;
 }
 
+.warning {
+    background-color: #ff973e; /* This is a yellow color, you can change it to your preference */
+}
+
 div.paging-bar button {
     width: 100px;
     margin: 0 5px;

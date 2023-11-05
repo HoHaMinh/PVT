@@ -1,4 +1,4 @@
-package com.hoaphat.pvt.repository;
+package com.hoaphat.pvt.repository.event;
 
 import com.hoaphat.pvt.model.event.SpecialMessage;
 import org.springframework.data.repository.CrudRepository;

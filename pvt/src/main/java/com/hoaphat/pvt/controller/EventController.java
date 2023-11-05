@@ -1,5 +1,6 @@
 package com.hoaphat.pvt.controller;
 
+import com.hoaphat.pvt.model.UserValidate;
 import com.hoaphat.pvt.model.dto.ResponseFilter;
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.model.dto.MonthEventManager;
@@ -7,9 +8,6 @@ import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import com.hoaphat.pvt.service.ISercurityScheduleService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -33,7 +32,6 @@ import java.util.stream.IntStream;
 
 @Controller
 public class EventController {
-    private static final Logger logger = LoggerFactory.getLogger(EventController.class);
     @Autowired
     private IMonthEventService monthEventService;
 
@@ -43,6 +41,57 @@ public class EventController {
     @Autowired
     private IResponseEventInformationService responseEventInformationService;
 
+    @Autowired
+    private UserValidate userValidate;
+
+    LocalDateTime timeSetToday;
+
+    @Scheduled(fixedRate = 1)
+    public void setTime() {
+        timeSetToday = LocalDateTime.now();
+    }
+
+    //     *Trang private
+    @GetMapping("/home/employee/private")
+    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> name) {
+        String nameFilter = name.orElse("");
+        monthEventService.checkWeekEventDeadline(timeSetToday);
+        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
+        model.addAttribute("selectedValue", nameFilter);
+        return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
+    }
+
+    @GetMapping("/home/employee/filterRestful")
+    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
+        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
+        ResponseFilter responseFilter = new ResponseFilter(list, nameFilter);
+        return new ResponseEntity<>(responseFilter, HttpStatus.OK);
+    }
+
+//    *Trang response
+
+    @GetMapping("/home/employee/private/showEventResponseForm/{id}")
+    private String showEventResponseForm(@PathVariable("id") Integer id, Model model) {
+        MonthEvent eventResponse = monthEventService.findById(id);
+        model.addAttribute("response", new ResponseEventInformation(eventResponse));
+        model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
+        return ("eventResponse");
+    }
+
+    @GetMapping("/home/employee/private/showEventResponseFormRestful/{id}")
+    public ResponseEntity<List<ResponseEventInformation>> showEventResponseFormRestful(@PathVariable("id") Integer id) {
+        return new ResponseEntity<>(responseEventInformationService.getAllResponseById(id), HttpStatus.OK);
+    }
+
+    @PostMapping("/home/employee/private/addEventResponse")
+    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, Principal principal) {
+        String name = principal.getName();
+        responseEventInformation.setCreatedByUser(name);
+        responseEventInformationService.addResponseEventInformation(responseEventInformation);
+        return "redirect:/home/employee/private/showEventResponseForm/" + responseEventInformation.getMonthEvent().getMonthEventId();
+    }
+
+    //    *Trang task
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page,
                            @RequestParam("size") Optional<Integer> size,
@@ -75,13 +124,6 @@ public class EventController {
         return ("monthEventForm");
     }
 
-    @GetMapping("/home/manager/task/showEditMonthEventForm/{id}")
-    private String showEditMonthEventForm(@PathVariable("id") Integer id, Model model) {
-        MonthEvent monthEditEvent = monthEventService.findById(id);
-        model.addAttribute("monthEditEvent", monthEditEvent);
-        return ("monthEditEventForm");
-    }
-
     @PostMapping("/home/manager/task/addMonthEvent")
     public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
@@ -91,6 +133,13 @@ public class EventController {
         return "redirect:/home/manager/task";
     }
 
+    @GetMapping("/home/manager/task/showEditMonthEventForm/{id}")
+    private String showEditMonthEventForm(@PathVariable("id") Integer id, Model model) {
+        MonthEvent monthEditEvent = monthEventService.findById(id);
+        model.addAttribute("monthEditEvent", monthEditEvent);
+        return ("monthEditEventForm");
+    }
+
     @PostMapping("/home/manager/task/editMonthEvent")
     public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes) {
         monthEventService.addMonthEvent(monthEvent);
@@ -98,54 +147,14 @@ public class EventController {
         return "redirect:/home/manager/task";
     }
 
-    LocalDateTime timeSetToday;
-
-    @Scheduled(fixedRate = 1)
-    public void setTime() {
-        timeSetToday = LocalDateTime.now();
-    }
-
-    @GetMapping("/home/employee/private")
-    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> name) {
-        String nameFilter = name.orElse("");
-        monthEventService.checkWeekEventDeadline(timeSetToday);
-        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
-        model.addAttribute("selectedValue", nameFilter);
-        return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
-    }
-
-    @GetMapping("/home/employee/filterRestful")
-    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
-        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
-        ResponseFilter responseFilter = new ResponseFilter(list, nameFilter);
-        return new ResponseEntity<>(responseFilter, HttpStatus.OK);
-    }
-
-    @GetMapping("/home/employee/private/showEventResponseForm/{id}")
-    private String showEventResponseForm(@PathVariable("id") Integer id, Model model) {
-        MonthEvent eventResponse = monthEventService.findById(id);
-        model.addAttribute("monthEvent", eventResponse);
-        model.addAttribute("response", new ResponseEventInformation(eventResponse));
-        model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
-        return ("eventResponse");
-    }
-
-    @PostMapping("/home/employee/private/addEventResponse")
-    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, RedirectAttributes redirectAttributes, Principal principal) {
-        String name = principal.getName();
-        responseEventInformation.setCreatedByUser(name);
-        responseEventInformationService.addResponseEventInformation(responseEventInformation);
-        redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
-        return "redirect:/home/employee/private/showEventResponseForm/" + responseEventInformation.getMonthEvent().getMonthEventId();
-    }
-
-    @GetMapping("/home/manager/task/deleteTask")
-    public String deleteMonthEventTask(RedirectAttributes redirectAttributes) {
-        monthEventService.deleteMonthEvent(timeSetToday);
-        redirectAttributes.addFlashAttribute("mess", "Xóa các lịch quá hạn thành công");
+    @GetMapping("/home/manager/weeklyTask/delete/{id}")
+    public String deleteWeekEventTask(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+        monthEventService.deleteWeekEvent(id);
+        redirectAttributes.addFlashAttribute("mess", "Xóa giao việc thành công");
         return "redirect:/home/manager/task";
     }
 
+    //    *Trang weekly task
     @GetMapping("/home/manager/weeklyTask")
     public ModelAndView showWeeklyTask() {
         return new ModelAndView("weeklyTask", "weekEventList", monthEventService.getWeekEventList());
@@ -170,12 +179,5 @@ public class EventController {
         model.addAttribute("weekEvents", weekEvents);
         model.addAttribute("monthEventManager", new MonthEventManager());
         return ("weekEventForm");
-    }
-
-    @GetMapping("/home/manager/weeklyTask/delete/{id}")
-    public String deleteWeekEventTask(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
-        monthEventService.deleteWeekEvent(id);
-        redirectAttributes.addFlashAttribute("mess", "Xóa giao việc thành công");
-        return "redirect:/home/manager/task";
     }
 }

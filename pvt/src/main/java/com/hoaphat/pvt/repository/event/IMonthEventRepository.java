@@ -1,4 +1,4 @@
-package com.hoaphat.pvt.repository;
+package com.hoaphat.pvt.repository.event;
 
 import com.hoaphat.pvt.model.event.MonthEvent;
 import org.springframework.data.domain.Page;
@@ -14,43 +14,45 @@ import java.util.List;
 
 @Repository
 public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer> {
-    @Query("select m from MonthEvent m where m.monthEventDeadline > :localDateTimeBefore and m.monthEventDeadline < :localDateTimeAfter order by m.monthEventDeadline asc ")
-    List<MonthEvent> findMonthEventsByTime(LocalDateTime localDateTimeBefore, LocalDateTime localDateTimeAfter);
-
+    //    *Trang private
     @Query("select m from MonthEvent m where m.monthEventDeadline > :localDateTimeBefore and m.monthEventDeadline < :localDateTimeAfter " +
             "and ((m.monthEventDescription LIKE CONCAT(:name, '%') or :name is null) or m.monthEventDescription LIKE CONCAT('Cả phòng', '%')) order by m.monthEventDeadline asc ")
     List<MonthEvent> findMonthEventsByFilter(LocalDateTime localDateTimeBefore, LocalDateTime localDateTimeAfter, String name);
 
-    @Transactional
-    @Modifying
-    @Query("update MonthEvent m set m.monthEventStatus = 1 where m.monthEventDeadline < :now")
-    void updateMonthEventStatus(LocalDateTime now);
-
+    //    *Trang response
+    //    Update status = 1 khi là quản lý phản hồi
     @Transactional
     @Modifying
     @Query("update MonthEvent m set m.responseStatus = 1 where m.monthEventId = :id")
     void updateResponseStatus1(Integer id);
 
+    //    Update status = 2 khi là nhân viên phản hồi
     @Transactional
     @Modifying
     @Query("update MonthEvent m set m.responseStatus = 2 where m.monthEventId = :id")
     void updateResponseStatus2(Integer id);
 
-    @Transactional
-    @Modifying
-    @Query("delete MonthEvent m where m.monthEventStatus = 1")
-    void deleteMonthEventByStatus();
-
-    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline asc ")
-    List<MonthEvent> findWeekEvents();
+    //    *Trang task
+    Page<MonthEvent> findMonthEventsByMonthEventStatus(Integer status, Pageable pageable);
 
     @Transactional
     @Modifying
     @Query("update MonthEvent m set m.monthEventDeadline = :now where m.monthEventId = :id")
     void updateWeekEventDeadline(LocalDateTime now, Integer id);
 
-    @Query("select m from MonthEvent m where m.monthEventStatus = 2 ")
-    List<MonthEvent> findAllWeekEvents();
+    //    *Trang weekly task
+    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline asc ")
+    List<MonthEvent> findWeekEvents();
 
-    Page<MonthEvent> findMonthEventsByMonthEventStatus(Integer status, Pageable pageable);
+
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.monthEventStatus = 1 where m.monthEventDeadline < :now")
+    void updateMonthEventStatus(LocalDateTime now);
+
+
+    @Transactional
+    @Modifying
+    @Query("delete MonthEvent m where m.monthEventStatus = 1")
+    void deleteMonthEventByStatus();
 }
