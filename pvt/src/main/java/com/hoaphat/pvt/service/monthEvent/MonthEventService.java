@@ -2,6 +2,7 @@ package com.hoaphat.pvt.service.monthEvent;
 
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,9 @@ import java.util.List;
 public class MonthEventService implements IMonthEventService {
     @Autowired
     private IMonthEventRepository monthEventRepository;
+
+    @Autowired
+    private IResponseEventInformationRepository responseEventInformationRepository;
 
     @Override
     public List<MonthEvent> getMonthEventList() {
@@ -46,6 +50,7 @@ public class MonthEventService implements IMonthEventService {
 
     @Override
     public void deleteWeekEvent(Integer id) {
+        responseEventInformationRepository.deleteResponseById(id);
         monthEventRepository.deleteById(id);
     }
 

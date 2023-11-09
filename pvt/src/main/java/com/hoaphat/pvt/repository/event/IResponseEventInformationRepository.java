@@ -1,13 +1,22 @@
 package com.hoaphat.pvt.repository.event;
 
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+
 import java.util.List;
 
 @Repository
-public interface IResponseEventInformationRepository extends CrudRepository<ResponseEventInformation,Integer> {
+public interface IResponseEventInformationRepository extends CrudRepository<ResponseEventInformation, Integer> {
     @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent order by r.createdByDate asc ")
     List<ResponseEventInformation> findResponseById(Integer idMonthEvent);
+
+    @Transactional
+    @Modifying
+    @Query("delete from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent")
+    void deleteResponseById(Integer idMonthEvent);
 }
