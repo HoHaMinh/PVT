@@ -7,14 +7,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+
 @Controller
 public class HomeController {
     @Autowired
     private ISpecialMessageService specialMessageService;
 
     @GetMapping("/home")
-    public ModelAndView showHome(Model model) {
+    public ModelAndView showHome(Model model, HttpServletRequest request) {
         model.addAttribute("message",specialMessageService.getAll());
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return new ModelAndView("home");
     }
 }

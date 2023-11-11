@@ -12,7 +12,12 @@
 <body>
 <div class="container-fluid">
     <div class="row text-center header">
-        <h2 style="color: white">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+        <h2 style="color: white" class="col-10">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+        <div class="col-2 text-end" style="float: right">
+            <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
+                <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
+            </div>
+        </div>
     </div>
     <div>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -72,6 +77,9 @@
                                 style="font-weight: bolder; font-size: larger; text-align: left">
                                 Deadline
                             </td>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Response status
+                            </td>
                         </tr>
                         </thead>
                         <tr>
@@ -91,6 +99,11 @@
                                        th:field="*{monthEventDeadline}"
                                        th:placeholder="${monthEditEvent.getMonthEventDescription()}"
                                        th:value="${monthEditEvent.getMonthEventDescription()}" required>
+                            </td>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{responseStatus}"
+                                       th:value="${monthEditEvent.getResponseStatus()}"
+                                       th:placeholder="${monthEditEvent.getResponseStatus()}">
                             </td>
                         </tr>
                     </table>

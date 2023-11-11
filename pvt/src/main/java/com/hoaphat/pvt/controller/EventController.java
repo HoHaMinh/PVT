@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -53,11 +54,13 @@ public class EventController {
 
     //     *Trang private
     @GetMapping("/home/employee/private")
-    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> name) {
+    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> name, HttpServletRequest request) {
         String nameFilter = name.orElse("");
         monthEventService.checkWeekEventDeadline(timeSetToday);
         model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
         model.addAttribute("selectedValue", nameFilter);
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return new ModelAndView("private", "monthEventListByTime", monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter));
     }
 
@@ -71,10 +74,12 @@ public class EventController {
 //    *Trang response
 
     @GetMapping("/home/employee/private/showEventResponseForm/{id}")
-    private String showEventResponseForm(@PathVariable("id") Integer id, Model model) {
+    private String showEventResponseForm(@PathVariable("id") Integer id, Model model, HttpServletRequest request) {
         MonthEvent eventResponse = monthEventService.findById(id);
         model.addAttribute("response", new ResponseEventInformation(eventResponse));
         model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return ("eventResponse");
     }
 
@@ -84,10 +89,12 @@ public class EventController {
     }
 
     @PostMapping("/home/employee/private/addEventResponse")
-    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, Principal principal) {
+    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, Principal principal, Model model, HttpServletRequest request) {
         String name = principal.getName();
         responseEventInformation.setCreatedByUser(name);
         responseEventInformationService.addResponseEventInformation(responseEventInformation);
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return "redirect:/home/employee/private/showEventResponseForm/" + responseEventInformation.getMonthEvent().getMonthEventId();
     }
 
@@ -95,7 +102,8 @@ public class EventController {
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page,
                            @RequestParam("size") Optional<Integer> size,
-                           @RequestParam("sort") Optional<String> sort) {
+                           @RequestParam("sort") Optional<String> sort,
+                           HttpServletRequest request) {
         int currentPage = page.orElse(1);
         int pageSize = size.orElse(11);
         String sortField = sort.orElse("monthEventDeadline");
@@ -109,11 +117,13 @@ public class EventController {
                     .collect(Collectors.toList());
             model.addAttribute("pageNumbers", pageNumbers);
         }
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return ("task");
     }
 
     @GetMapping("/home/manager/task/showAddMonthEventForm")
-    private String showAddMonthEventForm(@RequestParam("rows") Integer rows, Model model) {
+    private String showAddMonthEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
         List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
         for (int i = 0; i < rows; i++) {
             MonthEvent monthEvent = new MonthEvent();
@@ -121,56 +131,70 @@ public class EventController {
         }
         model.addAttribute("monthEvents", monthEvents);
         model.addAttribute("monthEventManager", new MonthEventManager());
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return ("monthEventForm");
     }
 
     @PostMapping("/home/manager/task/addMonthEvent")
-    public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes) {
+    public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
             monthEventService.addMonthEvent(monthEvent);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return "redirect:/home/manager/task";
     }
 
     @GetMapping("/home/manager/task/showEditMonthEventForm/{id}")
-    private String showEditMonthEventForm(@PathVariable("id") Integer id, Model model) {
+    private String showEditMonthEventForm(@PathVariable("id") Integer id, Model model, HttpServletRequest request) {
         MonthEvent monthEditEvent = monthEventService.findById(id);
         model.addAttribute("monthEditEvent", monthEditEvent);
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return ("monthEditEventForm");
     }
 
     @PostMapping("/home/manager/task/editMonthEvent")
-    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes) {
+    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         monthEventService.addMonthEvent(monthEvent);
         redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công");
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return "redirect:/home/manager/task";
     }
 
     @GetMapping("/home/manager/weeklyTask/delete/{id}")
-    public String deleteWeekEventTask(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+    public String deleteWeekEventTask(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         monthEventService.deleteWeekEvent(id);
         redirectAttributes.addFlashAttribute("mess", "Xóa giao việc thành công");
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return "redirect:/home/manager/task";
     }
 
     //    *Trang weekly task
     @GetMapping("/home/manager/weeklyTask")
-    public ModelAndView showWeeklyTask() {
+    public ModelAndView showWeeklyTask(Model model, HttpServletRequest request) {
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return new ModelAndView("weeklyTask", "weekEventList", monthEventService.getWeekEventList());
     }
 
     @PostMapping("/home/manager/weeklyTask/addWeekEvent")
-    public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes) {
+    public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
             monthEventService.addMonthEvent(monthEvent);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return "redirect:/home/manager/weeklyTask";
     }
 
     @GetMapping("/home/manager/weeklyTask/showAddWeekEventForm")
-    public String showAddWeekEventForm(@RequestParam("rows") Integer rows, Model model) {
+    public String showAddWeekEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
         List<MonthEvent> weekEvents = new ArrayList<MonthEvent>(rows);
         for (int i = 0; i < rows; i++) {
             MonthEvent weekEvent = new MonthEvent();
@@ -178,6 +202,8 @@ public class EventController {
         }
         model.addAttribute("weekEvents", weekEvents);
         model.addAttribute("monthEventManager", new MonthEventManager());
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
         return ("weekEventForm");
     }
 }

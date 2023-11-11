@@ -50,6 +50,11 @@ thead, th, td {
     background-color: #ff973e; /* This is a yellow color, you can change it to your preference */
 }
 
+.greeting-text {
+    font-size: 18px;
+    color: white;
+}
+
 div.paging-bar button {
     width: 100px;
     margin: 0 5px;
