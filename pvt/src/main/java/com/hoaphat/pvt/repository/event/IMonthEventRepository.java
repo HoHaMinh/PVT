@@ -47,12 +47,6 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
 
     @Transactional
     @Modifying
-    @Query("update MonthEvent m set m.monthEventStatus = 1 where m.monthEventDeadline < :now")
-    void updateMonthEventStatus(LocalDateTime now);
-
-
-    @Transactional
-    @Modifying
-    @Query("delete MonthEvent m where m.monthEventStatus = 1")
-    void deleteMonthEventByStatus();
+    @Query("update MonthEvent m set m.lastTimeResponse = :lastTimeResponse, m.lastPersonResponse = :lastPersonResponse  where m.monthEventId = :id")
+    void updateMonthEventResponse(LocalDateTime lastTimeResponse, String lastPersonResponse, Integer id);
 }

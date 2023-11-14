@@ -12,7 +12,7 @@ import java.util.List;
 
 @Repository
 public interface IResponseEventInformationRepository extends CrudRepository<ResponseEventInformation, Integer> {
-    @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent order by r.createdByDate asc ")
+    @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent order by r.createdByDate desc ")
     List<ResponseEventInformation> findResponseById(Integer idMonthEvent);
 
     @Transactional

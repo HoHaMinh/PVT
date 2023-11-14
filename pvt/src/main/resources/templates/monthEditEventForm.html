@@ -80,6 +80,12 @@
                             <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
                                 Response status
                             </td>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Last Time Response
+                            </td>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Last Person Response
+                            </td>
                         </tr>
                         </thead>
                         <tr>
@@ -104,6 +110,16 @@
                                 <input type="text" th:field="*{responseStatus}"
                                        th:value="${monthEditEvent.getResponseStatus()}"
                                        th:placeholder="${monthEditEvent.getResponseStatus()}">
+                            </td>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{lastTimeResponse}"
+                                       th:value="${monthEditEvent.getLastTimeResponse()}"
+                                       th:placeholder="${monthEditEvent.getLastTimeResponse()}">
+                            </td>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{lastPersonResponse}"
+                                       th:value="${monthEditEvent.getLastPersonResponse()}"
+                                       th:placeholder="${monthEditEvent.getLastPersonResponse()}">
                             </td>
                         </tr>
                     </table>

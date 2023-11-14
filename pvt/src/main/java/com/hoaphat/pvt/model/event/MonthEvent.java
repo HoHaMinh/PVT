@@ -21,8 +21,11 @@ public class MonthEvent {
     private Integer monthEventStatus = 0;
     @Column(columnDefinition = "int default 0")
     private Integer responseStatus = 0;
-
     private Integer extendDay;
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime lastTimeResponse;
+    private String lastPersonResponse;
 
     public MonthEvent() {
     }
@@ -45,6 +48,18 @@ public class MonthEvent {
     public MonthEvent(String monthEventDescription, LocalDateTime monthEventDeadline) {
         this.monthEventDescription = monthEventDescription;
         this.monthEventDeadline = monthEventDeadline;
+        this.lastTimeResponse = LocalDateTime.of(2023, 1, 1, 0, 0);
+    }
+
+    public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline, Integer monthEventStatus, Integer responseStatus, Integer extendDay, LocalDateTime lastTimeResponse, String lastPersonResponse) {
+        this.monthEventId = monthEventId;
+        this.monthEventDescription = monthEventDescription;
+        this.monthEventDeadline = monthEventDeadline;
+        this.monthEventStatus = monthEventStatus;
+        this.responseStatus = responseStatus;
+        this.extendDay = extendDay;
+        this.lastTimeResponse = lastTimeResponse;
+        this.lastPersonResponse = lastPersonResponse;
     }
 
     public Integer getMonthEventId() {
@@ -98,5 +113,26 @@ public class MonthEvent {
 
     public void setResponseStatus(Integer responseStatus) {
         this.responseStatus = responseStatus;
+    }
+
+    public LocalDateTime getLastTimeResponse() {
+        return lastTimeResponse;
+    }
+
+    public String getFormattedLastTimeResponse() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.lastTimeResponse.format(formatter);
+    }
+
+    public void setLastTimeResponse(LocalDateTime lastTimeResponse) {
+        this.lastTimeResponse = lastTimeResponse;
+    }
+
+    public String getLastPersonResponse() {
+        return lastPersonResponse;
+    }
+
+    public void setLastPersonResponse(String lastPersonResponse) {
+        this.lastPersonResponse = lastPersonResponse;
     }
 }

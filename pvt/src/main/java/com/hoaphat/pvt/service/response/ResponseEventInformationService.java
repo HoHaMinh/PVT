@@ -24,6 +24,7 @@ public class ResponseEventInformationService implements IResponseEventInformatio
             monthEventRepository.updateResponseStatus2(responseEventInformation.getMonthEvent().getMonthEventId());
         }
         responseEventInformationRepository.save(responseEventInformation);
+        monthEventRepository.updateMonthEventResponse(responseEventInformation.getCreatedByDate(),responseEventInformation.getCreatedByUser(),responseEventInformation.getMonthEvent().getMonthEventId());
     }
 
     @Override
