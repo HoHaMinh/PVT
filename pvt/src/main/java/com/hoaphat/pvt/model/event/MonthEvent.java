@@ -26,8 +26,12 @@ public class MonthEvent {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime lastTimeResponse;
     private String lastPersonResponse;
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime registeredDay;
 
     public MonthEvent() {
+        this.lastTimeResponse = LocalDateTime.of(2023, 1, 1, 0, 0);
     }
 
     public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline, Integer monthEventStatus, Integer extendDay) {
@@ -51,7 +55,9 @@ public class MonthEvent {
         this.lastTimeResponse = LocalDateTime.of(2023, 1, 1, 0, 0);
     }
 
-    public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline, Integer monthEventStatus, Integer responseStatus, Integer extendDay, LocalDateTime lastTimeResponse, String lastPersonResponse) {
+    public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline,
+                      Integer monthEventStatus, Integer responseStatus, Integer extendDay, LocalDateTime lastTimeResponse,
+                      String lastPersonResponse, LocalDateTime registeredDay) {
         this.monthEventId = monthEventId;
         this.monthEventDescription = monthEventDescription;
         this.monthEventDeadline = monthEventDeadline;
@@ -60,6 +66,7 @@ public class MonthEvent {
         this.extendDay = extendDay;
         this.lastTimeResponse = lastTimeResponse;
         this.lastPersonResponse = lastPersonResponse;
+        this.registeredDay = registeredDay;
     }
 
     public Integer getMonthEventId() {
@@ -134,5 +141,18 @@ public class MonthEvent {
 
     public void setLastPersonResponse(String lastPersonResponse) {
         this.lastPersonResponse = lastPersonResponse;
+    }
+
+    public LocalDateTime getRegisteredDay() {
+        return registeredDay;
+    }
+
+    public String getFormattedRegisteredDay() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.registeredDay.format(formatter);
+    }
+
+    public void setRegisteredDay(LocalDateTime registeredDay) {
+        this.registeredDay = registeredDay;
     }
 }

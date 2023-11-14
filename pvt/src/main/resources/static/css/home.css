@@ -41,6 +41,22 @@ body {
     font-size: 20px;
 }
 
+.col-0\.3 {
+    flex: 0 0 auto;
+    width: 2.5%;
+}
+
+.col-1\.5 {
+    flex: 0 0 auto;
+    width: 12.5%;
+}
+
+.col-0\.7 {
+    flex: 0 0 auto;
+    width: 5.833333%;
+}
+
+
 thead, th, td {
     text-align: center;
     vertical-align: middle;

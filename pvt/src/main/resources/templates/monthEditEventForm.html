@@ -86,6 +86,9 @@
                             <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
                                 Last Person Response
                             </td>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Registered Day
+                            </td>
                         </tr>
                         </thead>
                         <tr>
@@ -120,6 +123,11 @@
                                 <input type="text" th:field="*{lastPersonResponse}"
                                        th:value="${monthEditEvent.getLastPersonResponse()}"
                                        th:placeholder="${monthEditEvent.getLastPersonResponse()}">
+                            </td>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{registeredDay}"
+                                       th:value="${monthEditEvent.getRegisteredDay()}"
+                                       th:placeholder="${monthEditEvent.getRegisteredDay()}">
                             </td>
                         </tr>
                     </table>

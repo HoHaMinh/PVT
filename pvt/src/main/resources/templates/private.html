@@ -88,12 +88,21 @@
                         result += `
                     <tr class="${rowClass}">
                         <td class="center">${i + 1}</td>
-                        <td class="justify">${data.monthEventList[i].monthEventDescription}</td>
-                        <td class="center">${data.monthEventList[i].monthEventDeadline}</td>
-                        <td class="center">
+                        <td class="justify">${data.monthEventList[i].monthEventDescription}</td>`;
+                        if(data.monthEventList[i].registeredDay === '00:00 01-01-2023') {
+                            result += `<td class="center">Không hiển thị</td>`;
+                        } else {
+                            result += `<td class="center">${data.monthEventList[i].registeredDay}</td>`;
+                        }
+                        result +=`<td class="center">${data.monthEventList[i].monthEventDeadline}</td>`;
+                        if(data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
+                            result += `<td class="justify">Chưa có phản hồi</td>`;
+                        } else {
+                            result += `<td class="justify">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
+                        }
+                        result +=`<td class="center">
                             <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}"
                                 style="text-decoration: none">`;
-
                         if (data.monthEventList[i].responseStatus === 0) {
                             result += `<button type="button" class="btn btn-secondary">Phản hồi</button>`;
                         } else if (data.monthEventList[i].responseStatus === 2) {
@@ -101,7 +110,6 @@
                         } else if (data.monthEventList[i].responseStatus === 1) {
                             result += `<button type="button" class="btn btn-success">Phản hồi</button>`;
                         }
-
                         result += `</a></td></tr>`;
                     }
                     $("#result").html(result);
@@ -235,17 +243,25 @@
                        th:if="${monthEventListByTime != null}">
                     <thead id="navbar-sticky">
                     <tr>
-                        <th class="col-1 col-md-1 col-lg-1">STT</th>
-                        <th class="col-8 col-md-8 col-lg-8">Nội dung công việc</th>
-                        <th class="col-2 col-md-2 col-lg-2">Deadline</th>
-                        <th class="col-1 col-md-1 col-lg-1">Phản hồi</th>
+                        <th class="col-0.3">STT</th>
+                        <th class="col-6 col-md-6 col-lg-6">Nội dung công việc</th>
+                        <th class="col-1.5">Ngày giao việc</th>
+                        <th class="col-1.5">Deadline</th>
+                        <th class="col-2 col-md-2 col-lg-2">Phản hồi gần nhất</th>
+                        <th class="col-0.7">Xem</th>
                     </tr>
                     </thead>
                     <tbody id="result">
                     <tr th:each="list,iter: ${monthEventListByTime}">
                         <td class="center" th:text="${iter.count}"></td>
                         <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+                        <td class="center" th:if="${list.getRegisteredDay() == '00:00 01-01-2023'}" th:text="Không hiển thị"></td>
+                        <td class="center" th:if="${list.getRegisteredDay() != '00:00 01-01-2023'}" th:text="${list.getFormattedRegisteredDay()}"></td>
                         <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                        <td class="justify" th:if="${list.getLastTimeResponse() == '00:00 01-01-2023'}"
+                            th:text="Chưa có phản hồi"></td>
+                        <td class="justify" th:if="${list.getLastTimeResponse() != '00:00 01-01-2023'}"
+                            th:text="${list.getLastPersonResponse()} + ' lúc ' + ${list.getFormattedLastTimeResponse()}"></td>
                         <td class="center">
                             <a th:href="@{/home/employee/private/showEventResponseForm/{id} (id=${list.getMonthEventId()})}"
                                style="text-decoration: none">

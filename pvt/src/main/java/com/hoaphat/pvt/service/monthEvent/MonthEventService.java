@@ -27,7 +27,7 @@ public class MonthEventService implements IMonthEventService {
     //    *Trang private
     @Override
     public List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String name) {
-        LocalDateTime localDateTimeAfter = now.plusDays(2);
+        LocalDateTime localDateTimeAfter = now.plusHours(60);
         LocalDateTime localDateTimeBefore = now.minusDays(1);
         return monthEventRepository.findMonthEventsByFilter(localDateTimeBefore, localDateTimeAfter, name);
     }
@@ -40,6 +40,7 @@ public class MonthEventService implements IMonthEventService {
 
     @Override
     public void addMonthEvent(MonthEvent monthEvent) {
+        monthEvent.setRegisteredDay(LocalDateTime.now());
         monthEventRepository.save(monthEvent);
     }
 
