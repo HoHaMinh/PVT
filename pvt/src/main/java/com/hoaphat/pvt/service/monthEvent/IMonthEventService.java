@@ -11,7 +11,7 @@ public interface IMonthEventService {
 
     Page<MonthEvent> getMonthEventListWithPaging(Pageable pageable);
 
-    void addMonthEvent(MonthEvent monthEvent);
+    void addMonthEvent(MonthEvent monthEvent, boolean flag);
 
     List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String name);
 

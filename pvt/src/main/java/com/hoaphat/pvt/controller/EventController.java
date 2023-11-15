@@ -8,6 +8,7 @@ import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import com.hoaphat.pvt.service.ISercurityScheduleService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -92,6 +93,8 @@ public class EventController {
     public String addEventResponse(@ModelAttribute("response") ResponseEventInformation responseEventInformation, Principal principal, Model model, HttpServletRequest request) {
         String name = principal.getName();
         responseEventInformation.setCreatedByUser(name);
+        String escapedEventInformation = StringEscapeUtils.escapeHtml4(responseEventInformation.getEventInformationResponse());
+        responseEventInformation.setEventInformationResponse(escapedEventInformation);
         responseEventInformationService.addResponseEventInformation(responseEventInformation);
         String username = (String) request.getSession().getAttribute("username");
         model.addAttribute("username", username);
@@ -139,7 +142,7 @@ public class EventController {
     @PostMapping("/home/manager/task/addMonthEvent")
     public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            monthEventService.addMonthEvent(monthEvent);
+            monthEventService.addMonthEvent(monthEvent,true);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
         String username = (String) request.getSession().getAttribute("username");
@@ -158,7 +161,7 @@ public class EventController {
 
     @PostMapping("/home/manager/task/editMonthEvent")
     public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
-        monthEventService.addMonthEvent(monthEvent);
+        monthEventService.addMonthEvent(monthEvent,false);
         redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công");
         String username = (String) request.getSession().getAttribute("username");
         model.addAttribute("username", username);
@@ -185,7 +188,7 @@ public class EventController {
     @PostMapping("/home/manager/weeklyTask/addWeekEvent")
     public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            monthEventService.addMonthEvent(monthEvent);
+            monthEventService.addMonthEvent(monthEvent,true);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
         String username = (String) request.getSession().getAttribute("username");

@@ -26,6 +26,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	implementation 'de.neuland-bfi:jade4j:1.3.0'
+	implementation 'org.apache.commons:commons-lang3:3.12.0'
 }
 
 tasks.named('test') {

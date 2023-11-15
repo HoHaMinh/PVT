@@ -38,9 +38,12 @@ public class MonthEventService implements IMonthEventService {
         return monthEventRepository.findMonthEventsByMonthEventStatus(0, pageable);
     }
 
+//  *** flag =true là add, flag =false là edit
     @Override
-    public void addMonthEvent(MonthEvent monthEvent) {
-        monthEvent.setRegisteredDay(LocalDateTime.now());
+    public void addMonthEvent(MonthEvent monthEvent, boolean flag) {
+        if (flag) {
+            monthEvent.setRegisteredDay(LocalDateTime.now());
+        }
         monthEventRepository.save(monthEvent);
     }
 

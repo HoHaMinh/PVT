@@ -35,10 +35,11 @@
                     success: function (data) {
                         let result = '';
                         for (let i = 0; i < data.length; i++) {
+                            const formattedEventInformation = data[i].eventInformationResponse.replace(/\n/g, '<br>');
                             result += `
                     <tr>
                         <td class="center">${i + 1}</td>
-                        <td class="justify">${data[i].eventInformationResponse}</td>
+                        <td class="justify">${formattedEventInformation}</td>
                         <td class="center">${data[i].createdByDate}</td>
                         <td class="center">${data[i].createdByUser}</td>
                     </tr>
@@ -86,8 +87,8 @@
 <body>
 <div class="container-fluid">
     <div class="row text-center header">
-        <h2 style="color: white" class="col-10">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-        <div class="col-2 text-end" style="float: right">
+        <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+        <div class="col-2.5 text-end" style="float: right">
             <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
                 <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
             </div>
@@ -152,7 +153,7 @@
                     <tbody id="result">
                     <tr th:each="list,iter: ${listResponse}">
                         <td class="center" th:text="${iter.count}"></td>
-                        <td class="justify" th:text="${list.getEventInformationResponse()}"></td>
+                        <td class="justify" th:utext="${list.getEventInformationResponse()}"></td>
                         <td class="center" th:text="${list.getFormattedCreatedByDate()}"></td>
                         <td class="center" th:text="${list.getCreatedByUser()}"></td>
                     </tr>

@@ -51,6 +51,21 @@ body {
     width: 12.5%;
 }
 
+.col-2\.5 {
+    flex: 0 0 auto;
+    width: 20.833333%;
+}
+
+.col-9\.5 {
+    flex: 0 0 auto;
+    width: 79.166667%;
+}
+
+.col-4\.5 {
+    flex: 0 0 auto;
+    width: 45.833333%;
+}
+
 .col-0\.7 {
     flex: 0 0 auto;
     width: 5.833333%;
@@ -67,8 +82,9 @@ thead, th, td {
 }
 
 .greeting-text {
-    font-size: 18px;
-    color: white;
+    font-size: 17px;
+    color: #ff56c3;
+    font-family: 'Open Sans', 'sans-serif';
 }
 
 div.paging-bar button {
