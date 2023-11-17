@@ -8,6 +8,32 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true,
+                // Add any other options you need
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function(e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho công việc được giao');
+                }
+            });
+        });
+    </script>
 </head>
 <body>
 <div class="container-fluid">
@@ -29,7 +55,8 @@
                      id="navbarNavDropdown">
                     <ul class="navbar-nav">
                         <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
+                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch
+                                cần làm</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
@@ -70,10 +97,10 @@
                             <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
                                 Id
                             </td>
-                            <td class="col-10 col-md-10 col-lg-10" style="font-weight: bolder; font-size: larger">
+                            <td class="col-11 col-md-11 col-lg-11" style="font-weight: bolder; font-size: larger">
                                 Nội dung
                             </td>
-                            <td class="col-2 col-md-2 col-lg-2"
+                            <td class="col-1 col-md-1 col-lg-1"
                                 style="font-weight: bolder; font-size: larger; text-align: left">
                                 Deadline
                             </td>
@@ -107,7 +134,8 @@
                           style="width:100%;" rows="2" required></textarea>
                             </td>
                             <td>
-                                <input type="datetime-local"
+                                <input type="text"
+                                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
                                        th:field="*{monthEventDeadline}"
                                        th:placeholder="${monthEditEvent.getMonthEventDescription()}"
                                        th:value="${monthEditEvent.getMonthEventDescription()}" required>

@@ -27,15 +27,22 @@
                 success: function (data) {
                     let result = '';
                     for (let i = 0; i < data.monthEventList.length; i++) {
+                        var now = new Date();
                         var deadlineString = data.monthEventList[i].monthEventDeadline;
                         var deadline = parseDate(deadlineString);
-                        var now = new Date();
-                        var timeDiff = deadline - now;
-                        var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
+                        var timeDiffDeadline = deadline - now;
+                        var minutesDiffDeadline = Math.ceil(timeDiffDeadline / (1000 * 60));
                         var rowClass = '';
-
-                        if (minutesDiff <= 10) {
+                        if (minutesDiffDeadline <= 20) {
                             rowClass = 'warning';
+                        }
+                        var lastTimeResponseString = data.monthEventList[i].lastTimeResponse;
+                        var lastTimeResponse = parseDate(lastTimeResponseString);
+                        var timeDiff = lastTimeResponse - now;
+                        var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
+                        var remindClass = '';
+                        if (minutesDiff <= 0 && minutesDiff >= -60) {
+                            remindClass = 'remind';
                         }
 
                         result += `
@@ -51,7 +58,7 @@
                         if(data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
                             result += `<td class="justify">Chưa có phản hồi</td>`;
                         } else {
-                            result += `<td class="justify">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
+                            result += `<td class="justify ${remindClass}">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
                         }
                         result +=`<td class="center">
                             <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}"

@@ -16,7 +16,7 @@ import java.util.List;
 public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer> {
     //    *Trang private
     @Query("select m from MonthEvent m where m.monthEventDeadline > :localDateTimeBefore and m.monthEventDeadline < :localDateTimeAfter " +
-            "and ((m.monthEventDescription LIKE CONCAT(:name, '%') or :name is null) or m.monthEventDescription LIKE CONCAT('Cả phòng', '%')) order by m.monthEventDeadline asc ")
+            "and ((m.monthEventDescription LIKE CONCAT(:name, '%') or :name is null) or m.monthEventDescription LIKE CONCAT('Cả phòng', '%')) order by m.monthEventDeadline, m.monthEventId asc")
     List<MonthEvent> findMonthEventsByFilter(LocalDateTime localDateTimeBefore, LocalDateTime localDateTimeAfter, String name);
 
     //    *Trang response
@@ -33,8 +33,8 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     void updateResponseStatus2(Integer id);
 
     //    *Trang task
-    @Query(value = "select m from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline asc",
-            countQuery = "select count(m) from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1")
+    @Query(value = "select m from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc",
+            countQuery = "select count(m) from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc")
     Page<MonthEvent> findMonthEventsByMonthEventStatus(Pageable pageable);
 
     @Transactional
@@ -43,7 +43,7 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     void updateWeekEventDeadline(LocalDateTime now, Integer id);
 
     //    *Trang weekly task
-    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline asc ")
+    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline, m.monthEventId asc ")
     List<MonthEvent> findWeekEvents();
 
 

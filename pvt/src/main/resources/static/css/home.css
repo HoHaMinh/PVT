@@ -81,10 +81,40 @@ thead, th, td {
     background-color: #ff973e; /* This is a yellow color, you can change it to your preference */
 }
 
+.remind {
+    color: red; /* This is a yellow color, you can change it to your preference */
+}
+
 .greeting-text {
     font-size: 17px;
     color: #ff56c3;
     font-family: 'Open Sans', 'sans-serif';
+}
+
+/* Add some basic styling to improve the appearance of the input field */
+.flatpickr-input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the alternative input field (altInput) */
+.flatpickr-alt-input {
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer; /* Add a pointer cursor to indicate it's clickable */
+}
+
+/* Style the calendar dropdown */
+.flatpickr-calendar {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 div.paging-bar button {
