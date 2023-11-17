@@ -42,7 +42,7 @@
                     <tr class="${rowClass}">
                         <td class="center">${i + 1}</td>
                         <td class="justify">${data.monthEventList[i].monthEventDescription}</td>`;
-                        if(data.monthEventList[i].registeredDay === '00:00 01-01-2023') {
+                        if(data.monthEventList[i].registeredDay === '00:00 01-01-2023' || data.monthEventList[i].monthEventStatus != 0) {
                             result += `<td class="center">Không hiển thị</td>`;
                         } else {
                             result += `<td class="center">${data.monthEventList[i].registeredDay}</td>`;
@@ -208,8 +208,8 @@
                     <tr th:each="list,iter: ${monthEventListByTime}">
                         <td class="center" th:text="${iter.count}"></td>
                         <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
-                        <td class="center" th:if="${list.getRegisteredDay() == '00:00 01-01-2023'}" th:text="Không hiển thị"></td>
-                        <td class="center" th:if="${list.getRegisteredDay() != '00:00 01-01-2023'}" th:text="${list.getFormattedRegisteredDay()}"></td>
+                        <td class="center" th:if="${list.getRegisteredDay() == '00:00 01-01-2023' or list.getMonthEventStatus() == '1' or list.getMonthEventStatus() == '2'}" th:text="Không hiển thị"></td>
+                        <td class="center" th:if="${list.getRegisteredDay() != '00:00 01-01-2023' and list.getMonthEventStatus() == '0'}" th:text="${list.getFormattedRegisteredDay()}"></td>
                         <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
                         <td class="justify" th:if="${list.getLastTimeResponse() == '00:00 01-01-2023'}"
                             th:text="Chưa có phản hồi"></td>
@@ -219,15 +219,15 @@
                             <a th:href="@{/home/employee/private/showEventResponseForm/{id} (id=${list.getMonthEventId()})}"
                                style="text-decoration: none">
                                 <button type="button" class="btn btn-secondary"
-                                        th:if="${list.getResponseStatus() == 0}">
+                                        th:if="${list.getResponseStatus() == '0'}">
                                     Xem
                                 </button>
                                 <button type="button" class="btn btn-warning"
-                                        th:if="${list.getResponseStatus() == 2}">
+                                        th:if="${list.getResponseStatus() == '2'}">
                                     Xem
                                 </button>
                                 <button type="button" class="btn btn-success"
-                                        th:if="${list.getResponseStatus() == 1}">
+                                        th:if="${list.getResponseStatus() == '1'}">
                                     Xem
                                 </button>
                             </a>

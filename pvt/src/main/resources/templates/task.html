@@ -76,7 +76,11 @@
             <div class="mb-1">
                 <h3 class="text-primary mb-2">Lịch công việc tháng/cá nhân</h3>
                 <a href="" id="addMonthEvent" style="text-decoration: none">
-                    <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới công việc tháng/cá
+                    <button type="button" class="btn btn-primary" onclick="showMonthDialog()">Thêm mới công việc tháng
+                    </button>
+                </a>
+                <a href="" id="addPrivateEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">Thêm mới công việc cá
                         nhân
                     </button>
                 </a>
@@ -141,11 +145,18 @@
     </div>
 </div>
 <script>
-    function showDialog() {
+    function showMonthDialog() {
         var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
         if (numberOfRows != null) {
             var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
             document.getElementById("addMonthEvent").setAttribute("href", url);
+        }
+    }
+    function showPrivateDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+            document.getElementById("addPrivateEvent").setAttribute("href", url);
         }
     }
 </script>

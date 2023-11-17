@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <title>Thêm mới việc PVT</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row text-center header">
+    <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
+    <div class="col-2.5 text-end" style="float: right">
+      <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
+        <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
+      </div>
+    </div>
+  </div>
+  <div>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <div class="container-fluid">
+        <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
+          <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
+        </a>
+        <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
+             id="navbarNavDropdown">
+          <ul class="navbar-nav">
+            <li class="nav-item active">
+              <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
+            </li>
+            <li class="nav-item ">
+              <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
+            </li>
+            <li class="nav-item dropdown active">
+              <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
+                 id="navbarDropdownMenuLink"
+                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Giao việc (chỉ quản lý)
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
+                  nhân</a></li>
+                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
+                  cá nhân lặp lại định kỳ</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div>
+      <div class="mb-1">
+        <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
+        <a href="" id="addPrivateEvent" style="text-decoration: none">
+          <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">Thêm mới công việc cá
+            nhân
+          </button>
+        </a>
+      </div>
+      <div>
+        <form class="row" method="post" th:action="@{/home/manager/task/addMonthEvent}"
+              th:object="${monthEventManager}" id="form">
+          <table>
+            <thead id="navbar-sticky">
+            <tr>
+              <td class="col-10 col-md-10 col-lg-10" style="font-weight: bolder; font-size: larger">
+                Nội dung
+              </td>
+              <td class="col-2 col-md-2 col-lg-2"
+                  style="font-weight: bolder; font-size: larger; text-align: left">
+                Deadline
+              </td>
+            </tr>
+            </thead>
+            <tr th:each="monthEvent, stat : ${monthEvents}">
+              <td>
+                                <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                                          th:name="|monthEvents[${stat.index}]|"
+                                          style="width:100%" rows="2" required></textarea>
+              </td>
+              <td>
+                <input type="datetime-local"
+                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                       th:name="|monthEvents[${stat.index}]|" required>
+              </td>
+            </tr>
+          </table>
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary">Thêm</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-12 ">
+      <a th:href="@{/home/manager/task}" style="text-decoration: none">
+        <button class="btn btn-outline-primary" style="float: right">
+          Trở về trang giao việc cá nhân
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showPrivateDialog() {
+    var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
+    if (numberOfRows != null) {
+      var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+      document.getElementById("addPrivateEvent").setAttribute("href", url);
+    }
+  }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>

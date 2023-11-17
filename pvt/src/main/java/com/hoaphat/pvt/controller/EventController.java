@@ -139,6 +139,20 @@ public class EventController {
         return ("monthEventForm");
     }
 
+    @GetMapping("/home/manager/task/showAddPrivateEventForm")
+    private String showAddPrivateEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
+        List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
+        for (int i = 0; i < rows; i++) {
+            MonthEvent monthEvent = new MonthEvent();
+            monthEvents.add(monthEvent);
+        }
+        model.addAttribute("monthEvents", monthEvents);
+        model.addAttribute("monthEventManager", new MonthEventManager());
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+        return ("privateEventForm");
+    }
+
     @PostMapping("/home/manager/task/addMonthEvent")
     public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {

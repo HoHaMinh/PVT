@@ -56,10 +56,9 @@
         </nav>
         <div>
             <div class="mb-1">
-                <h3 class="text-primary mb-2">Lịch công việc tháng/cá nhân</h3>
+                <h3 class="text-primary mb-2">Lịch công việc tháng</h3>
                 <a href="" id="addMonthEvent" style="text-decoration: none">
-                    <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới công việc tháng/cá
-                        nhân
+                    <button type="button" class="btn btn-primary" onclick="showMonthDialog()">Thêm mới công việc tháng
                     </button>
                 </a>
             </div>
@@ -76,6 +75,9 @@
                                 style="font-weight: bolder; font-size: larger; text-align: left">
                                 Deadline
                             </td>
+                            <td hidden="hidden" class="col-0 col-md-0 col-lg-0">
+                                Trạng thái (mặc định 2)
+                            </td>
                         </tr>
                         </thead>
                         <tr th:each="monthEvent, stat : ${monthEvents}">
@@ -88,6 +90,11 @@
                                 <input type="datetime-local"
                                        th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
                                        th:name="|monthEvents[${stat.index}]|" required>
+                            </td>
+                            <td hidden="hidden">
+                                <input th:value="1"
+                                       th:name="|monthEvents[${stat.index}].monthEventStatus|"
+                                       th:id="|monthEvents[${stat.index}].monthEventStatus|">
                             </td>
                         </tr>
                     </table>
@@ -108,7 +115,7 @@
 </div>
 
 <script>
-    function showDialog() {
+    function showMonthDialog() {
         var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
         if (numberOfRows != null) {
             var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;

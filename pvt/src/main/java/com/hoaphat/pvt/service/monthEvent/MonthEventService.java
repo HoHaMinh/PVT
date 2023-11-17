@@ -35,7 +35,7 @@ public class MonthEventService implements IMonthEventService {
     //* Trang task
     @Override
     public Page<MonthEvent> getMonthEventListWithPaging(Pageable pageable) {
-        return monthEventRepository.findMonthEventsByMonthEventStatus(0, pageable);
+        return monthEventRepository.findMonthEventsByMonthEventStatus(pageable);
     }
 
 //  *** flag =true là add, flag =false là edit

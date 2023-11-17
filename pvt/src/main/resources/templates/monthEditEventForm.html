@@ -78,6 +78,9 @@
                                 Deadline
                             </td>
                             <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
+                                Month Event Status
+                            </td>
+                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
                                 Response status
                             </td>
                             <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
@@ -108,6 +111,11 @@
                                        th:field="*{monthEventDeadline}"
                                        th:placeholder="${monthEditEvent.getMonthEventDescription()}"
                                        th:value="${monthEditEvent.getMonthEventDescription()}" required>
+                            </td>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{monthEventStatus}"
+                                       th:value="${monthEditEvent.getMonthEventStatus()}"
+                                       th:placeholder="${monthEditEvent.getMonthEventStatus()}">
                             </td>
                             <td hidden="hidden">
                                 <input type="text" th:field="*{responseStatus}"

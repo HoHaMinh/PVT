@@ -33,7 +33,9 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     void updateResponseStatus2(Integer id);
 
     //    *Trang task
-    Page<MonthEvent> findMonthEventsByMonthEventStatus(Integer status, Pageable pageable);
+    @Query(value = "select m from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline asc",
+            countQuery = "select count(m) from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1")
+    Page<MonthEvent> findMonthEventsByMonthEventStatus(Pageable pageable);
 
     @Transactional
     @Modifying
