@@ -4,6 +4,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import java.time.LocalDateTime;
 
 @Entity
 public class SpecialMessage {
@@ -11,13 +12,15 @@ public class SpecialMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String message;
+    private LocalDateTime birthday;
 
     public SpecialMessage() {
     }
 
-    public SpecialMessage(Integer id, String message) {
+    public SpecialMessage(Integer id, String message, LocalDateTime birthday) {
         this.id = id;
         this.message = message;
+        this.birthday = birthday;
     }
 
     public Integer getId() {
@@ -34,5 +37,13 @@ public class SpecialMessage {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public LocalDateTime getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(LocalDateTime birthday) {
+        this.birthday = birthday;
     }
 }

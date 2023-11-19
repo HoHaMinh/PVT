@@ -5,6 +5,7 @@ import com.hoaphat.pvt.repository.event.ISpecialMessageRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -13,7 +14,14 @@ public class SpecialMessageService implements ISpecialMessageService{
     private ISpecialMessageRepository specialMessageRepository;
 
     @Override
-    public List<SpecialMessage> getAll() {
-       return (List<SpecialMessage>) specialMessageRepository.findAll();
+    public SpecialMessage getAll(LocalDateTime now) {
+        List<SpecialMessage> specialMessageList = (List<SpecialMessage>) specialMessageRepository.findAll();
+        for (SpecialMessage s: specialMessageList
+             ) {
+            if (s.getBirthday().getMonthValue() == now.getMonthValue() && s.getBirthday().getDayOfMonth() == now.getDayOfMonth()) {
+                return s;
+            }
+        }
+       return null;
     }
 }

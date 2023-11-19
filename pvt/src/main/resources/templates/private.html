@@ -33,7 +33,7 @@
                         var timeDiffDeadline = deadline - now;
                         var minutesDiffDeadline = Math.ceil(timeDiffDeadline / (1000 * 60));
                         var rowClass = '';
-                        if (minutesDiffDeadline <= 20) {
+                        if (minutesDiffDeadline <= 60) {
                             rowClass = 'warning';
                         }
                         var lastTimeResponseString = data.monthEventList[i].lastTimeResponse;
