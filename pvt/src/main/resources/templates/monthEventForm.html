@@ -106,7 +106,7 @@
                             </td>
                         </tr>
                         </thead>
-                        <tr th:each="monthEvent, stat : ${monthEvents}">
+                        <tr th:each="monthEvent, stat : ${monthEvents}" class="mb-4">
                             <td>
                                 <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
                                           th:name="|monthEvents[${stat.index}]|"

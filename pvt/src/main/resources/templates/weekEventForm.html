@@ -8,6 +8,32 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true,
+                // Add any other options you need
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function(e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho công việc được giao');
+                }
+            });
+        });
+    </script>
 </head>
 <body>
 <div class="container-fluid">
@@ -66,18 +92,18 @@
             </div>
             <div>
                 <form class="row" method="post" th:action="@{/home/manager/weeklyTask/addWeekEvent}"
-                      th:object="${monthEventManager}">
+                      th:object="${monthEventManager}" id="form">
                     <table>
                         <thead id="navbar-sticky">
                         <tr>
-                            <td class="col-8 col-md-8 col-lg-8" style="font-weight: bolder; font-size: larger">
+                            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
                                 Nội dung
                             </td>
                             <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
-                                Deadline
-                            </td>
-                            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
                                 Gia hạn deadline tự động theo ? ngày
+                            </td>
+                            <td class="col-1 col-md-1 col-lg-1" style="font-weight: bolder; font-size: larger">
+                                Deadline
                             </td>
                             <td hidden="hidden" class="col-0 col-md-0 col-lg-0">
                                 Trạng thái (mặc định 2)
@@ -91,14 +117,15 @@
                                           style="width:100%" rows="2" required></textarea>
                             </td>
                             <td>
-                                <input type="datetime-local"
-                                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
-                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%" required>
-                            </td>
-                            <td>
                                 <input type="number"
                                        th:field="*{monthEvents[__${stat.index}__].extendDay}"
                                        th:name="|monthEvents[${stat.index}]|" style="width: 100%" required>
+                            </td>
+                            <td>
+                                <input type="text"
+                                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
+                                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                                       th:name="|monthEvents[${stat.index}]|" required>
                             </td>
                             <td hidden="hidden">
                                 <input th:value="2"
@@ -124,7 +151,7 @@
 </div>
 <script>
     function showDialog() {
-        var numberOfRows = prompt("Hãy nhập số dòng giao việc tuần bạn muốn giao việc:");
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc lặp lại bạn muốn giao việc:");
         if (numberOfRows != null) {
             var url = "/home/manager/weeklyTask/showAddWeekEventForm?rows=" + numberOfRows;
             document.getElementById("addWeekEvent").setAttribute("href", url);
