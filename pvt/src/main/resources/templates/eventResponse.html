@@ -138,6 +138,15 @@
                         data-bs-target="#exampleModal">
                     Thêm mới phản hồi
                 </button>
+                <a th:href="@{/home/manager/task/showEditMonthEventForm/{id} (id=${response.getMonthEvent().getMonthEventId()})}"
+                   style="text-decoration: none">
+                    <button type="button" class="btn btn-outline-secondary col-2 col-md-2 col-lg-2">
+                       Quản lý đổi deadline
+                    </button>
+                </a>
+                <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${response.getMonthEvent().getMonthEventId()})}" style="text-decoration: none">
+                    <button type="button" class="btn btn-outline-danger col-2 col-md-2 col-lg-2"> Quản lý xóa</button>
+                </a>
             </div>
             <div class="table-responsive">
                 <table class="table table-striped table-bordered" id="new-material"
