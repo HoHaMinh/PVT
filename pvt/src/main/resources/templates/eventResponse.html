@@ -24,8 +24,12 @@
     <script th:inline="javascript">
         /*<![CDATA[*/
         $(document).ready(function() {
-            // Define a function to load the data from the server
+            let isUserInteracting = false; // Biến cờ để kiểm tra người dùng có đang thao tác không
+
+            // Hàm tải dữ liệu từ server
             function loadData() {
+                if (isUserInteracting) return; // Nếu người dùng đang thao tác, không cập nhật dữ liệu
+
                 var currentURL = window.location.href;
                 var modifiedURL = currentURL.replace('showEventResponseForm', 'showEventResponseFormRestful');
                 $.ajax({
@@ -37,25 +41,41 @@
                         for (let i = 0; i < data.length; i++) {
                             const formattedEventInformation = data[i].eventInformationResponse.replace(/\n/g, '<br>');
                             result += `
-                    <tr>
-                        <td class="center">${i + 1}</td>
-                        <td class="justify">${formattedEventInformation}</td>
-                        <td class="center">${data[i].createdByDate}</td>
-                        <td class="center">${data[i].createdByUser}</td>
-                    </tr>
-                `;
+                            <tr>
+                                <td class="center">${i + 1}</td>
+                                <td class="justify">${formattedEventInformation}</td>
+                                <td class="center">${data[i].createdByDate}</td>
+                                <td class="center">${data[i].createdByUser}</td>
+                            </tr>
+                        `;
                         }
                         $("#result").html(result);
                     },
                     error: function (e) {
+                        console.error('Lỗi khi tải dữ liệu:', e);
                     }
                 });
             }
 
-            // Call the loadData function when the page loads
+            // Gọi loadData ngay khi trang vừa tải
             loadData();
 
-            // Add an event listener for the form submission
+            // Gọi lại loadData mỗi 5 giây
+            setInterval(loadData, 5000);
+
+            // Theo dõi khi người dùng bắt đầu thao tác (như bôi đen để copy)
+            $(document).on('mousedown keydown', function() {
+                isUserInteracting = true;
+            });
+
+            // Theo dõi khi người dùng kết thúc thao tác
+            $(document).on('mouseup keyup', function() {
+                setTimeout(() => {
+                    isUserInteracting = false;
+                }, 3000); // Sau 3 giây, cho phép cập nhật lại
+            });
+
+            // Xử lý sự kiện submit form
             $('form').on('submit', function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -71,18 +91,79 @@
                             buttons: false
                         }).then(function() {
                             $('#exampleModal').modal('hide');
-                            // Call the loadData function again to refresh the data
-                            loadData();
+                            loadData(); // Tải lại dữ liệu ngay sau khi thêm mới
                         });
                     }
                 });
             });
-
-            // Set an interval to call the loadData function every 0.1 seconds
-            setInterval(loadData, 100);
         });
         /*]]>*/
     </script>
+
+<!--    CODE GỐC-->
+<!-- <script th:inline="javascript">-->
+<!--        /*<![CDATA[*/-->
+<!--        $(document).ready(function() {-->
+<!--            // Define a function to load the data from the server-->
+<!--            function loadData() {-->
+<!--                var currentURL = window.location.href;-->
+<!--                var modifiedURL = currentURL.replace('showEventResponseForm', 'showEventResponseFormRestful');-->
+<!--                $.ajax({-->
+<!--                    url: modifiedURL,-->
+<!--                    type: 'get',-->
+<!--                    dataType: "json",-->
+<!--                    success: function (data) {-->
+<!--                        let result = '';-->
+<!--                        for (let i = 0; i < data.length; i++) {-->
+<!--                            const formattedEventInformation = data[i].eventInformationResponse.replace(/\n/g, '<br>');-->
+<!--                            result += `-->
+<!--                    <tr>-->
+<!--                        <td class="center">${i + 1}</td>-->
+<!--                        <td class="justify">${formattedEventInformation}</td>-->
+<!--                        <td class="center">${data[i].createdByDate}</td>-->
+<!--                        <td class="center">${data[i].createdByUser}</td>-->
+<!--                    </tr>-->
+<!--                `;-->
+<!--                        }-->
+<!--                        $("#result").html(result);-->
+<!--                    },-->
+<!--                    error: function (e) {-->
+<!--                    }-->
+<!--                });-->
+<!--            }-->
+
+<!--            // Call the loadData function when the page loads-->
+<!--            loadData();-->
+
+<!--            // Add an event listener for the form submission-->
+<!--            $('form').on('submit', function(e) {-->
+<!--                e.preventDefault();-->
+<!--                $.ajax({-->
+<!--                    type: 'post',-->
+<!--                    url: $(this).attr('action'),-->
+<!--                    data: $(this).serialize(),-->
+<!--                    success: function() {-->
+<!--                        swal({-->
+<!--                            title: 'Thông báo',-->
+<!--                            text: 'Thêm mới thành công',-->
+<!--                            icon: 'success',-->
+<!--                            timer: 1500,-->
+<!--                            buttons: false-->
+<!--                        }).then(function() {-->
+<!--                            $('#exampleModal').modal('hide');-->
+<!--                            // Call the loadData function again to refresh the data-->
+<!--                            loadData();-->
+<!--                        });-->
+<!--                    }-->
+<!--                });-->
+<!--            });-->
+
+<!--            // Set an interval to call the loadData function every 0.1 seconds-->
+<!--            setInterval(loadData, 100);-->
+<!--        });-->
+<!--        /*]]>*/-->
+<!--    </script>-->
+
 </head>
 <body>
 <div class="container-fluid">
