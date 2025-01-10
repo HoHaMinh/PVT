@@ -1,3 +1,3 @@
-1) Dùng workbench export database to dump folder
+1) Dùng workbench export database to dump folder (vào administrator, sau khi xong vào folder dump trong document để copy file chuyển qua folder database trong IT)
 2) Upgit file dump
 3) Tao database pvt tuong ung va import vao

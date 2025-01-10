@@ -38,7 +38,7 @@ public class MonthEventService implements IMonthEventService {
         return monthEventRepository.findMonthEventsByMonthEventStatus(pageable);
     }
 
-//  *** flag =true là add, flag =false là edit
+    //  *** flag =true là add, flag =false là edit
     @Override
     public void addMonthEvent(MonthEvent monthEvent, boolean flag) {
         if (flag) {
@@ -68,9 +68,17 @@ public class MonthEventService implements IMonthEventService {
     public void checkWeekEventDeadline(LocalDateTime now) {
         List<MonthEvent> weekEvents = monthEventRepository.findWeekEvents();
         for (MonthEvent weekEvent : weekEvents) {
-            if (now.isAfter(weekEvent.getMonthEventDeadline().plusHours(5))) {
-                LocalDateTime newDeadline = weekEvent.getMonthEventDeadline().plusDays(weekEvent.getExtendDay());
-                monthEventRepository.updateWeekEventDeadline(newDeadline, weekEvent.getMonthEventId());
+            // Kiểm tra nếu tháng sự kiện có deadline
+            if (weekEvent.getMonthEventDeadline() != null) {
+                // Kiểm tra nếu deadline đã qua và extendDay là null, gán mặc định là 0
+                int extendDay = (weekEvent.getExtendDay() != null) ? weekEvent.getExtendDay() : 0;
+
+                // Kiểm tra xem deadline đã quá hạn chưa
+                if (now.isAfter(weekEvent.getMonthEventDeadline().plusHours(5))) {
+                    // Tính toán deadline mới với extendDay
+                    LocalDateTime newDeadline = weekEvent.getMonthEventDeadline().plusDays(extendDay);
+                    monthEventRepository.updateWeekEventDeadline(newDeadline, weekEvent.getMonthEventId());
+                }
             }
         }
     }

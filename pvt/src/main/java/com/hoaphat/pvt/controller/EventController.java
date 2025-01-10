@@ -26,6 +26,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -156,7 +157,7 @@ public class EventController {
     @PostMapping("/home/manager/task/addMonthEvent")
     public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            monthEventService.addMonthEvent(monthEvent,true);
+            monthEventService.addMonthEvent(monthEvent, true);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
         String username = (String) request.getSession().getAttribute("username");
@@ -173,13 +174,56 @@ public class EventController {
         return ("monthEditEventForm");
     }
 
+//    CODE GỐC BAN ĐẦU CHO VIỆC LƯU EDIT MONTH EVENT
+//    @PostMapping("/home/manager/task/editMonthEvent")
+//    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
+//        // Chỉnh sửa MonthEvent
+//        monthEventService.addMonthEvent(monthEvent,false);
+//        // Tạo và thêm ResponseEventInformation
+//        ResponseEventInformation responseEventInformation = new ResponseEventInformation();
+//        responseEventInformation.setMonthEvent(monthEvent);
+//        redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công");
+//        String username = (String) request.getSession().getAttribute("username");
+//        model.addAttribute("username", username);
+//        return "redirect:/home/manager/task";
+//    }
+
     @PostMapping("/home/manager/task/editMonthEvent")
-    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
-        monthEventService.addMonthEvent(monthEvent,false);
-        redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công");
-        String username = (String) request.getSession().getAttribute("username");
-        model.addAttribute("username", username);
-        return "redirect:/home/manager/task";
+    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent monthEvent,
+                                 RedirectAttributes redirectAttributes, Model model,
+                                 HttpServletRequest request, Principal principal) {
+        try {
+            // Chỉnh sửa MonthEvent
+            monthEventService.addMonthEvent(monthEvent, false);
+            // Tạo ResponseEventInformation tự động
+            ResponseEventInformation responseEventInformation = new ResponseEventInformation();
+            // Lấy ngày tháng năm từ monthEvent (ví dụ monthEvent.getMonthEventDeadline())
+            LocalDateTime deadline = monthEvent.getMonthEventDeadline();
+            if (deadline == null) {
+                throw new NullPointerException("Deadline của MonthEvent không được null.");
+            }
+            // Định dạng thời gian: "Báo cáo lại giờ:phút ngày/tháng/năm"
+            String eventInformationResponse = "Báo cáo lại " + deadline.format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy"));
+            // Thiết lập dữ liệu cho responseEventInformation
+            String username = principal.getName();  // Lấy tên người dùng tự động từ Principal
+            responseEventInformation.setCreatedByUser(username);  // Gán người dùng vào thông tin phản hồi
+            responseEventInformation.setCreatedByDate(deadline);  // Sử dụng ngày giờ từ deadline của MonthEvent
+            responseEventInformation.setEventInformationResponse(eventInformationResponse);  // Thêm thông tin báo cáo
+            // Gán đối tượng MonthEvent vào ResponseEventInformation
+            if (monthEvent != null) {
+                responseEventInformation.setMonthEvent(monthEvent); // Giả sử ResponseEventInformation có thuộc tính MonthEvent
+            } else {
+                throw new NullPointerException("MonthEvent không hợp lệ.");
+            }
+            // Thêm ResponseEventInformation vào cơ sở dữ liệu
+            responseEventInformationService.addResponseEventInformation(responseEventInformation);
+            redirectAttributes.addFlashAttribute("mess", "Chỉnh sửa thành công và tạo phản hồi sự kiện tự động");
+            model.addAttribute("username", username);
+            return "redirect:/home/employee/private";
+        } catch (NullPointerException e) {
+            redirectAttributes.addFlashAttribute("mess", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/home/employee/private";
+        }
     }
 
     @GetMapping("/home/manager/weeklyTask/delete/{id}")
@@ -202,7 +246,7 @@ public class EventController {
     @PostMapping("/home/manager/weeklyTask/addWeekEvent")
     public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
         for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            monthEventService.addMonthEvent(monthEvent,true);
+            monthEventService.addMonthEvent(monthEvent, true);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
         String username = (String) request.getSession().getAttribute("username");
