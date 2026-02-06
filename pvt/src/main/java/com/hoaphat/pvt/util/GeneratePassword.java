@@ -9,6 +9,6 @@ public class GeneratePassword {
     }
 
     public static void main(String[] args) {
-        System.out.println(generatePassword("hoathuytinh"));
+        System.out.println(generatePassword("pvt123"));
     }
 }

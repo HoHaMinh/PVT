@@ -1,7 +1,0 @@
-cd Desktop\New folder
-./gradlew build (lưu ý chọn terminal đúng folder cao nhất, sau khi build success thì file snapshot sẽ nằm trong folder build/libs)
-java -jar pvt.jar
-http://localhost:8080/list
-
-GO1DMINHHH
-pvt123
