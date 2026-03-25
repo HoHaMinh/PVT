@@ -1,6 +1,8 @@
 package com.hoaphat.pvt.service.monthEvent;
 
+import com.hoaphat.pvt.model.account.Account;
 import com.hoaphat.pvt.model.event.MonthEvent;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +20,8 @@ public class MonthEventService implements IMonthEventService {
 
     @Autowired
     private IResponseEventInformationRepository responseEventInformationRepository;
-
+    @Autowired
+    private IAccountRepository accountRepository;
     @Override
     public List<MonthEvent> getMonthEventList() {
         return monthEventRepository.findAll();
@@ -26,10 +29,15 @@ public class MonthEventService implements IMonthEventService {
 
     //    *Trang private
     @Override
-    public List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String name) {
-        LocalDateTime localDateTimeAfter = now.plusHours(60);
-        LocalDateTime localDateTimeBefore = now.minusDays(1);
-        return monthEventRepository.findMonthEventsByFilter(localDateTimeBefore, localDateTimeAfter, name);
+    public List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String accountName) {
+        LocalDateTime before = now.minusDays(730);
+        LocalDateTime after = now.plusDays(30);
+
+        if (accountName == null || accountName.isEmpty()) {
+            return monthEventRepository.findAllFilter(before, after);
+        }
+
+        return monthEventRepository.findByAccountFilter(before, after, accountName);
     }
 
     //* Trang task
@@ -44,7 +52,21 @@ public class MonthEventService implements IMonthEventService {
         if (flag) {
             monthEvent.setRegisteredDay(LocalDateTime.now());
         }
-        monthEventRepository.save(monthEvent);
+        if (Boolean.TRUE.equals(monthEvent.getAll())) {
+            // 👉 chọn "All"
+            monthEvent.setAccount(null);
+        } else {
+            // 👉 chọn cá nhân
+            if (monthEvent.getAccount() != null
+                    && monthEvent.getAccount().getAccountName() != null) {
+
+                String accountName = monthEvent.getAccount().getAccountName();
+
+                Account acc = accountRepository.findByAccountName(accountName);
+
+                monthEvent.setAccount(acc); // ⭐ lấy object đã tồn tại trong DB
+            }
+        } monthEventRepository.save(monthEvent);
     }
 
     @Override

@@ -13,7 +13,7 @@ public interface IMonthEventService {
 
     void addMonthEvent(MonthEvent monthEvent, boolean flag);
 
-    List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String name);
+    List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String accountName);
 
     List<MonthEvent> getWeekEventList();
 

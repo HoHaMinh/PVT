@@ -35,26 +35,24 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests().antMatchers("/", "/login","/js/**","/css/**").permitAll();
-        http.authorizeHttpRequests().antMatchers("/home/employee/**").hasAnyRole("EMPLOYEE", "MANAGER");
-        http.authorizeHttpRequests().antMatchers("/home/manager/**").hasRole("MANAGER");
-        http.authorizeHttpRequests().and().exceptionHandling().accessDeniedPage("/deny");
-        http.authorizeHttpRequests().and().formLogin()
+        http.authorizeHttpRequests()
+                .antMatchers("/", "/login", "/js/**", "/css/**").permitAll()
+                .antMatchers("/home/employee/**").hasAnyRole("EMPLOYEE", "MANAGER")
+                .antMatchers("/home/manager/**").hasRole("MANAGER")
+                // ✅ Bắt tất cả route còn lại (kể cả /home) yêu cầu đăng nhập
+                .anyRequest().authenticated();
+
+        http.exceptionHandling().accessDeniedPage("/deny");
+
+        http.formLogin()
                 .loginPage("/login")
                 .loginProcessingUrl("/doLogin")
                 .usernameParameter("accountname")
                 .passwordParameter("password")
-                .defaultSuccessUrl("/home",true)
+                .defaultSuccessUrl("/home", true)
                 .successHandler(myAuthenticationSuccessHandler())
-                .failureUrl("/?error=true")
-                .and()
-                .logout().logoutUrl("/logout");
-    }
+                .failureUrl("/?error=true");
 
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-                .inMemoryAuthentication()
-                .withUser("username").password("password").roles("USER");
+        http.logout().logoutUrl("/logout");
     }
 }

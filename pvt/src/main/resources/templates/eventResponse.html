@@ -100,116 +100,12 @@
         /*]]>*/
     </script>
 
-<!--    CODE GỐC-->
-<!-- <script th:inline="javascript">-->
-<!--        /*<![CDATA[*/-->
-<!--        $(document).ready(function() {-->
-<!--            // Define a function to load the data from the server-->
-<!--            function loadData() {-->
-<!--                var currentURL = window.location.href;-->
-<!--                var modifiedURL = currentURL.replace('showEventResponseForm', 'showEventResponseFormRestful');-->
-<!--                $.ajax({-->
-<!--                    url: modifiedURL,-->
-<!--                    type: 'get',-->
-<!--                    dataType: "json",-->
-<!--                    success: function (data) {-->
-<!--                        let result = '';-->
-<!--                        for (let i = 0; i < data.length; i++) {-->
-<!--                            const formattedEventInformation = data[i].eventInformationResponse.replace(/\n/g, '<br>');-->
-<!--                            result += `-->
-<!--                    <tr>-->
-<!--                        <td class="center">${i + 1}</td>-->
-<!--                        <td class="justify">${formattedEventInformation}</td>-->
-<!--                        <td class="center">${data[i].createdByDate}</td>-->
-<!--                        <td class="center">${data[i].createdByUser}</td>-->
-<!--                    </tr>-->
-<!--                `;-->
-<!--                        }-->
-<!--                        $("#result").html(result);-->
-<!--                    },-->
-<!--                    error: function (e) {-->
-<!--                    }-->
-<!--                });-->
-<!--            }-->
-
-<!--            // Call the loadData function when the page loads-->
-<!--            loadData();-->
-
-<!--            // Add an event listener for the form submission-->
-<!--            $('form').on('submit', function(e) {-->
-<!--                e.preventDefault();-->
-<!--                $.ajax({-->
-<!--                    type: 'post',-->
-<!--                    url: $(this).attr('action'),-->
-<!--                    data: $(this).serialize(),-->
-<!--                    success: function() {-->
-<!--                        swal({-->
-<!--                            title: 'Thông báo',-->
-<!--                            text: 'Thêm mới thành công',-->
-<!--                            icon: 'success',-->
-<!--                            timer: 1500,-->
-<!--                            buttons: false-->
-<!--                        }).then(function() {-->
-<!--                            $('#exampleModal').modal('hide');-->
-<!--                            // Call the loadData function again to refresh the data-->
-<!--                            loadData();-->
-<!--                        });-->
-<!--                    }-->
-<!--                });-->
-<!--            });-->
-
-<!--            // Set an interval to call the loadData function every 0.1 seconds-->
-<!--            setInterval(loadData, 100);-->
-<!--        });-->
-<!--        /*]]>*/-->
-<!--    </script>-->
-
 </head>
 <body>
 <div class="container-fluid">
-    <div class="row text-center header">
-        <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-        <div class="col-2.5 text-end" style="float: right">
-            <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
-                <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
-            </div>
-        </div>
-    </div>
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
     <div>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid">
-                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
-                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
-                </a>
-                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
-                     id="navbarNavDropdown">
-                    <ul class="navbar-nav">
-                        <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
-                        </li>
-                        <li class="nav-item ">
-                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
-                        </li>
-                        <li class="nav-item dropdown active">
-                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
-                               id="navbarDropdownMenuLink"
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Giao việc (chỉ quản lý)
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
-                                    nhân</a></li>
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
-                                    cá nhân lặp lại định kỳ</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
         <div>
             <div class="mb-1">
                 <h3 class="text-primary">Danh sách phản hồi cho công việc</h3>
@@ -227,6 +123,24 @@
                 </a>
                 <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${response.getMonthEvent().getMonthEventId()})}" style="text-decoration: none">
                     <button type="button" class="btn btn-outline-danger col-2 col-md-2 col-lg-2"> Quản lý xóa</button>
+                </a>
+                <!-- Nút Hide / Show -->
+                <!-- Hide -->
+                <a th:if="${#request.isUserInRole('ROLE_MANAGER') and !response.getMonthEvent().hidden}"
+                   th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()})}"
+                   style="text-decoration: none">
+                    <button type="button" class="btn btn-outline-warning col-2 col-md-2 col-lg-2">
+                        Ẩn việc
+                    </button>
+                </a>
+
+                <!-- Show -->
+                <a th:if="${#request.isUserInRole('ROLE_MANAGER') and response.getMonthEvent().hidden}"
+                   th:href="@{/home/manager/task/show/{id}(id=${response.getMonthEvent().getMonthEventId()})}"
+                   style="text-decoration: none">
+                    <button type="button" class="btn btn-outline-success col-2 col-md-2 col-lg-2">
+                        Hiện ở lịch cần làm
+                    </button>
                 </a>
             </div>
             <div class="table-responsive">

@@ -10,7 +10,7 @@ public class Account {
 
     @Column(nullable = false, length = 128)
     private String password;
-
+    @Column(name = "name")
     private String name;
 
     public Account() {
@@ -49,5 +49,19 @@ public class Account {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDisplayName() {
+        String name = this.name; // ✅ dùng tên thật
+
+        if (name == null || name.trim().isEmpty()) {
+            return this.accountName; // fallback nếu thiếu
+        }
+
+        String[] parts = name.trim().split(" ");
+        if (parts.length >= 2) {
+            return parts[parts.length - 2] + " " + parts[parts.length - 1];
+        }
+        return parts[parts.length - 1];
     }
 }

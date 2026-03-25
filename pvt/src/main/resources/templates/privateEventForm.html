@@ -8,10 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
   <link rel="stylesheet" th:href="@{/css/home.css}">
-  <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-  <!-- Flatpickr JS -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -22,10 +19,9 @@
         altInput: true,
         altFormat: "d-m-Y H:i",
         time_24hr: true,
-        // Add any other options you need
       }));
 
-      document.querySelector('#form').addEventListener('submit', function(e) {
+      document.querySelector('#form').addEventListener('submit', function (e) {
         var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
         if (!allDatesSelected) {
           e.preventDefault();
@@ -37,94 +33,77 @@
 </head>
 <body>
 <div class="container-fluid">
-  <div class="row text-center header">
-    <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-    <div class="col-2.5 text-end" style="float: right">
-      <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
-        <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
-      </div>
-    </div>
-  </div>
+  <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
   <div>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
-      <div class="container-fluid">
-        <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
-          <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
-        </a>
-        <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
-             id="navbarNavDropdown">
-          <ul class="navbar-nav">
-            <li class="nav-item active">
-              <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
-            </li>
-            <li class="nav-item ">
-              <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
-            </li>
-            <li class="nav-item dropdown active">
-              <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
-                 id="navbarDropdownMenuLink"
-                 role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Giao việc (chỉ quản lý)
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
-                  nhân</a></li>
-                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
-                  cá nhân lặp lại định kỳ</a></li>
-              </ul>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
+    <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
     <div>
       <div class="mb-1">
         <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
         <a href="" id="addPrivateEvent" style="text-decoration: none">
-          <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">Thêm mới công việc cá
-            nhân
+          <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">
+            Thêm mới công việc cá nhân
           </button>
         </a>
       </div>
-      <div>
-        <form class="row" method="post" th:action="@{/home/manager/task/addMonthEvent}"
-              th:object="${monthEventManager}" id="form">
-          <table>
-            <thead id="navbar-sticky">
-            <tr>
-              <td class="col-11 col-md-11 col-lg-11" style="font-weight: bolder; font-size: larger">
-                Nội dung
-              </td>
-              <td class="col-1 col-md-1 col-lg-1"
-                  style="font-weight: bolder; font-size: larger; text-align: left">
-                Deadline
-              </td>
-            </tr>
-            </thead>
-            <tr th:each="monthEvent, stat : ${monthEvents}">
-              <td>
-                                <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
-                                          th:name="|monthEvents[${stat.index}]|"
-                                          style="width:100%" rows="2" required></textarea>
-              </td>
-              <td>
-                <input type="text"
-                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
-                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
-                       th:name="|monthEvents[${stat.index}]|" required>
-              </td>
-            </tr>
-          </table>
-          <div class="col-12">
-            <button type="submit" class="btn btn-primary">Thêm</button>
-          </div>
-        </form>
-      </div>
+
+      <form class="row" method="post"
+            th:action="@{/home/manager/task/addMonthEvent}"
+            th:object="${monthEventManager}" id="form">
+        <table>
+          <thead id="navbar-sticky">
+          <tr>
+            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
+              Nội dung
+            </td>
+            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
+              Người phụ trách
+            </td>
+            <td class="col-1 col-md-1 col-lg-1" style="font-weight: bolder; font-size: larger">
+              Deadline
+            </td>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="monthEvent, stat : ${monthEvents}">
+            <td>
+              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
+              <textarea th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                        style="width:100%" rows="2" required></textarea>
+            </td>
+            <td>
+              <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-control">
+                <option value="">-- Chọn người phụ trách --</option>
+
+                <!-- ⭐ Cả phòng -->
+                <option value="ALL" style="font-weight:bold; color:red;">
+                  🔥 Cả phòng
+                </option>
+
+                <!-- Danh sách nhân viên -->
+                <option th:each="acc : ${accounts}"
+                        th:value="${acc.accountName}"
+                        th:text="${acc.displayName}">
+                </option>
+              </select>
+            </td>
+            <td>
+              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
+              <input type="text"
+                     class="flatpickr-input"
+                     placeholder="Bấm chọn thời gian"
+                     th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                     required>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="col-12 mt-2">
+          <button type="submit" class="btn btn-primary">Thêm</button>
+        </div>
+      </form>
     </div>
-    <div class="col-12 ">
+
+    <div class="col-12 mt-3">
       <a th:href="@{/home/manager/task}" style="text-decoration: none">
         <button class="btn btn-outline-primary" style="float: right">
           Trở về trang giao việc cá nhân
@@ -134,6 +113,11 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+<!-- ✅ Script checkbox tách riêng, không nhét vào thẻ script có src -->
 <script>
   function showPrivateDialog() {
     var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
@@ -142,10 +126,24 @@
       document.getElementById("addPrivateEvent").setAttribute("href", url);
     }
   }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const rows = document.querySelectorAll("tr");
+    rows.forEach(row => {
+      const checkbox = row.querySelector(".all-checkbox");
+      const select = row.querySelector(".account-select");
+      if (checkbox && select) {
+        checkbox.addEventListener("change", function () {
+          if (this.checked) {
+            select.value = "";
+            select.disabled = true;
+          } else {
+            select.disabled = false;
+          }
+        });
+      }
+    });
+  });
 </script>
 </body>
 </html>

@@ -161,3 +161,23 @@ button.responsive-icon-search:hover svg {
 strong {
     color: red;
 }
+
+/* Banner ảnh */
+.home-banner {
+    width: 100%;
+    height: calc(100vh - 160px);
+    /* 160px = header + navbar (ước lượng, có thể chỉnh) */
+    overflow: hidden;
+}
+
+.home-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;      /* giữ tỉ lệ đẹp */
+    object-position: center; /* căn giữa ảnh */
+    transition: transform 0.5s ease;
+}
+
+.home-banner:hover img {
+    transform: scale(1.02);
+}

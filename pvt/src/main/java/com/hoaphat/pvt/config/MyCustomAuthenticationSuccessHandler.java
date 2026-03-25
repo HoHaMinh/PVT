@@ -22,14 +22,18 @@ public class MyCustomAuthenticationSuccessHandler implements AuthenticationSucce
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String username = userDetails.getUsername(); // Get the username
+        String accountName = userDetails.getUsername(); // login ID — giữ nguyên không đổi
+        String displayName = accountName; // fallback nếu không tìm thấy
+
         List<Account> accountList = accountService.findAll();
         for (int i = 0; i < accountList.size(); i++) {
-            if (username.equals(accountList.get(i).getAccountName())) {
-                username = accountList.get(i).getName();
+            if (accountName.equals(accountList.get(i).getAccountName())) {
+                displayName = accountList.get(i).getName(); // chỉ ghi đè displayName
             }
         }
-        request.getSession().setAttribute("username", username);
+
+        request.getSession().setAttribute("username", displayName);    // tên hiển thị: "Hồ Hà Minh"
+        request.getSession().setAttribute("accountName", accountName); // login ID: "ho.ha.minh" ✅
         response.sendRedirect("/home");
     }
 }

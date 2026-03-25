@@ -19,4 +19,8 @@ public interface IResponseEventInformationRepository extends CrudRepository<Resp
     @Modifying
     @Query("delete from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent")
     void deleteResponseById(Integer idMonthEvent);
+
+    void deleteByMonthEvent_MonthEventIdAndEventInformationResponseStartingWith(
+            Integer monthEventId, String prefix
+    );
 }

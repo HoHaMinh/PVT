@@ -11,52 +11,15 @@
 </head>
 <body>
 <div class="container-fluid">
-    <div class="row text-center header">
-        <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-        <div class="col-2.5 text-end" style="float: right">
-            <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
-                <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
-            </div>
-        </div>
-    </div>
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
     <div>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid">
-                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
-                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
-                </a>
-                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
-                     id="navbarNavDropdown">
-                    <ul class="navbar-nav">
-                        <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
-                        </li>
-                        <li class="nav-item ">
-                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
-                        </li>
-                        <li class="nav-item dropdown ">
-                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}" id="navbarDropdownMenuLink"
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Giao việc (chỉ quản lý)
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá nhân</a></li>
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc cá nhân lặp lại định kỳ</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
         <div class="mt-2">
             <div th:each="mess: ${message}" th:if="${message!=null}" style="display: flex; align-items: center;justify-content: center;">
                 <h3 style="color: red" th:text="${mess.getMessage()}"></h3>
             </div>
-            <div style="height: 600px; overflow: hidden">
-                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg" style="width: 100%; height: 600px; object-fit: fill; object-position: top;">
+            <div class="home-banner">
+                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg">
             </div>
         </div>
     </div>

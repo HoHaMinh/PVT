@@ -4,117 +4,741 @@
     <meta charset="utf-8">
     <title>Ảnh PVT</title>
     <base href="/">
-    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <link rel="stylesheet" th:href="@{/css/image.css}">
-    <link href="https://fonts.googleapis.com/css?family=Reem+Kufi" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
-    <link rel='stylesheet prefetch' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css'>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #eef0f4;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        /* Thay .gallery-wrapper */
+        .gallery-wrapper {
+            padding: 16px 24px 40px;
+            border-top: 3px solid #1a56a0; /* ✅ đường kẻ xanh tách navbar */
+            min-height: calc(100vh - 120px);
+        }
+
+        /* ── Album tabs ── */
+        .album-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e3e9;
+            padding-bottom: 12px;
+        }
+
+        .album-tab {
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid #d0d4dc;
+            background: #fff;
+            color: #666;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            letter-spacing: 0.02em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .album-tab:hover {
+            border-color: #1a56a0;
+            color: #1a56a0;
+            background: #eef3fb;
+        }
+
+        .album-tab.active {
+            background: #1a56a0;
+            color: #fff;
+            border-color: #1a56a0;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(26,86,160,0.25);
+        }
+
+        /* ── Album panels ── */
+        .album-panel {
+            display: none;
+            animation: fadeSlideIn 0.3s ease;
+        }
+
+        .album-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Photo grid ── */
+        .photo-grid {
+            display: grid;
+            gap: 6px;
+        }
+
+        .photo-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #dde1e8;
+            height: 260px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.3s ease;
+            min-width: 0;
+        }
+
+        .photo-item:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: block;
+        }
+
+        /* Chỉ áp dụng khi 1 ảnh */
+        .photo-grid.single-photo .photo-item img {
+            object-fit: contain;  /* ← không cắt ảnh */
+            background: #f0f0f0;
+        }
+
+        .photo-item:hover img { transform: scale(1.07); }
+
+        .photo-item .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .photo-item:hover .overlay { opacity: 1; }
+
+        .photo-item .photo-num {
+            position: absolute;
+            bottom: 10px; right: 12px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+        }
+
+        .photo-item:hover .photo-num { opacity: 1; }
+
+        /* Ảnh đầu to hơn khi có nhiều ảnh */
+        .photo-grid.has-many .photo-item:first-child {
+            grid-column: span 2;
+            height: 400px;
+        }
+
+        /* 1-2 ảnh: hiển thị to căn giữa */
+        .photo-grid.has-few {
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            max-width: 900px;
+        }
+
+        .photo-grid.has-few .photo-item {
+            height: 420px;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: block;
+        }
+
+        .photo-item:hover img {
+            transform: scale(1.07);
+        }
+
+        .photo-item .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .photo-item:hover .overlay {
+            opacity: 1;
+        }
+
+        .photo-item .photo-num {
+            position: absolute;
+            bottom: 10px;
+            right: 12px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+        }
+
+        .photo-item:hover .photo-num {
+            opacity: 1;
+        }
+
+        /* ── Lightbox ── */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10,14,26,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .lightbox.active {
+            display: flex;
+            animation: lbFadeIn 0.22s ease;
+        }
+
+        @keyframes lbFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .lightbox-img-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 90vw;
+            max-height: 85vh;
+        }
+
+        .lightbox-img-wrap img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            transition: opacity 0.2s ease;
+        }
+
+        .lightbox-close {
+            position: fixed;
+            top: 18px; right: 24px;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .lightbox-close:hover { background: rgba(255,255,255,0.22); }
+
+        .lightbox-nav {
+            position: fixed;
+            top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+
+        .lightbox-counter {
+            margin-top: 14px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em;
+        }
+
+        .lightbox-caption {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 300;
+        }
+
+        .lightbox-img-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+
+        .lightbox-img-wrap.zoomed {
+            cursor: grab;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+
+        .lightbox-img-wrap.dragging {
+            cursor: grabbing;
+        }
+
+        .lightbox-img-wrap img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            transition: opacity 0.2s ease;
+            transform-origin: center center;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* Thanh zoom controls */
+        .lightbox-zoom-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 24px;
+            padding: 6px 16px;
+            z-index: 10002;
+            backdrop-filter: blur(8px);
+        }
+
+        .zoom-btn {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+
+        .zoom-btn:hover { background: rgba(255,255,255,0.25); }
+
+        .zoom-level {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.6);
+            min-width: 38px;
+            text-align: center;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .zoom-reset {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.45);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: none;
+            transition: all 0.2s;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .zoom-reset:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        /* ── Back button ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 28px;
+            padding: 8px 20px;
+            border: 1px solid #c8cdd6;
+            border-radius: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.82rem;
+            background: #fff;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .back-btn:hover {
+            border-color: #1a56a0;
+            color: #1a56a0;
+            text-decoration: none;
+            background: #eef3fb;
+        }
+    </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div>
-        <div class="row text-center header" style="height: 52px">
-            <h2 style="color: white; padding-top: 0.5%; height: 46px; font-size: 1.9rem; font-weight: bold"
-                class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-            <div class="col-2.5 text-end" style="float: right">
-                <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
-                    <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
-                </div>
-            </div>
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+    <!-- Gallery -->
+    <div class="gallery-wrapper">
+
+        <!-- Empty -->
+        <div th:if="${albums == null or albums.isEmpty()}" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <p>Chưa có album nào</p>
         </div>
-        <div>
-            <nav class="navbar navbar-expand-lg navbar-light bg-light">
-                <div class="container-fluid">
-                    <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
-                        <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
-                    </a>
-                    <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
-                         id="navbarNavDropdown">
-                        <ul class="navbar-nav">
-                            <li class="nav-item">
-                                <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
-                            </li>
-                            <li class="nav-item active">
-                                <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
-                            </li>
-                            <li class="nav-item dropdown active">
-                                <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
-                                   id="navbarDropdownMenuLink"
-                                   role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    Giao việc (chỉ quản lý)
-                                </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                    <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
-                                        nhân</a></li>
-                                    <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao
-                                        việc
-                                        cá nhân lặp lại định kỳ</a></li>
-                                </ul>
-                            </li>
-                        </ul>
+
+        <div th:if="${albums != null and !albums.isEmpty()}">
+
+            <!-- Album tabs -->
+            <div class="album-tabs" id="albumTabs">
+                <button class="album-tab active"
+                        th:each="album, stat : ${albums}"
+                        th:text="${album.key}"
+                        th:classappend="${stat.first} ? ' active' : ''"
+                        th:attr="onclick='switchAlbum(' + ${stat.index} + ')'"
+                        th:id="'tab-' + ${stat.index}">
+                </button>
+            </div>
+
+            <!-- Album panels -->
+            <div th:each="album, stat : ${albums}"
+                 th:id="'panel-' + ${stat.index}"
+                 th:classappend="${stat.first} ? ' active' : ''"
+                 class="album-panel">
+
+                <div class="photo-grid" th:id="'grid-' + ${stat.index}">
+                    <div th:each="imgUrl, imgStat : ${album.value}"
+                         class="photo-item"
+                         th:data-url="${imgUrl}"
+                         th:data-index="${imgStat.index}"
+                         th:data-panel="${stat.index}"
+                         onclick="openLightbox(this)">
+                        <img th:src="${imgUrl}" th:alt="${album.key}" loading="lazy"/>
+                        <div class="overlay"></div>
+                        <span class="photo-num" th:text="${imgStat.index + 1} + ' / ' + ${imgStat.size}"></span>
                     </div>
                 </div>
-            </nav>
-            <div>
-                <div id="container">
-                    <ul id="slides">
-                        <li class="slide">
-                            <div class="slide-partial slide-left"><img
-                                    th:src="@{/img/1.jpg}"/></div>
-                            <div class="slide-partial slide-right"><img
-                                    th:src="@{/img/2.jpg}"/></div>
-                            <h1 class="title"><span class="title-text">Tiên tửu</span></h1>
-                        </li>
-                        <li class="slide">
-                            <div class="slide-partial slide-left"><img
-                                    th:src="@{/img/3.jpg}"/></div>
-                            <div class="slide-partial slide-right"><img
-                                    th:src="@{/img/4.jpg}"/></div>
-                            <h1 class="title"><span class="title-text">Tiên tửu version 2</span></h1>
-                        </li>
-                        <li class="slide">
-                            <div class="slide-partial slide-left"><img
-                                    th:src="@{/img/5.jpg}"/></div>
-                            <div class="slide-partial slide-right"><img
-                                    th:src="@{/img/6.jpg}"/></div>
-                            <h1 class="title"><span class="title-text">Tiên tửu version 3</span></h1>
-                        </li>
-                        <!--                <li class="slide">-->
-                        <!--                    <div class="slide-partial slide-left"><img-->
-                        <!--                            src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/544318/canyon-left.jpg"/></div>-->
-                        <!--                    <div class="slide-partial slide-right"><img-->
-                        <!--                            src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/544318/canyon-right.jpg"/></div>-->
-                        <!--                    <h1 class="title"><span class="title-text">Canyon</span></h1>-->
-                        <!--                </li>-->
-                        <!--                <li class="slide">-->
-                        <!--                    <div class="slide-partial slide-left"><img-->
-                        <!--                            src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/544318/lake-left.jpg"/></div>-->
-                        <!--                    <div class="slide-partial slide-right"><img-->
-                        <!--                            src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/544318/lake-right.jpg"/></div>-->
-                        <!--                    <h1 class="title"><span class="title-text">Lake</span></h1>-->
-                        <!--                </li>-->
-                    </ul>
-                    <ul id="slide-select">
-                        <li class="btn prev fa fa-arrow-left"></li>
-                        <li class="selector"></li>
-                        <li class="selector"></li>
-                        <li class="selector"></li>
-                        <!--                <li class="selector"></li>-->
-                        <!--                <li class="selector"></li>-->
-                        <li class="btn next fa fa-arrow-right"></li>
-                    </ul>
-                </div>
             </div>
+
+        </div>
+
+        <div>
+            <a th:href="@{/home}" class="back-btn">
+                ← Trở về trang chủ
+            </a>
         </div>
     </div>
 </div>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js'></script>
-<script th:src="@{/js/image.js}"></script>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navigateLight(-1)">&#8592;</button>
+    <button class="lightbox-nav lightbox-next" onclick="navigateLight(1)">&#8594;</button>
+    <div class="lightbox-img-wrap" id="lightboxWrap">
+        <img id="lightbox-img" src="" alt="">
+    </div>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+
+    <!-- ✅ Thanh zoom -->
+    <div class="lightbox-zoom-bar">
+        <button class="zoom-btn" onclick="zoomBy(-0.25)">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" onclick="zoomBy(0.25)">+</button>
+        <button class="zoom-reset" onclick="resetZoom()">Reset</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script>
+    // ── Tính layout rows theo số ảnh ──
+    function getRows(n) {
+        if (n === 1)  return [1];
+        if (n === 2)  return [2];
+        if (n === 3)  return [3];
+        if (n === 4)  return [2, 2];
+        if (n === 5)  return [3, 2];
+        if (n === 6)  return [3, 3];
+        if (n === 7)  return [4, 3];
+        if (n === 8)  return [4, 4];
+        if (n === 9)  return [5, 4];
+        if (n === 10) return [5, 5];
+        if (n === 11) return [4, 4, 3];
+        if (n === 12) return [4, 4, 4];
+        if (n === 13) return [5, 5, 3];
+        if (n === 14) return [5, 5, 4];
+        if (n === 15) return [5, 5, 5];
+        // 16+: hàng 5, phần dư tính tiếp theo quy tắc trên
+        let rows = [];
+        let rem = n;
+        while (rem > 0) {
+            let take = Math.min(5, rem);
+            rows.push(take);
+            rem -= take;
+        }
+        return rows;
+    }
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function lcm(a, b) { return a * b / gcd(a, b); }
+    function lcmArray(arr) { return arr.reduce(lcm); }
+
+    function applyGridLayout(grid) {
+        const items = grid.querySelectorAll('.photo-item');
+        const count = items.length;
+        if (count === 0) return;
+
+        // ── 1 ảnh: căn giữa, giữ tỉ lệ ──
+        if (count === 1) {
+            grid.classList.add('single-photo');
+            grid.style.display = 'flex';
+            grid.style.justifyContent = 'center';
+            items[0].style.width = '55%';
+            items[0].style.height = '480px';
+            return;
+        }
+
+        // ── 2-3 ảnh: giới hạn width, chiều cao lớn ──
+        if (count <= 3) {
+            grid.style.display = 'flex';
+            grid.style.justifyContent = 'center';
+            grid.style.gap = '6px';
+            const maxW = count === 2 ? '75%' : '90%';
+            grid.style.maxWidth = maxW;
+            grid.style.margin = '0 auto';
+            items.forEach(item => {
+                item.style.flex = '1';
+                item.style.height = '420px';
+                item.style.minWidth = '0';
+            });
+            return;
+        }
+
+        // ── 4+ ảnh: dùng grid LCM ──
+        const rows = getRows(count);
+        const totalCols = lcmArray(rows);
+        grid.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+        const rowCount = rows.length;
+        const baseH = rowCount === 1 ? 360 : rowCount === 2 ? 280 : 220;
+        grid.style.gridTemplateRows = `repeat(${rowCount}, ${baseH}px)`;
+
+        let idx = 0;
+        rows.forEach(rowSize => {
+            const span = totalCols / rowSize;
+            for (let i = 0; i < rowSize && idx < items.length; i++) {
+                items[idx].style.gridColumn = `span ${span}`;
+                idx++;
+            }
+        });
+    }
+
+    // ── Switch album tab ──
+    function switchAlbum(index) {
+        document.querySelectorAll('.album-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+        });
+        document.querySelectorAll('.album-panel').forEach((p, i) => {
+            p.classList.toggle('active', i === index);
+        });
+        currentPanelIndex = index;
+    }
+
+    // ── Lightbox ──
+    let currentPanelIndex = 0;
+    let currentImgIndex   = 0;
+
+    // Zoom & pan state
+    let scale    = 1;
+    let originX  = 0;
+    let originY  = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let lastOriginX = 0;
+    let lastOriginY = 0;
+    const MIN_SCALE = 1;
+    const MAX_SCALE = 5;
+
+    function applyTransform() {
+        const img  = document.getElementById('lightbox-img');
+        const wrap = document.getElementById('lightboxWrap');
+        img.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+        document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+        wrap.classList.toggle('zoomed', scale > 1);
+    }
+
+    function resetZoom() {
+        scale   = 1;
+        originX = 0;
+        originY = 0;
+        applyTransform();
+    }
+
+    function zoomBy(delta) {
+        scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale + delta));
+        if (scale === 1) { originX = 0; originY = 0; }
+        applyTransform();
+    }
+
+    // Scroll wheel zoom
+    document.getElementById('lightboxWrap').addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.15 : 0.15;
+        zoomBy(delta);
+    }, { passive: false });
+
+    // Drag to pan
+    const wrap = document.getElementById('lightboxWrap');
+
+    wrap.addEventListener('mousedown', function(e) {
+        if (scale <= 1) return;
+        isDragging = true;
+        dragStartX  = e.clientX;
+        dragStartY  = e.clientY;
+        lastOriginX = originX;
+        lastOriginY = originY;
+        wrap.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        originX = lastOriginX + (e.clientX - dragStartX);
+        originY = lastOriginY + (e.clientY - dragStartY);
+        applyTransform();
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.classList.remove('dragging');
+    });
+
+    // Pinch zoom mobile
+    let lastTouchDist = 0;
+    wrap.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            lastTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const delta = (dist - lastTouchDist) * 0.01;
+            lastTouchDist = dist;
+            zoomBy(delta);
+        }
+    }, { passive: false });
+
+    function openLightbox(el) {
+        currentPanelIndex = parseInt(el.dataset.panel);
+        currentImgIndex   = parseInt(el.dataset.index);
+        resetZoom();
+        showLightboxImage();
+        document.getElementById('lightbox').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function showLightboxImage() {
+        const panel = document.getElementById('panel-' + currentPanelIndex);
+        const items = panel.querySelectorAll('.photo-item');
+        const item  = items[currentImgIndex];
+        const img   = document.getElementById('lightbox-img');
+
+        img.style.opacity = '0';
+        resetZoom();
+        img.src = item.dataset.url;
+        img.onload = () => { img.style.opacity = '1'; };
+
+        document.getElementById('lightbox-counter').textContent =
+            (currentImgIndex + 1) + ' / ' + items.length;
+        const tab = document.getElementById('tab-' + currentPanelIndex);
+        document.getElementById('lightbox-caption').textContent =
+            tab ? tab.textContent.trim() : '';
+    }
+
+    function navigateLight(dir) {
+        const panel = document.getElementById('panel-' + currentPanelIndex);
+        const total = panel.querySelectorAll('.photo-item').length;
+        currentImgIndex = (currentImgIndex + dir + total) % total;
+        showLightboxImage();
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+        resetZoom();
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (!document.getElementById('lightbox').classList.contains('active')) return;
+        if (e.key === 'Escape')     closeLightbox();
+        if (e.key === 'ArrowRight') navigateLight(1);
+        if (e.key === 'ArrowLeft')  navigateLight(-1);
+        if (e.key === '+')          zoomBy(0.25);
+        if (e.key === '-')          zoomBy(-0.25);
+        if (e.key === '0')          resetZoom();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Apply layout cho tất cả grid
+        document.querySelectorAll('.photo-grid').forEach(applyGridLayout);
+
+        // Fix tab đầu active
+        const firstTab = document.querySelector('.album-tab');
+        if (firstTab) {
+            document.querySelectorAll('.album-tab').forEach(t => t.classList.remove('active'));
+            firstTab.classList.add('active');
+        }
+    });
+</script>
 </body>
 </html>

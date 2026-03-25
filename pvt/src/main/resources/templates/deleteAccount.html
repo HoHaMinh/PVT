@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Xóa tài khoản</title>
+  <link rel="stylesheet" href="/css/mdb.min.css">
+</head>
+<body>
+
+<h2 style="text-align:center">Xóa tài khoản</h2>
+
+<div th:if="${message}" style="color: green; text-align:center">
+  <p th:text="${message}"></p>
+</div>
+
+<div th:if="${error}" style="color: red; text-align:center">
+  <p th:text="${error}"></p>
+</div>
+
+<form th:action="@{/home/manager/delete-account}" method="post">
+
+  <div style="width: 30%; margin: auto">
+
+    <label>Chọn tài khoản</label>
+    <select name="accountName" class="form-control" required>
+      <option value="">-- Chọn tài khoản --</option>
+      <option th:each="acc : ${accounts}"
+              th:value="${acc.accountName}"
+              th:text="${acc.name}">
+      </option>
+    </select>
+
+    <br>
+
+    <button type="submit" class="btn btn-danger"
+            onclick="return confirm('Bạn có chắc muốn xóa tài khoản này?')">
+      Xóa tài khoản
+    </button>
+
+  </div>
+</form>
+
+<a th:href="@{/home}" style="text-decoration: none">
+  <button class="btn btn-outline-primary" style="float: right">
+    Trở về trang chủ
+  </button>
+</a>
+
+</body>
+</html>

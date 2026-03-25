@@ -37,49 +37,9 @@
 </head>
 <body>
 <div class="container-fluid">
-    <div class="row text-center header">
-        <h2 style="color: white" class="col-9.5">PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG</h2>
-        <div class="col-2.5 text-end" style="float: right">
-            <div class="dropdown mt-2" style="display: flex; align-items: center; justify-content: center;">
-                <p class="greeting-text" th:text="'Xin chào: ' +${username}"></p>
-            </div>
-        </div>
-    </div>
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
     <div>
-        <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <div class="container-fluid">
-                <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
-                    <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
-                </a>
-                <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
-                     id="navbarNavDropdown">
-                    <ul class="navbar-nav">
-                        <li class="nav-item active">
-                            <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
-                        </li>
-                        <li class="nav-item ">
-                            <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
-                        </li>
-                        <li class="nav-item dropdown active">
-                            <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}"
-                               id="navbarDropdownMenuLink"
-                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Giao việc (chỉ quản lý)
-                            </a>
-                            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá
-                                    nhân</a></li>
-                                <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc
-                                    cá nhân lặp lại định kỳ</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
         <div>
             <div class="mb-1">
                 </h10>
@@ -96,8 +56,11 @@
                     <table>
                         <thead id="navbar-sticky">
                         <tr>
-                            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
+                            <td class="col-7 col-md-7 col-lg-7" style="font-weight: bolder; font-size: larger">
                                 Nội dung
+                            </td>
+                            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
+                                Người phụ trách
                             </td>
                             <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
                                 Gia hạn deadline tự động theo ? ngày
@@ -115,6 +78,22 @@
                                 <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
                                           th:name="|monthEvents[${stat.index}]|"
                                           style="width:100%" rows="2" required></textarea>
+                            </td>
+                            <td>
+                                <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-control">
+                                    <option value="">-- Chọn người phụ trách --</option>
+
+                                    <!-- ⭐ Cả phòng -->
+                                    <option value="ALL" style="font-weight:bold; color:red;">
+                                        🔥 Cả phòng
+                                    </option>
+
+                                    <!-- Danh sách nhân viên -->
+                                    <option th:each="acc : ${accounts}"
+                                            th:value="${acc.accountName}"
+                                            th:text="${acc.displayName}">
+                                    </option>
+                                </select>
                             </td>
                             <td>
                                 <input type="number"

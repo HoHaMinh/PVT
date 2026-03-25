@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Tạo tài khoản</title>
+  <link rel="stylesheet" href="/css/mdb.min.css">
+</head>
+<body>
+
+<h2 style="text-align:center">Tạo tài khoản</h2>
+
+<div th:if="${message}" style="color: green; text-align:center">
+  <p th:text="${message}"></p>
+</div>
+
+<div th:if="${error}" style="color: red; text-align:center">
+  <p th:text="${error}"></p>
+</div>
+
+<form th:action="@{/home/manager/create-account}" method="post">
+
+  <div style="width: 30%; margin: auto">
+    <label>Username (nên lấy id bravo)</label>
+    <input type="text" name="username" class="form-control"/>
+
+    <label>Password</label>
+    <input type="password" name="password" class="form-control"/>
+
+    <label>Họ và tên</label>
+    <input type="text" name="name" class="form-control"/>
+
+    <label>Chức vụ (Nhân viên hoặc Quản lý)</label>
+    <select name="role" class="form-control">
+      <option value="ROLE_EMPLOYEE">Nhân viên</option>
+      <option value="ROLE_MANAGER">Quản lý</option>
+    </select>
+
+    <br>
+    <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+  </div>
+</form>
+<a th:href="@{/home}" style="text-decoration: none">
+  <button class="btn btn-outline-primary" style="float: right">
+    Trở về trang chủ
+  </button>
+</a>
+</body>
+</html>

@@ -1,6 +1,7 @@
 package com.hoaphat.pvt.model.event;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.hoaphat.pvt.model.account.Account;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -154,5 +155,36 @@ public class MonthEvent {
 
     public void setRegisteredDay(LocalDateTime registeredDay) {
         this.registeredDay = registeredDay;
+    }
+
+    @ManyToOne
+    @JoinColumn(name = "account_name")
+    private Account account;
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+    @Column(name = "is_all")
+    private Boolean all = false;
+    public Boolean getAll() {
+        return all;
+    }
+
+    public void setAll(Boolean all) {
+        this.all = all;
+    }
+
+    @Column(name = "is_hidden")
+    private Boolean hidden = false;
+
+    public Boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(Boolean hidden) {
+        this.hidden = hidden;
     }
 }
