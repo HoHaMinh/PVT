@@ -5,77 +5,59 @@
     <title>Phản hồi công việc</title>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-    <script>
-        $(document).ready(function(){
-            // Add an event listener for the "Thêm" button
-            $('#exampleModal').on('click', '.btn-outline-dark', function(e) {
-                if ($('#eventInformationResponse').val().trim() === '') {
-                    e.preventDefault(); // Prevent form submission
-                    swal('Bắt buộc', 'Nội dung không được bỏ trống.', 'error');
-                }
-            });
-        });
-    </script>
+
     <script th:inline="javascript">
         /*<![CDATA[*/
         $(document).ready(function() {
-            let isUserInteracting = false; // Biến cờ để kiểm tra người dùng có đang thao tác không
+            let isInteract = false;
 
-            // Hàm tải dữ liệu từ server
+            // Hàm tải dữ liệu tự động
             function loadData() {
-                if (isUserInteracting) return; // Nếu người dùng đang thao tác, không cập nhật dữ liệu
-
-                var currentURL = window.location.href;
-                var modifiedURL = currentURL.replace('showEventResponseForm', 'showEventResponseFormRestful');
+                if (isInteract) return;
+                var url = window.location.href.replace('showEventResponseForm', 'showEventResponseFormRestful');
                 $.ajax({
-                    url: modifiedURL,
+                    url: url,
                     type: 'get',
                     dataType: "json",
                     success: function (data) {
                         let result = '';
                         for (let i = 0; i < data.length; i++) {
-                            const formattedEventInformation = data[i].eventInformationResponse.replace(/\n/g, '<br>');
+                            const content = data[i].eventInformationResponse.replace(/\n/g, '<br>');
                             result += `
-                            <tr>
-                                <td class="center">${i + 1}</td>
-                                <td class="justify">${formattedEventInformation}</td>
-                                <td class="center">${data[i].createdByDate}</td>
-                                <td class="center">${data[i].createdByUser}</td>
-                            </tr>
-                        `;
+                                <tr>
+                                    <td class="center">${i + 1}</td>
+                                    <td class="justify">${content}</td>
+                                    <td class="center">${data[i].createdByDate}</td>
+                                    <td class="center">${data[i].createdByUser}</td>
+                                </tr>`;
                         }
                         $("#result").html(result);
-                    },
-                    error: function (e) {
-                        console.error('Lỗi khi tải dữ liệu:', e);
                     }
                 });
             }
 
-            // Gọi loadData ngay khi trang vừa tải
             loadData();
-
-            // Gọi lại loadData mỗi 5 giây
             setInterval(loadData, 5000);
 
-            // Theo dõi khi người dùng bắt đầu thao tác (như bôi đen để copy)
-            $(document).on('mousedown keydown', function() {
-                isUserInteracting = true;
-            });
-
-            // Theo dõi khi người dùng kết thúc thao tác
+            // Chống xung đột khi người dùng đang thao tác (copy/paste)
+            $(document).on('mousedown keydown', function() { isInteract = true; });
             $(document).on('mouseup keyup', function() {
-                setTimeout(() => {
-                    isUserInteracting = false;
-                }, 3000); // Sau 3 giây, cho phép cập nhật lại
+                setTimeout(() => { isInteract = false; }, 3000);
             });
 
-            // Xử lý sự kiện submit form
+            // Kiểm tra không cho phép gửi nội dung trống
+            $('#exampleModal').on('click', '.btn-outline-dark', function(e) {
+                if ($('#eventInformationResponse').val().trim() === '') {
+                    e.preventDefault();
+                    swal('Bắt buộc', 'Nội dung không được bỏ trống.', 'error');
+                }
+            });
+
+            // Gửi form bằng AJAX
             $('form').on('submit', function(e) {
                 e.preventDefault();
                 $.ajax({
@@ -85,13 +67,14 @@
                     success: function() {
                         swal({
                             title: 'Thông báo',
-                            text: 'Thêm mới thành công',
+                            text: 'Thêm thành công',
                             icon: 'success',
                             timer: 1500,
                             buttons: false
                         }).then(function() {
                             $('#exampleModal').modal('hide');
-                            loadData(); // Tải lại dữ liệu ngay sau khi thêm mới
+                            $('#eventInformationResponse').val(''); // Xóa nội dung cũ trong textarea
+                            loadData();
                         });
                     }
                 });
@@ -99,129 +82,98 @@
         });
         /*]]>*/
     </script>
-
 </head>
 <body>
 <div class="container-fluid">
-    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
-    <div>
-        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
-        <div>
-            <div class="mb-1">
-                <h3 class="text-primary">Danh sách phản hồi cho công việc</h3>
-                <p th:text="${response.getMonthEvent().getMonthEventDescription()}" class="mb-2" style="text-align: center;color: red" ></p>
-                <button type="button" class="btn btn-outline-primary col-2 col-md-2 col-lg-2"
-                        data-bs-toggle="modal"
-                        data-bs-target="#exampleModal">
-                    Thêm mới phản hồi
-                </button>
-                <a th:href="@{/home/manager/task/showEditMonthEventForm/{id} (id=${response.getMonthEvent().getMonthEventId()})}"
-                   style="text-decoration: none">
-                    <button type="button" class="btn btn-outline-secondary col-2 col-md-2 col-lg-2">
-                       Quản lý đổi deadline
-                    </button>
-                </a>
-                <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${response.getMonthEvent().getMonthEventId()})}" style="text-decoration: none">
-                    <button type="button" class="btn btn-outline-danger col-2 col-md-2 col-lg-2"> Quản lý xóa</button>
-                </a>
-                <!-- Nút Hide / Show -->
-                <!-- Hide -->
-                <a th:if="${#request.isUserInRole('ROLE_MANAGER') and !response.getMonthEvent().hidden}"
-                   th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()})}"
-                   style="text-decoration: none">
-                    <button type="button" class="btn btn-outline-warning col-2 col-md-2 col-lg-2">
-                        Ẩn việc
-                    </button>
-                </a>
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
 
-                <!-- Show -->
-                <a th:if="${#request.isUserInRole('ROLE_MANAGER') and response.getMonthEvent().hidden}"
-                   th:href="@{/home/manager/task/show/{id}(id=${response.getMonthEvent().getMonthEventId()})}"
-                   style="text-decoration: none">
-                    <button type="button" class="btn btn-outline-success col-2 col-md-2 col-lg-2">
-                        Hiện ở lịch cần làm
-                    </button>
-                </a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-striped table-bordered" id="new-material"
-                       th:if="${listResponse != null}">
-                    <thead id="navbar-sticky">
-                    <tr>
-                        <th class="col-1 col-md-1 col-lg-1">STT</th>
-                        <th class="col-8 col-md-8 col-lg-8">Nội dung</th>
-                        <th class="col-2 col-md-2 col-lg-2">Thời gian</th>
-                        <th class="col-1 col-md-1 col-lg-1">User</th>
-                    </tr>
-                    </thead>
-                    <tbody id="result">
-                    <tr th:each="list,iter: ${listResponse}">
-                        <td class="center" th:text="${iter.count}"></td>
-                        <td class="justify" th:utext="${list.getEventInformationResponse()}"></td>
-                        <td class="center" th:text="${list.getFormattedCreatedByDate()}"></td>
-                        <td class="center" th:text="${list.getCreatedByUser()}"></td>
-                    </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="col-12 ">
-            <a th:href="@{/home/employee/private}" style="text-decoration: none">
-                <button class="btn btn-outline-primary" style="float: right">
-                    Trở về trang lịch cần làm
-                </button>
-            </a>
-        </div>
+    <div class="mb-1">
+        <h3 class="text-primary">Danh sách phản hồi cho công việc</h3>
+        <p th:text="${response.getMonthEvent().getMonthEventDescription()}" class="mb-2" style="text-align:center; color:red"></p>
+
+        <button type="button" class="btn btn-outline-primary col-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Thêm mới
+        </button>
+
+        <a th:href="@{/home/manager/task/showEditMonthEventForm/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-secondary col-2">Đổi deadline</button>
+        </a>
+
+        <a th:href="@{/home/manager/weeklyTask/delete/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-danger col-2">Quản lý xóa</button>
+        </a>
+
+        <a th:if="${!response.getMonthEvent().hidden}"
+           th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-warning col-2">Ẩn việc</button>
+        </a>
+
+        <a th:if="${response.getMonthEvent().hidden}"
+           th:href="@{/home/manager/task/show/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-success col-2">Hiện việc</button>
+        </a>
+
+        <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-primary col-2">Trở lại tab cũ</button>
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered" th:if="${listResponse != null}">
+            <thead id="navbar-sticky">
+            <tr>
+                <th class="col-1">STT</th>
+                <th class="col-8">Nội dung</th>
+                <th class="col-2">Thời gian</th>
+                <th class="col-1">User</th>
+            </tr>
+            </thead>
+            <tbody id="result">
+            <tr th:each="l,iter : ${listResponse}">
+                <td class="center" th:text="${iter.count}"></td>
+                <td class="justify" th:utext="${l.getEventInformationResponse()}"></td>
+                <td class="center" th:text="${l.getFormattedCreatedByDate()}"></td>
+                <td class="center" th:text="${l.getCreatedByUser()}"></td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-body">
-                <form class="row" method="post" th:action="@{/home/employee/private/addEventResponse}"
-                      th:object="${response}">
+                <form class="row" method="post" th:action="@{/home/employee/private/addEventResponse(selectedValue=${selectedValue})}" th:object="${response}">
                     <table>
                         <thead>
                         <tr>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Id Event
-                            </td>
-                            <td class="col-12 col-md-12 col-lg-12" style="font-weight: bolder; font-size: larger">
-                                Nội dung
-                            </td>
+                            <td style="font-weight:bolder; font-size:larger">Nội dung phản hồi</td>
                         </tr>
                         </thead>
+                        <tbody>
                         <tr>
                             <td hidden="hidden">
-                                <input type="text" th:field="*{monthEvent}"
-                                       th:value="${response.getMonthEvent()}"
-                                       th:placeholder="${response.getMonthEvent()}">
+                                <input type="text" th:field="*{monthEvent}">
                             </td>
                             <td>
-                                <textarea type="text" th:field="*{eventInformationResponse}"
-                                          style="width:100%" rows="7" required></textarea>
+                                    <textarea th:field="*{eventInformationResponse}" id="eventInformationResponse"
+                                              style="width:100%" rows="7" required></textarea>
                             </td>
                         </tr>
+                        </tbody>
                     </table>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-outline-dark">
-                            Thêm
-                        </button>
-                        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
-                            Hủy
-                        </button>
+                        <button type="submit" class="btn btn-outline-dark">Thêm</button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Hủy</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-<!--    end modal-->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
-</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

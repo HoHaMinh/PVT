@@ -8,11 +8,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <!-- Flatpickr CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-    <!-- Flatpickr JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
@@ -21,8 +20,7 @@
                 dateFormat: "Y-m-d\\TH:i",
                 altInput: true,
                 altFormat: "d-m-Y H:i",
-                time_24hr: true,
-                // Add any other options you need
+                time_24hr: true
             }));
 
             document.querySelector('#form').addEventListener('submit', function(e) {
@@ -37,146 +35,80 @@
 </head>
 <body>
 <div class="container-fluid">
-    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div th:replace="~{fragments :: header}"></div>
     <div>
-        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <nav th:replace="~{fragments :: nav}"></nav>
         <div>
             <div class="mb-1">
-                <h10 style="text-align: left" class="text-danger" th:if="${mess != null}" th:text="${mess}">
-                </h10>
-                <h3 class="text-primary mb-2">Chỉnh sửa lịch công việc tháng/cá
-                    nhân</h3>
+                <h10 style="text-align: left" class="text-danger" th:if="${mess != null}" th:text="${mess}"></h10>
+                <h3 class="text-primary mb-2">Chỉnh sửa lịch công việc tháng/cá nhân</h3>
             </div>
             <div>
-                <form class="row" method="post" th:action="@{/home/manager/task/editMonthEvent}"
+                <form class="row" method="post"
+                      th:action="@{/home/manager/task/editMonthEvent(selectedValue=${selectedValue})}"
                       th:object="${monthEditEvent}" id="form">
                     <table>
                         <thead id="navbar-sticky">
                         <tr>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Id
-                            </td>
-                            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
-                                Nội dung
-                            </td>
-                            <td class="col-1 col-md-1 col-lg-1"
-                                style="font-weight: bolder; font-size: larger; text-align: left">
-                                Deadline
-                            </td>
-                            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
-                                Người phụ trách
-                            </td>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Month Event Status
-                            </td>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Response status
-                            </td>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Last Time Response
-                            </td>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Last Person Response
-                            </td>
-                            <td class="col-0 col-md-0 col-lg-0" hidden="hidden">
-                                Registered Day
-                            </td>
+                            <td hidden="hidden">Id</td>
+                            <td class="col-9" style="font-weight: bolder; font-size: larger">Nội dung</td>
+                            <td class="col-1" style="font-weight: bolder; font-size: larger; text-align: left">Deadline</td>
+                            <td class="col-2" style="font-weight: bolder; font-size: larger">Người phụ trách</td>
+                            <td hidden="hidden">Month Event Status</td>
+                            <td hidden="hidden">Response status</td>
+                            <td hidden="hidden">Last Time Response</td>
+                            <td hidden="hidden">Last Person Response</td>
+                            <td hidden="hidden">Registered Day</td>
                         </tr>
                         </thead>
+                        <tbody>
                         <tr>
                             <td hidden="hidden">
-                                <input type="text" th:field="*{monthEventId}"
-                                       th:value="${monthEditEvent.getMonthEventId()}"
-                                       th:placeholder="${monthEditEvent.getMonthEventId()}">
+                                <input type="text" th:field="*{monthEventId}">
                             </td>
                             <td>
-                                <textarea type="text" th:field="*{monthEventDescription}"
-                                          th:placeholder="${monthEditEvent.getMonthEventDescription()}"
-                                          th:value="${monthEditEvent.getMonthEventDescription()}"
-                                          style="width:100%;" rows="2" required></textarea>
+                                <textarea th:field="*{monthEventDescription}" style="width:100%;" rows="2" required></textarea>
                             </td>
                             <td>
-                                <input type="text"
-                                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
-                                       th:field="*{monthEventDeadline}"
-                                       th:placeholder="${monthEditEvent.getMonthEventDescription()}"
-                                       th:value="${monthEditEvent.getMonthEventDescription()}" required>
+                                <input type="text" class="flatpickr-input" placeholder="Bấm chọn thời gian"
+                                       th:field="*{monthEventDeadline}" required>
                             </td>
                             <td>
                                 <select class="form-control" th:field="*{account.accountName}">
-
                                     <option value="">-- Chọn người phụ trách --</option>
-
-                                    <!-- ✅ Cả phòng -->
-                                    <option value="ALL"
-                                            th:selected="${monthEditEvent.all}">
-                                        🔥 Cả phòng
-                                    </option>
-
-                                    <!-- Danh sách nhân viên -->
+                                    <option value="ALL" th:selected="${monthEditEvent.all}">🔥 Cả phòng</option>
                                     <option th:each="acc : ${accountList}"
                                             th:value="${acc.accountName}"
                                             th:text="${acc.displayName}"
                                             th:selected="${!monthEditEvent.all and monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
                                     </option>
-
                                 </select>
                             </td>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{monthEventStatus}"
-                                       th:value="${monthEditEvent.getMonthEventStatus()}"
-                                       th:placeholder="${monthEditEvent.getMonthEventStatus()}">
-                            </td>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{responseStatus}"
-                                       th:value="${monthEditEvent.getResponseStatus()}"
-                                       th:placeholder="${monthEditEvent.getResponseStatus()}">
-                            </td>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{lastTimeResponse}"
-                                       th:value="${monthEditEvent.getLastTimeResponse()}"
-                                       th:placeholder="${monthEditEvent.getLastTimeResponse()}">
-                            </td>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{lastPersonResponse}"
-                                       th:value="${monthEditEvent.getLastPersonResponse()}"
-                                       th:placeholder="${monthEditEvent.getLastPersonResponse()}">
-                            </td>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{registeredDay}"
-                                       th:value="${monthEditEvent.getRegisteredDay()}"
-                                       th:placeholder="${monthEditEvent.getRegisteredDay()}">
-                            </td>
+                            <td hidden="hidden"><input type="text" th:field="*{monthEventStatus}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{responseStatus}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{lastTimeResponse}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{lastPersonResponse}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{registeredDay}"></td>
                         </tr>
+                        </tbody>
                     </table>
-                    <div class="col-12">
-                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
                     </div>
                 </form>
             </div>
         </div>
-        <div class="col-12">
-            <a th:href="@{/home/manager/task}" style="text-decoration: none">
+
+        <div class="col-12 mt-3">
+            <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" style="text-decoration: none">
                 <button class="btn btn-outline-primary" style="float: right">
-                    Trở về trang giao việc cá nhân
+                    Trở lại tab cũ
                 </button>
             </a>
         </div>
     </div>
 </div>
 
-<script>
-    function showDialog() {
-        var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
-        if (numberOfRows != null) {
-            var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
-            document.getElementById("addMonthEvent").setAttribute("href", url);
-        }
-    }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

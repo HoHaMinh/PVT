@@ -10,6 +10,7 @@
     <link rel="stylesheet" th:href="@{/css/home.css}">
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
     <script type="text/javascript">
         function parseDate(input) {
             var parts = input.split(' ');
@@ -20,78 +21,69 @@
 
         function loadData() {
             var selectedValue = $("input[name='options-outlined']:checked").val();
+            if (selectedValue === undefined) selectedValue = "";
+
             $.ajax({
                 url: "/home/employee/filterRestful",
                 type: 'get',
                 data: {selectedValue: selectedValue},
                 dataType: "json",
-                    success: function (data) {
-                        let result = '';
-                        for (let i = 0; i < data.monthEventList.length; i++) {
+                success: function (data) {
+                    let result = '';
+                    for (let i = 0; i < data.monthEventList.length; i++) {
+                        var now = new Date();
+                        var deadlineString = data.monthEventList[i].monthEventDeadline;
+                        var deadline = parseDate(deadlineString);
+                        var timeDiffDeadline = deadline - now;
+                        var minutesDiffDeadline = Math.ceil(timeDiffDeadline / (1000 * 60));
 
-                            var now = new Date();
-
-                            var deadlineString = data.monthEventList[i].monthEventDeadline;
-                            var deadline = parseDate(deadlineString);
-                            var timeDiffDeadline = deadline - now;
-                            var minutesDiffDeadline = Math.ceil(timeDiffDeadline / (1000 * 60));
-
-                            var rowClass = '';
-                            if (minutesDiffDeadline <= 60) {
-                                rowClass = 'warning';
-                            }
-
-                            var lastTimeResponseString = data.monthEventList[i].lastTimeResponse;
-                            var lastTimeResponse = parseDate(lastTimeResponseString);
-                            var timeDiff = lastTimeResponse - now;
-                            var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
-
-                            var remindClass = '';
-                            if (minutesDiff <= 0 && minutesDiff >= -60) {
-                                remindClass = 'remind';
-                            }
-                            result += `
-        <tr class="${rowClass}">
-            <td class="center">${i + 1}</td>
-            <td class="justify">
-                ${data.monthEventList[i].monthEventDescription}
-            </td>
-        `;
-
-                            if (data.monthEventList[i].registeredDay === '00:00 01-01-2023' || data.monthEventList[i].monthEventStatus != 0) {
-                                result += `<td class="center">Không hiển thị</td>`;
-                            } else {
-                                result += `<td class="center">${data.monthEventList[i].registeredDay}</td>`;
-                            }
-
-                            result += `<td class="center">${data.monthEventList[i].monthEventDeadline}</td>`;
-
-                            if (data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
-                                result += `<td class="justify">Chưa có phản hồi</td>`;
-                            } else {
-                                result += `<td class="justify ${remindClass}">
-                ${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}
-            </td>`;
-                            }
-
-                            result += `<td class="center">
-            <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}"
-                style="text-decoration: none">`;
-
-                            if (data.monthEventList[i].responseStatus === 0) {
-                                result += `<button type="button" class="btn btn-secondary">Xem</button>`;
-                            } else if (data.monthEventList[i].responseStatus === 2) {
-                                result += `<button type="button" class="btn btn-warning">Xem</button>`;
-                            } else if (data.monthEventList[i].responseStatus === 1) {
-                                result += `<button type="button" class="btn btn-success">Xem</button>`;
-                            }
-
-                            result += `</a></td></tr>`;
+                        var rowClass = '';
+                        if (minutesDiffDeadline <= 60) {
+                            rowClass = 'warning';
                         }
 
-                        $("#result").html(result);
+                        var lastTimeResponseString = data.monthEventList[i].lastTimeResponse;
+                        var lastTimeResponse = parseDate(lastTimeResponseString);
+                        var timeDiff = lastTimeResponse - now;
+                        var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
+
+                        var remindClass = '';
+                        if (minutesDiff <= 0 && minutesDiff >= -60) {
+                            remindClass = 'remind';
+                        }
+
+                        result += `<tr class="${rowClass}">
+                            <td class="center">${i + 1}</td>
+                            <td class="justify">${data.monthEventList[i].monthEventDescription}</td>`;
+
+                        if (data.monthEventList[i].registeredDay === '00:00 01-01-2023' || data.monthEventList[i].monthEventStatus != 0) {
+                            result += `<td class="center">Không hiển thị</td>`;
+                        } else {
+                            result += `<td class="center">${data.monthEventList[i].registeredDay}</td>`;
+                        }
+
+                        result += `<td class="center">${data.monthEventList[i].monthEventDeadline}</td>`;
+
+                        if (data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
+                            result += `<td class="justify">Chưa có phản hồi</td>`;
+                        } else {
+                            result += `<td class="justify ${remindClass}">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
+                        }
+
+                        let status = data.monthEventList[i].responseStatus;
+                        let btnClass = (status === 0) ? 'btn-secondary' : (status === 2 ? 'btn-warning' : 'btn-success');
+
+                        // FIX: Thêm ?selectedValue=${selectedValue} vào link để giữ tab khi chuyển trang
+                        result += `<td class="center">
+                            <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}?selectedValue=${selectedValue}" style="text-decoration:none">
+                                <button type="button" class="btn ${btnClass}">Xem</button>
+                            </a>
+                        </td></tr>`;
+                    }
+                    $("#result").html(result);
                 },
                 error: function (e) {
+                    console.log("Error loadData AJAX");
                 }
             });
         }
@@ -102,49 +94,36 @@
             setInterval(loadData, 5000);
         });
     </script>
+</head>
 <body>
 <div class="container-fluid">
-    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div th:replace="~{fragments :: header}"></div>
     <div>
-        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <nav th:replace="~{fragments :: nav}"></nav>
         <div>
-            <div th:each="security: ${sercuritySchedule}" class="mb-2">
+            <div th:each="security:${sercuritySchedule}" class="mb-2">
                 <h5 th:text="${security.getStr1()}"></h5>
-                <strong th:text="${security.getStr2()} + '. '"></strong><strong
-                    th:text="${security.getStr3()} + '. '"></strong><strong
-                    th:text="${security.getStr4()}"></strong>
+                <strong th:text="${security.getStr2()}+'. '"></strong>
+                <strong th:text="${security.getStr3()}+'. '"></strong>
+                <strong th:text="${security.getStr4()}"></strong>
             </div>
+
             <h3 class="text-primary">Nhắc nhở lịch cần làm</h3>
-            <!-- CHỈ HIỂN THỊ PHẦN ĐÃ SỬA QUAN TRỌNG -->
 
-            <div id="tabContainer" class="row mb-3 mt-3"
-                 style="display: flex; flex-wrap: wrap;">
-
-                <!-- ALL -->
-                <div th:if="${isManager}"
-                     data-account="ALL"
-                     style="flex: 0 0 12.5%; max-width: 12.5%; padding: 2px;">
-
-                    <input type="radio" class="btn-check" name="options-outlined"
-                           id="all" value=""
+            <div id="tabContainer" class="row mb-3 mt-3" style="display:flex; flex-wrap:wrap;">
+                <div th:if="${isManager}" data-account="ALL" style="flex:0 0 12.5%; max-width:12.5%; padding:2px;">
+                    <input type="radio" class="btn-check" name="options-outlined" id="all" value=""
                            th:checked="${selectedValue == null or selectedValue == ''}">
-
-                    <label class="btn btn-outline-primary w-100 text-center" for="all">
-                        All
-                    </label>
+                    <label class="btn btn-outline-primary w-100 text-center" for="all">All</label>
                 </div>
 
-                <!-- USER -->
-                <th:block th:each="acc : ${userTabs}">
+                <th:block th:each="acc:${userTabs}">
                     <div th:if="${isManager} or (${accountName} == ${acc.accountName})"
                          th:attr="data-account=${acc.accountName}"
                          th:with="len=${#strings.length(acc.displayName)}"
-                         th:style="${len >= 9}
-                 ? 'flex: 0 0 25%; max-width: 25%; padding:2px;'
-                 : 'flex: 0 0 12.5%; max-width: 12.5%; padding:2px;'">
+                         th:style="${len >= 9} ? 'flex: 0 0 25%; max-width: 25%; padding:2px;' : 'flex: 0 0 12.5%; max-width: 12.5%; padding:2px;'">
 
-                        <input type="radio" class="btn-check"
-                               name="options-outlined"
+                        <input type="radio" class="btn-check" name="options-outlined"
                                th:id="'acc_' + ${acc.accountName}"
                                th:value="${acc.accountName}"
                                th:checked="${selectedValue != null and selectedValue == acc.accountName}">
@@ -152,14 +131,14 @@
                         <label class="btn btn-outline-primary w-100 text-center"
                                th:for="'acc_' + ${acc.accountName}"
                                th:text="${acc.displayName}"
-                               style="white-space: nowrap;">
+                               style="white-space:nowrap;">
                         </label>
                     </div>
                 </th:block>
             </div>
+
             <div class="table-responsive">
-                <table class="table table-bordered table-hover" id="new-material"
-                       th:if="${monthEventListByTime != null}">
+                <table class="table table-bordered table-hover" id="new-material" th:if="${monthEventListByTime != null}">
                     <thead id="navbar-sticky">
                     <tr>
                         <th class="col-0.3">STT</th>
@@ -171,83 +150,64 @@
                     </tr>
                     </thead>
                     <tbody id="result">
-                    <tr th:each="list,iter: ${monthEventListByTime}">
+                    <tr th:each="list,iter:${monthEventListByTime}">
                         <td class="center" th:text="${iter.count}"></td>
                         <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+
                         <td class="center"
                             th:if="${list.getRegisteredDay() == '00:00 01-01-2023' or list.getMonthEventStatus() == '1' or list.getMonthEventStatus() == '2'}"
                             th:text="Không hiển thị"></td>
                         <td class="center"
                             th:if="${list.getRegisteredDay() != '00:00 01-01-2023' and list.getMonthEventStatus() == '0'}"
                             th:text="${list.getFormattedRegisteredDay()}"></td>
+
                         <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+
                         <td class="justify" th:if="${list.getLastTimeResponse() == '00:00 01-01-2023'}"
                             th:text="Chưa có phản hồi"></td>
                         <td class="justify" th:if="${list.getLastTimeResponse() != '00:00 01-01-2023'}"
                             th:text="${list.getLastPersonResponse()} + ' lúc ' + ${list.getFormattedLastTimeResponse()}"></td>
+
                         <td class="center">
-                            <a th:href="@{/home/employee/private/showEventResponseForm/{id} (id=${list.getMonthEventId()})}"
-                               style="text-decoration: none">
-                                <button type="button" class="btn btn-secondary"
-                                        th:if="${list.getResponseStatus() == '0'}">
-                                    Xem
-                                </button>
-                                <button type="button" class="btn btn-warning"
-                                        th:if="${list.getResponseStatus() == '2'}">
-                                    Xem
-                                </button>
-                                <button type="button" class="btn btn-success"
-                                        th:if="${list.getResponseStatus() == '1'}">
-                                    Xem
-                                </button>
+                            <a th:href="@{/home/employee/private/showEventResponseForm/{id}(id=${list.getMonthEventId()}, selectedValue=${selectedValue})}"
+                               style="text-decoration:none">
+                                <button type="button" class="btn btn-secondary" th:if="${list.getResponseStatus() == '0'}">Xem</button>
+                                <button type="button" class="btn btn-warning" th:if="${list.getResponseStatus() == '2'}">Xem</button>
+                                <button type="button" class="btn btn-success" th:if="${list.getResponseStatus() == '1'}">Xem</button>
                             </a>
                         </td>
                     </tr>
                     </tbody>
-
                 </table>
             </div>
+
             <div class="row smaller-font">
-                <!--                    <div class="col-5">-->
-                <!--                    </div>-->
-                <!--                    <div class="col-5">-->
-                <!--                        <button class="btn btn-outline-primary smaller-button2">-->
-                <!--                            Trước-->
-                <!--                        </button>-->
-                <!--                        <a></a>-->
-                <!--                        <button class="btn btn-outline-primary smaller-button2">Sau-->
-                <!--                        </button>-->
-                <!--                    </div>-->
-                <div class="col-12 ">
+                <div class="col-12">
                     <a th:href="@{/home}" style="text-decoration: none">
-                        <button class="btn btn-outline-primary" style="float: right">
-                            Trở về trang chủ
-                        </button>
+                        <button class="btn btn-outline-primary" style="float: right">Trở về trang chủ</button>
                     </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
-</script>
+        crossorigin="anonymous"></script>
+
 <script th:inline="javascript">
-    var isManager = /*[[${isManager}]]*/ false;
+    var csrfHeader = [[${_csrf.headerName}]], csrfToken = [[${_csrf.token}]], isM = [[${isManager}]];
 
-    if (isManager) {
+    if (isM) {
         var el = document.getElementById('tabContainer');
-
         new Sortable(el, {
             animation: 150,
+            draggable: "div:not([data-account='ALL'])",
             onEnd: function () {
-
                 let order = [];
-
-                document.querySelectorAll("#tabContainer > div").forEach(el => {
-                    let acc = el.getAttribute("data-account");
-
+                document.querySelectorAll("#tabContainer > div").forEach(e => {
+                    let acc = e.getAttribute("data-account");
                     if (acc && acc !== "ALL") {
                         order.push(acc);
                     }
