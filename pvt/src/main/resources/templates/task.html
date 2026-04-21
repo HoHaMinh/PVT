@@ -2,14 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc cho Mobile -->
     <title>Danh sách việc PVT</title>
-    <base href="/">
-    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    
+    <style>
+        /* Tối ưu bảng vuốt ngang trên Mobile */
+        .table-responsive {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            background: white;
+        }
+        th { white-space: nowrap; }
+        
+        /* Gom nhóm nút bấm trên Mobile */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    </style>
+
     <script th:inline="javascript">
         /*<![CDATA[*/
         $(document).ready(function() {
@@ -24,113 +41,99 @@
                 });
             }
         });
+
+        function showPrivateDialog() {
+            var numberOfRows = prompt("Hãy nhập số lượng công việc cá nhân bạn muốn giao:");
+            if (numberOfRows != null && numberOfRows > 0) {
+                var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+                window.location.href = url; // Chuyển trang mượt hơn
+            }
+        }
         /*]]>*/
     </script>
 </head>
-<body>
-<div class="container-fluid">
-    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
-    <div>
-        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
-        <div>
-            <div class="mb-1">
-                <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
-                <a href="" id="addPrivateEvent" style="text-decoration: none">
-                    <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">Thêm mới công việc cá
-                        nhân
-                    </button>
-                </a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered" id="new-material" th:if="${monthEventList != null}">
-                    <thead id="navbar-sticky">
-                    <tr>
-                        <th class="col-1 col-md-1 col-lg-1">STT</th>
-                        <th class="col-7 col-md-7 col-lg-7">Nội dung giao việc</th>
-                        <th class="col-1 col-md-1 col-lg-1">Deadline</th>
-                        <th class="col-3 col-md-3 col-lg-3">Hành động</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="list,iter: ${monthEventList}">
-                        <td class="center" th:text="${iter.count}"></td>
-                        <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
-                        <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
-                        <td class="center">
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+    
+    <div class="container-fluid mt-4 px-3 px-md-4 mb-5">
+        
+        <!-- Tiêu đề và Nút thêm mới -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <h4 class="text-primary fw-bold m-0">Quản lý công việc cá nhân</h4>
+            <button type="button" class="btn btn-primary shadow-sm" onclick="showPrivateDialog()">
+                + Thêm mới công việc
+            </button>
+        </div>
 
+        <!-- Bảng dữ liệu -->
+        <div class="table-responsive mb-4">
+            <table class="table table-hover table-bordered bg-white m-0" th:if="${monthEventList != null}">
+                <thead class="table-light">
+                <tr>
+                    <th class="text-center">STT</th>
+                    <th style="min-width: 250px;">Nội dung giao việc</th>
+                    <th class="text-center" style="min-width: 150px;">Deadline</th>
+                    <th class="text-center" style="min-width: 220px;">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="list,iter: ${monthEventList}" class="align-middle">
+                    <td class="text-center fw-bold text-muted" th:text="${iter.count}"></td>
+                    <td class="text-start" th:text="${list.getMonthEventDescription()}"></td>
+                    <td class="text-center fw-bold text-danger" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                    <td class="text-center">
+                        <!-- Gom nhóm các nút bấm -->
+                        <div class="action-buttons">
                             <!-- Sửa -->
-                            <a th:href="@{/home/manager/task/showEditMonthEventForm/{id} (id=${list.getMonthEventId()})}">
-                                <button type="button" class="btn btn-outline-secondary">
-                                    Chỉnh sửa
-                                </button>
+                            <a th:href="@{/home/manager/task/showEditMonthEventForm/{id} (id=${list.getMonthEventId()})}" class="btn btn-sm btn-outline-secondary">
+                                Sửa
                             </a>
+                            
                             <!-- Xóa -->
-                            <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}">
-                                <button type="button" class="btn btn-outline-danger">Xóa</button>
+                            <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}" 
+                               class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">
+                                Xóa
                             </a>
-                            <!-- ⭐ NÚT HIDE / SHOW -->
-                            <form th:action="@{/home/manager/task/toggleHidden/{id}(id=${list.monthEventId})}"
-                                  method="post"
-                                  style="display:inline">
-                                <button type="submit"
-                                        class="btn"
+                            
+                            <!-- Ẩn / Hiện -->
+                            <form th:action="@{/home/manager/task/toggleHidden/{id}(id=${list.monthEventId})}" method="post" style="margin: 0;">
+                                <button type="submit" class="btn btn-sm"
                                         th:classappend="${list.hidden} ? 'btn-success' : 'btn-warning'"
-                                        th:text="${list.hidden} ? 'Ẩn việc' : 'Hiện lịch cần làm'">
+                                        th:text="${list.hidden} ? 'Ẩn việc' : 'Hiện việc'">
                                 </button>
                             </form>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
-                <div class="row smaller-font">
-                    <div class="col-5">
-                    </div>
-                    <div class="col-5">
-                        <nav aria-label="Page navigation example">
-                            <ul class="pagination" th:if="${monthEventList.totalPages > 0}"
-                                th:each="pageNumber : ${pageNumbers}" style="float: left; width: 30px">
-                                <li th:if="${currentPage==pageNumber}" class="page-item active">
-                                    <a class="page-link"
-                                       th:href="@{/home/manager/task(page=${pageNumber},size=${monthEventList.size})}"
-                                       th:text="${pageNumber}"></a>
-                                </li>
-                                <li th:unless="${currentPage==pageNumber}" class="page-item">
-                                    <a class="page-link"
-                                       th:href="@{/home/manager/task(page=${pageNumber},size=${monthEventList.size})}"
-                                       th:text="${pageNumber}"></a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                    <a th:href="@{/home}" style="text-decoration: none">
-                        <button class="btn btn-outline-primary" style="float: right">
-                            Trở về trang chủ
-                        </button>
-                    </a>
-                </div>
-            </div>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
+
+        <!-- Phân trang và Nút trở về -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            
+            <!-- Phân trang -->
+            <nav aria-label="Page navigation" th:if="${monthEventList != null and monthEventList.totalPages > 1}">
+                <ul class="pagination m-0">
+                    <li class="page-item" th:each="pageNumber : ${pageNumbers}" th:classappend="${currentPage == pageNumber} ? 'active' : ''">
+                        <a class="page-link" th:href="@{/home/manager/task(page=${pageNumber},size=${monthEventList.size})}" th:text="${pageNumber}"></a>
+                    </li>
+                </ul>
+            </nav>
+            <div th:unless="${monthEventList != null and monthEventList.totalPages > 1}"></div> <!-- Spacer -->
+
+            <!-- Nút trở về -->
+            <a th:href="@{/home}" class="btn btn-outline-primary rounded-pill px-4">
+                &larr; Trở về trang chủ
+            </a>
+        </div>
+
     </div>
 </div>
-<script>
-    function showMonthDialog() {
-        var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
-        if (numberOfRows != null) {
-            var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
-            document.getElementById("addMonthEvent").setAttribute("href", url);
-        }
-    }
-    function showPrivateDialog() {
-        var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
-        if (numberOfRows != null) {
-            var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
-            document.getElementById("addPrivateEvent").setAttribute("href", url);
-        }
-    }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
-</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

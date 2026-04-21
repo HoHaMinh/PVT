@@ -1,0 +1,2840 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+create-account.html
+deleteAccount.html
+deny.html
+eventResponse.html
+fragments.html
+home.html
+images.html
+login.html
+monthEditEventForm.html
+monthEventForm.html
+private.html
+privateEventForm.html
+task.html
+video.html
+weekEventForm.html
+weeklyTask.html
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="create-account.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Tạo tài khoản</title>
+  <link rel="stylesheet" href="/css/mdb.min.css">
+</head>
+<body>
+
+<h2 style="text-align:center">Tạo tài khoản</h2>
+
+<div th:if="${message}" style="color: green; text-align:center">
+  <p th:text="${message}"></p>
+</div>
+
+<div th:if="${error}" style="color: red; text-align:center">
+  <p th:text="${error}"></p>
+</div>
+
+<form th:action="@{/home/manager/create-account}" method="post">
+
+  <div style="width: 30%; margin: auto">
+    <label>Username (nên lấy id bravo)</label>
+    <input type="text" name="username" class="form-control"/>
+
+    <label>Password</label>
+    <input type="password" name="password" class="form-control"/>
+
+    <label>Họ và tên</label>
+    <input type="text" name="name" class="form-control"/>
+
+    <label>Chức vụ (Nhân viên hoặc Quản lý)</label>
+    <select name="role" class="form-control">
+      <option value="ROLE_EMPLOYEE">Nhân viên</option>
+      <option value="ROLE_MANAGER">Quản lý</option>
+    </select>
+
+    <br>
+    <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+  </div>
+</form>
+<a th:href="@{/home}" style="text-decoration: none">
+  <button class="btn btn-outline-primary" style="float: right">
+    Trở về trang chủ
+  </button>
+</a>
+</body>
+</html>
+</file>
+
+<file path="deleteAccount.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Xóa tài khoản</title>
+  <link rel="stylesheet" href="/css/mdb.min.css">
+</head>
+<body>
+
+<h2 style="text-align:center">Xóa tài khoản</h2>
+
+<div th:if="${message}" style="color: green; text-align:center">
+  <p th:text="${message}"></p>
+</div>
+
+<div th:if="${error}" style="color: red; text-align:center">
+  <p th:text="${error}"></p>
+</div>
+
+<form th:action="@{/home/manager/delete-account}" method="post">
+
+  <div style="width: 30%; margin: auto">
+
+    <label>Chọn tài khoản</label>
+    <select name="accountName" class="form-control" required>
+      <option value="">-- Chọn tài khoản --</option>
+      <option th:each="acc : ${accounts}"
+              th:value="${acc.accountName}"
+              th:text="${acc.name}">
+      </option>
+    </select>
+
+    <br>
+
+    <button type="submit" class="btn btn-danger"
+            onclick="return confirm('Bạn có chắc muốn xóa tài khoản này?')">
+      Xóa tài khoản
+    </button>
+
+  </div>
+</form>
+
+<a th:href="@{/home}" style="text-decoration: none">
+  <button class="btn btn-outline-primary" style="float: right">
+    Trở về trang chủ
+  </button>
+</a>
+
+</body>
+</html>
+</file>
+
+<file path="deny.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 Forbidden</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #ff5f6d, #ffc371);
+            color: #fff;
+        }
+
+        .error-container {
+            text-align: center;
+            max-width: 400px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 8px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+
+        h1 {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        p {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .home-link {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #ffc371;
+            background: #ff5f6d;
+            text-decoration: none;
+            border-radius: 20px;
+            transition: background 0.3s;
+        }
+
+        .home-link:hover {
+            background: #ffc371;
+            color: #ff5f6d;
+        }
+
+        .animation-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            transform: translate(-50%, -50%);
+            z-index: -1;
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+    </style>
+</head>
+<body>
+<div class="error-container">
+    <h1>403</h1>
+    <p>Xin lỗi, bạn không có quyền truy cập trang này.</p>
+    <a href="/" class="home-link">Quay lại Trang Chủ</a>
+    <div class="animation-box"></div>
+</div>
+</body>
+</html>
+</file>
+
+<file path="eventResponse.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Phản hồi công việc</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            let isInteract = false;
+
+            // Hàm tải dữ liệu tự động
+            function loadData() {
+                if (isInteract) return;
+                var url = window.location.href.replace('showEventResponseForm', 'showEventResponseFormRestful');
+                $.ajax({
+                    url: url,
+                    type: 'get',
+                    dataType: "json",
+                    success: function (data) {
+                        let result = '';
+                        for (let i = 0; i < data.length; i++) {
+                            const content = data[i].eventInformationResponse.replace(/\n/g, '<br>');
+                            result += `
+                                <tr>
+                                    <td class="center">${i + 1}</td>
+                                    <td class="justify">${content}</td>
+                                    <td class="center">${data[i].createdByDate}</td>
+                                    <td class="center">${data[i].createdByUser}</td>
+                                </tr>`;
+                        }
+                        $("#result").html(result);
+                    }
+                });
+            }
+
+            loadData();
+            setInterval(loadData, 5000);
+
+            // Chống xung đột khi người dùng đang thao tác (copy/paste)
+            $(document).on('mousedown keydown', function() { isInteract = true; });
+            $(document).on('mouseup keyup', function() {
+                setTimeout(() => { isInteract = false; }, 3000);
+            });
+
+            // Kiểm tra không cho phép gửi nội dung trống
+            $('#exampleModal').on('click', '.btn-outline-dark', function(e) {
+                if ($('#eventInformationResponse').val().trim() === '') {
+                    e.preventDefault();
+                    swal('Bắt buộc', 'Nội dung không được bỏ trống.', 'error');
+                }
+            });
+
+            // Gửi form bằng AJAX
+            $('form').on('submit', function(e) {
+                e.preventDefault();
+                $.ajax({
+                    type: 'post',
+                    url: $(this).attr('action'),
+                    data: $(this).serialize(),
+                    success: function() {
+                        swal({
+                            title: 'Thông báo',
+                            text: 'Thêm thành công',
+                            icon: 'success',
+                            timer: 1500,
+                            buttons: false
+                        }).then(function() {
+                            $('#exampleModal').modal('hide');
+                            $('#eventInformationResponse').val(''); // Xóa nội dung cũ trong textarea
+                            loadData();
+                        });
+                    }
+                });
+            });
+        });
+        /*]]>*/
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <div class="mb-1">
+        <h3 class="text-primary">Danh sách phản hồi cho công việc</h3>
+        <p th:text="${response.getMonthEvent().getMonthEventDescription()}" class="mb-2" style="text-align:center; color:red"></p>
+
+        <button type="button" class="btn btn-outline-primary col-2" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Thêm mới
+        </button>
+
+        <a th:href="@{/home/manager/task/showEditMonthEventForm/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-secondary col-2">Đổi deadline</button>
+        </a>
+
+        <a th:href="@{/home/manager/weeklyTask/delete/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-danger col-2">Quản lý xóa</button>
+        </a>
+
+        <a th:if="${!response.getMonthEvent().hidden}"
+           th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-warning col-2">Ẩn việc</button>
+        </a>
+
+        <a th:if="${response.getMonthEvent().hidden}"
+           th:href="@{/home/manager/task/show/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-success col-2">Hiện việc</button>
+        </a>
+
+        <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" style="text-decoration:none">
+            <button type="button" class="btn btn-outline-primary col-2">Trở lại tab cũ</button>
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered" th:if="${listResponse != null}">
+            <thead id="navbar-sticky">
+            <tr>
+                <th class="col-1">STT</th>
+                <th class="col-8">Nội dung</th>
+                <th class="col-2">Thời gian</th>
+                <th class="col-1">User</th>
+            </tr>
+            </thead>
+            <tbody id="result">
+            <tr th:each="l,iter : ${listResponse}">
+                <td class="center" th:text="${iter.count}"></td>
+                <td class="justify" th:utext="${l.getEventInformationResponse()}"></td>
+                <td class="center" th:text="${l.getFormattedCreatedByDate()}"></td>
+                <td class="center" th:text="${l.getCreatedByUser()}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <form class="row" method="post" th:action="@{/home/employee/private/addEventResponse(selectedValue=${selectedValue})}" th:object="${response}">
+                    <table>
+                        <thead>
+                        <tr>
+                            <td style="font-weight:bolder; font-size:larger">Nội dung phản hồi</td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{monthEvent}">
+                            </td>
+                            <td>
+                                    <textarea th:field="*{eventInformationResponse}" id="eventInformationResponse"
+                                              style="width:100%" rows="7" required></textarea>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-outline-dark">Thêm</button>
+                        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Hủy</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+</file>
+
+<file path="fragments.html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Header</title>
+</head>
+<body>
+<!-- Header -->
+<div th:fragment="header">
+    <div class="row text-center header align-items-center">
+        <h2 style="color: white" class="col-10">
+            PHÒNG VẬT TƯ ỐNG THÉP HÒA PHÁT ĐÀ NẴNG
+        </h2>
+        <div class="col-2 d-flex justify-content-end align-items-center">
+            <div class="dropdown">
+                <a class="greeting-text dropdown-toggle text-warning text-decoration-none"
+                   href="#"
+                   data-bs-toggle="dropdown"
+                   aria-expanded="false"
+                   th:text="'Xin chào: ' + ${username}">
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <form th:action="@{/logout}" method="post" style="margin: 0;">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button type="submit" class="dropdown-item">Đăng xuất</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Navbar -->
+<div th:fragment="nav">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand col-12 col-md-3 col-lg-4 align-items-center" th:href="@{/home}">
+                <img src="https://www.hoaphat.com.vn/assets/images/logo.png" class="img-fluid">
+            </a>
+            <div class="collapse navbar-collapse col-12 col-md-9 col-lg-8 align-items-center"
+                 id="navbarNavDropdown">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link font-style" aria-current="page" th:href="@{/home/employee/private}">Lịch cần làm</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
+                    </li>
+                    <li class="nav-item ">
+                        <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
+                    </li>
+                    <li class="nav-item dropdown ">
+                        <a class="nav-link dropdown-toggle font-style" th:href="@{/home/manager/task}" id="navbarDropdownMenuLink"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Giao việc (chỉ quản lý)
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá nhân</a></li>
+                            <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc cá nhân lặp lại định kỳ</a></li>
+                            <li>
+                                <a class="dropdown-item font-style" th:href="@{/home/manager/create-account}">
+                                    Tạo tài khoản
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item font-style" th:href="@{/home/manager/delete-account}">
+                                    Xóa tài khoản
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</div>
+</body>
+</html>
+</file>
+
+<file path="home.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Trang chủ PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <div class="mt-2">
+            <div th:each="mess: ${message}" th:if="${message!=null}" style="display: flex; align-items: center;justify-content: center;">
+                <h3 style="color: red" th:text="${mess.getMessage()}"></h3>
+            </div>
+            <div class="home-banner">
+                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg">
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
+</file>
+
+<file path="images.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Ảnh PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #eef0f4;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        /* Thay .gallery-wrapper */
+        .gallery-wrapper {
+            padding: 16px 24px 40px;
+            border-top: 3px solid #1a56a0; /* ✅ đường kẻ xanh tách navbar */
+            min-height: calc(100vh - 120px);
+        }
+
+        /* ── Album tabs ── */
+        .album-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e3e9;
+            padding-bottom: 12px;
+        }
+
+        .album-tab {
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid #d0d4dc;
+            background: #fff;
+            color: #666;
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            letter-spacing: 0.02em;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .album-tab:hover {
+            border-color: #1a56a0;
+            color: #1a56a0;
+            background: #eef3fb;
+        }
+
+        .album-tab.active {
+            background: #1a56a0;
+            color: #fff;
+            border-color: #1a56a0;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(26,86,160,0.25);
+        }
+
+        /* ── Album panels ── */
+        .album-panel {
+            display: none;
+            animation: fadeSlideIn 0.3s ease;
+        }
+
+        .album-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Photo grid ── */
+        .photo-grid {
+            display: grid;
+            gap: 6px;
+        }
+
+        .photo-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            cursor: pointer;
+            background: #dde1e8;
+            height: 260px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: box-shadow 0.3s ease;
+            min-width: 0;
+        }
+
+        .photo-item:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: block;
+        }
+
+        /* Chỉ áp dụng khi 1 ảnh */
+        .photo-grid.single-photo .photo-item img {
+            object-fit: contain;  /* ← không cắt ảnh */
+            background: #f0f0f0;
+        }
+
+        .photo-item:hover img { transform: scale(1.07); }
+
+        .photo-item .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .photo-item:hover .overlay { opacity: 1; }
+
+        .photo-item .photo-num {
+            position: absolute;
+            bottom: 10px; right: 12px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+        }
+
+        .photo-item:hover .photo-num { opacity: 1; }
+
+        /* Ảnh đầu to hơn khi có nhiều ảnh */
+        .photo-grid.has-many .photo-item:first-child {
+            grid-column: span 2;
+            height: 400px;
+        }
+
+        /* 1-2 ảnh: hiển thị to căn giữa */
+        .photo-grid.has-few {
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            max-width: 900px;
+        }
+
+        .photo-grid.has-few .photo-item {
+            height: 420px;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: block;
+        }
+
+        .photo-item:hover img {
+            transform: scale(1.07);
+        }
+
+        .photo-item .overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 55%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 8px;
+        }
+
+        .photo-item:hover .overlay {
+            opacity: 1;
+        }
+
+        .photo-item .photo-num {
+            position: absolute;
+            bottom: 10px;
+            right: 12px;
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.85);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            font-weight: 500;
+        }
+
+        .photo-item:hover .photo-num {
+            opacity: 1;
+        }
+
+        /* ── Lightbox ── */
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10,14,26,0.95);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .lightbox.active {
+            display: flex;
+            animation: lbFadeIn 0.22s ease;
+        }
+
+        @keyframes lbFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .lightbox-img-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 90vw;
+            max-height: 85vh;
+        }
+
+        .lightbox-img-wrap img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            transition: opacity 0.2s ease;
+        }
+
+        .lightbox-close {
+            position: fixed;
+            top: 18px; right: 24px;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .lightbox-close:hover { background: rgba(255,255,255,0.22); }
+
+        .lightbox-nav {
+            position: fixed;
+            top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .lightbox-nav:hover { background: rgba(255,255,255,0.2); }
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+
+        .lightbox-counter {
+            margin-top: 14px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em;
+        }
+
+        .lightbox-caption {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.5);
+            font-weight: 300;
+        }
+
+        .lightbox-img-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow: hidden;
+            cursor: zoom-in;
+        }
+
+        .lightbox-img-wrap.zoomed {
+            cursor: grab;
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+
+        .lightbox-img-wrap.dragging {
+            cursor: grabbing;
+        }
+
+        .lightbox-img-wrap img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 6px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            transition: opacity 0.2s ease;
+            transform-origin: center center;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        /* Thanh zoom controls */
+        .lightbox-zoom-bar {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 24px;
+            padding: 6px 16px;
+            z-index: 10002;
+            backdrop-filter: blur(8px);
+        }
+
+        .zoom-btn {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            border: none;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+            line-height: 1;
+        }
+
+        .zoom-btn:hover { background: rgba(255,255,255,0.25); }
+
+        .zoom-level {
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.6);
+            min-width: 38px;
+            text-align: center;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .zoom-reset {
+            font-size: 0.72rem;
+            color: rgba(255,255,255,0.45);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: none;
+            transition: all 0.2s;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        .zoom-reset:hover { color: #fff; border-color: rgba(255,255,255,0.4); }
+
+        /* ── Empty state ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        /* ── Back button ── */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 28px;
+            padding: 8px 20px;
+            border: 1px solid #c8cdd6;
+            border-radius: 20px;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.82rem;
+            background: #fff;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        .back-btn:hover {
+            border-color: #1a56a0;
+            color: #1a56a0;
+            text-decoration: none;
+            background: #eef3fb;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+    <!-- Gallery -->
+    <div class="gallery-wrapper">
+
+        <!-- Empty -->
+        <div th:if="${albums == null or albums.isEmpty()}" class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <p>Chưa có album nào</p>
+        </div>
+
+        <div th:if="${albums != null and !albums.isEmpty()}">
+
+            <!-- Album tabs -->
+            <div class="album-tabs" id="albumTabs">
+                <button class="album-tab active"
+                        th:each="album, stat : ${albums}"
+                        th:text="${album.key}"
+                        th:classappend="${stat.first} ? ' active' : ''"
+                        th:attr="onclick='switchAlbum(' + ${stat.index} + ')'"
+                        th:id="'tab-' + ${stat.index}">
+                </button>
+            </div>
+
+            <!-- Album panels -->
+            <div th:each="album, stat : ${albums}"
+                 th:id="'panel-' + ${stat.index}"
+                 th:classappend="${stat.first} ? ' active' : ''"
+                 class="album-panel">
+
+                <div class="photo-grid" th:id="'grid-' + ${stat.index}">
+                    <div th:each="imgUrl, imgStat : ${album.value}"
+                         class="photo-item"
+                         th:data-url="${imgUrl}"
+                         th:data-index="${imgStat.index}"
+                         th:data-panel="${stat.index}"
+                         onclick="openLightbox(this)">
+                        <img th:src="${imgUrl}" th:alt="${album.key}" loading="lazy"/>
+                        <div class="overlay"></div>
+                        <span class="photo-num" th:text="${imgStat.index + 1} + ' / ' + ${imgStat.size}"></span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div>
+            <a th:href="@{/home}" class="back-btn">
+                ← Trở về trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button class="lightbox-nav lightbox-prev" onclick="navigateLight(-1)">&#8592;</button>
+    <button class="lightbox-nav lightbox-next" onclick="navigateLight(1)">&#8594;</button>
+    <div class="lightbox-img-wrap" id="lightboxWrap">
+        <img id="lightbox-img" src="" alt="">
+    </div>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+
+    <!-- ✅ Thanh zoom -->
+    <div class="lightbox-zoom-bar">
+        <button class="zoom-btn" onclick="zoomBy(-0.25)">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="zoom-btn" onclick="zoomBy(0.25)">+</button>
+        <button class="zoom-reset" onclick="resetZoom()">Reset</button>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script>
+    // ── Tính layout rows theo số ảnh ──
+    function getRows(n) {
+        if (n === 1)  return [1];
+        if (n === 2)  return [2];
+        if (n === 3)  return [3];
+        if (n === 4)  return [2, 2];
+        if (n === 5)  return [3, 2];
+        if (n === 6)  return [3, 3];
+        if (n === 7)  return [4, 3];
+        if (n === 8)  return [4, 4];
+        if (n === 9)  return [5, 4];
+        if (n === 10) return [5, 5];
+        if (n === 11) return [4, 4, 3];
+        if (n === 12) return [4, 4, 4];
+        if (n === 13) return [5, 5, 3];
+        if (n === 14) return [5, 5, 4];
+        if (n === 15) return [5, 5, 5];
+        // 16+: hàng 5, phần dư tính tiếp theo quy tắc trên
+        let rows = [];
+        let rem = n;
+        while (rem > 0) {
+            let take = Math.min(5, rem);
+            rows.push(take);
+            rem -= take;
+        }
+        return rows;
+    }
+
+    function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
+    function lcm(a, b) { return a * b / gcd(a, b); }
+    function lcmArray(arr) { return arr.reduce(lcm); }
+
+    function applyGridLayout(grid) {
+        const items = grid.querySelectorAll('.photo-item');
+        const count = items.length;
+        if (count === 0) return;
+
+        // ── 1 ảnh: căn giữa, giữ tỉ lệ ──
+        if (count === 1) {
+            grid.classList.add('single-photo');
+            grid.style.display = 'flex';
+            grid.style.justifyContent = 'center';
+            items[0].style.width = '55%';
+            items[0].style.height = '480px';
+            return;
+        }
+
+        // ── 2-3 ảnh: giới hạn width, chiều cao lớn ──
+        if (count <= 3) {
+            grid.style.display = 'flex';
+            grid.style.justifyContent = 'center';
+            grid.style.gap = '6px';
+            const maxW = count === 2 ? '75%' : '90%';
+            grid.style.maxWidth = maxW;
+            grid.style.margin = '0 auto';
+            items.forEach(item => {
+                item.style.flex = '1';
+                item.style.height = '420px';
+                item.style.minWidth = '0';
+            });
+            return;
+        }
+
+        // ── 4+ ảnh: dùng grid LCM ──
+        const rows = getRows(count);
+        const totalCols = lcmArray(rows);
+        grid.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+        const rowCount = rows.length;
+        const baseH = rowCount === 1 ? 360 : rowCount === 2 ? 280 : 220;
+        grid.style.gridTemplateRows = `repeat(${rowCount}, ${baseH}px)`;
+
+        let idx = 0;
+        rows.forEach(rowSize => {
+            const span = totalCols / rowSize;
+            for (let i = 0; i < rowSize && idx < items.length; i++) {
+                items[idx].style.gridColumn = `span ${span}`;
+                idx++;
+            }
+        });
+    }
+
+    // ── Switch album tab ──
+    function switchAlbum(index) {
+        document.querySelectorAll('.album-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+        });
+        document.querySelectorAll('.album-panel').forEach((p, i) => {
+            p.classList.toggle('active', i === index);
+        });
+        currentPanelIndex = index;
+    }
+
+    // ── Lightbox ──
+    let currentPanelIndex = 0;
+    let currentImgIndex   = 0;
+
+    // Zoom & pan state
+    let scale    = 1;
+    let originX  = 0;
+    let originY  = 0;
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let lastOriginX = 0;
+    let lastOriginY = 0;
+    const MIN_SCALE = 1;
+    const MAX_SCALE = 5;
+
+    function applyTransform() {
+        const img  = document.getElementById('lightbox-img');
+        const wrap = document.getElementById('lightboxWrap');
+        img.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+        document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
+        wrap.classList.toggle('zoomed', scale > 1);
+    }
+
+    function resetZoom() {
+        scale   = 1;
+        originX = 0;
+        originY = 0;
+        applyTransform();
+    }
+
+    function zoomBy(delta) {
+        scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale + delta));
+        if (scale === 1) { originX = 0; originY = 0; }
+        applyTransform();
+    }
+
+    // Scroll wheel zoom
+    document.getElementById('lightboxWrap').addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.15 : 0.15;
+        zoomBy(delta);
+    }, { passive: false });
+
+    // Drag to pan
+    const wrap = document.getElementById('lightboxWrap');
+
+    wrap.addEventListener('mousedown', function(e) {
+        if (scale <= 1) return;
+        isDragging = true;
+        dragStartX  = e.clientX;
+        dragStartY  = e.clientY;
+        lastOriginX = originX;
+        lastOriginY = originY;
+        wrap.classList.add('dragging');
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        originX = lastOriginX + (e.clientX - dragStartX);
+        originY = lastOriginY + (e.clientY - dragStartY);
+        applyTransform();
+    });
+
+    document.addEventListener('mouseup', function() {
+        if (!isDragging) return;
+        isDragging = false;
+        wrap.classList.remove('dragging');
+    });
+
+    // Pinch zoom mobile
+    let lastTouchDist = 0;
+    wrap.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            lastTouchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    }, { passive: true });
+
+    wrap.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            const dist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const delta = (dist - lastTouchDist) * 0.01;
+            lastTouchDist = dist;
+            zoomBy(delta);
+        }
+    }, { passive: false });
+
+    function openLightbox(el) {
+        currentPanelIndex = parseInt(el.dataset.panel);
+        currentImgIndex   = parseInt(el.dataset.index);
+        resetZoom();
+        showLightboxImage();
+        document.getElementById('lightbox').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function showLightboxImage() {
+        const panel = document.getElementById('panel-' + currentPanelIndex);
+        const items = panel.querySelectorAll('.photo-item');
+        const item  = items[currentImgIndex];
+        const img   = document.getElementById('lightbox-img');
+
+        img.style.opacity = '0';
+        resetZoom();
+        img.src = item.dataset.url;
+        img.onload = () => { img.style.opacity = '1'; };
+
+        document.getElementById('lightbox-counter').textContent =
+            (currentImgIndex + 1) + ' / ' + items.length;
+        const tab = document.getElementById('tab-' + currentPanelIndex);
+        document.getElementById('lightbox-caption').textContent =
+            tab ? tab.textContent.trim() : '';
+    }
+
+    function navigateLight(dir) {
+        const panel = document.getElementById('panel-' + currentPanelIndex);
+        const total = panel.querySelectorAll('.photo-item').length;
+        currentImgIndex = (currentImgIndex + dir + total) % total;
+        showLightboxImage();
+    }
+
+    function closeLightbox() {
+        document.getElementById('lightbox').classList.remove('active');
+        document.body.style.overflow = '';
+        resetZoom();
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (!document.getElementById('lightbox').classList.contains('active')) return;
+        if (e.key === 'Escape')     closeLightbox();
+        if (e.key === 'ArrowRight') navigateLight(1);
+        if (e.key === 'ArrowLeft')  navigateLight(-1);
+        if (e.key === '+')          zoomBy(0.25);
+        if (e.key === '-')          zoomBy(-0.25);
+        if (e.key === '0')          resetZoom();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Apply layout cho tất cả grid
+        document.querySelectorAll('.photo-grid').forEach(applyGridLayout);
+
+        // Fix tab đầu active
+        const firstTab = document.querySelector('.album-tab');
+        if (firstTab) {
+            document.querySelectorAll('.album-tab').forEach(t => t.classList.remove('active'));
+            firstTab.classList.add('active');
+        }
+    });
+</script>
+</body>
+</html>
+</file>
+
+<file path="login.html">
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <title>Đăng nhập web PVT</title>
+  <link rel="stylesheet"  href="/css/mdb.min.css">
+</head>
+<body>
+<h1 class="text-primary" style="width: 20%; margin-left: 47%">Login</h1>
+<h6 th:if="${#request.getParameter('error') == 'true'}" class="text-danger" style="margin-left: 44%">Sai account hoặc password</h6>
+<form th:action="@{/doLogin}" method="post">
+  <!-- Account input -->
+  <div class="form-outline mb-4" style="width: 20%; margin-left: 40%">
+    <input type="text" id="form2Example1" class="form-control" name="accountname"/>
+    <label class="form-label" for="form2Example1">Account id</label>
+  </div>
+  <!-- Password input -->
+  <div class="form-outline mb-4" style="width: 20%; margin-left: 40%">
+    <input type="password" id="form2Example2" class="form-control" name="password"/>
+    <label class="form-label" for="form2Example2">Password</label>
+  </div>
+  <!-- Submit button -->
+  <button type="submit" class="btn btn-primary btn-block mb-4 justify-content-center" style="width: 20%; margin-left: 40%">Sign in</button>
+</form>
+<script src="/js/mdb.min.js"></script>
+</body>
+</html>
+</file>
+
+<file path="monthEditEventForm.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Chỉnh sửa việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function(e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho công việc được giao');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div>
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav>
+        <div>
+            <div class="mb-1">
+                <h10 style="text-align: left" class="text-danger" th:if="${mess != null}" th:text="${mess}"></h10>
+                <h3 class="text-primary mb-2">Chỉnh sửa lịch công việc tháng/cá nhân</h3>
+            </div>
+            <div>
+                <form class="row" method="post"
+                      th:action="@{/home/manager/task/editMonthEvent(selectedValue=${selectedValue})}"
+                      th:object="${monthEditEvent}" id="form">
+                    <table>
+                        <thead id="navbar-sticky">
+                        <tr>
+                            <td hidden="hidden">Id</td>
+                            <td class="col-9" style="font-weight: bolder; font-size: larger">Nội dung</td>
+                            <td class="col-1" style="font-weight: bolder; font-size: larger; text-align: left">Deadline</td>
+                            <td class="col-2" style="font-weight: bolder; font-size: larger">Người phụ trách</td>
+                            <td hidden="hidden">Month Event Status</td>
+                            <td hidden="hidden">Response status</td>
+                            <td hidden="hidden">Last Time Response</td>
+                            <td hidden="hidden">Last Person Response</td>
+                            <td hidden="hidden">Registered Day</td>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td hidden="hidden">
+                                <input type="text" th:field="*{monthEventId}">
+                            </td>
+                            <td>
+                                <textarea th:field="*{monthEventDescription}" style="width:100%;" rows="2" required></textarea>
+                            </td>
+                            <td>
+                                <input type="text" class="flatpickr-input" placeholder="Bấm chọn thời gian"
+                                       th:field="*{monthEventDeadline}" required>
+                            </td>
+                            <td>
+                                <select class="form-control" th:field="*{account.accountName}">
+                                    <option value="">-- Chọn người phụ trách --</option>
+                                    <option value="ALL" th:selected="${monthEditEvent.all}">🔥 Cả phòng</option>
+                                    <option th:each="acc : ${accountList}"
+                                            th:value="${acc.accountName}"
+                                            th:text="${acc.displayName}"
+                                            th:selected="${!monthEditEvent.all and monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
+                                    </option>
+                                </select>
+                            </td>
+                            <td hidden="hidden"><input type="text" th:field="*{monthEventStatus}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{responseStatus}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{lastTimeResponse}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{lastPersonResponse}"></td>
+                            <td hidden="hidden"><input type="text" th:field="*{registeredDay}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="col-12 mt-3">
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-12 mt-3">
+            <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" style="text-decoration: none">
+                <button class="btn btn-outline-primary" style="float: right">
+                    Trở lại tab cũ
+                </button>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+</file>
+
+<file path="monthEventForm.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Thêm mới việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true,
+                // Add any other options you need
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function(e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho công việc được giao');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <div>
+            <div class="mb-1">
+                <h3 class="text-primary mb-2">Lịch công việc tháng</h3>
+                <a href="" id="addMonthEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showMonthDialog()">Thêm mới công việc tháng
+                    </button>
+                </a>
+            </div>
+            <div>
+                <form class="row" method="post" th:action="@{/home/manager/task/addMonthEvent}"
+                      th:object="${monthEventManager}" id="form">
+                    <table>
+                        <thead id="navbar-sticky">
+                        <tr>
+                            <td class="col-11 col-md-11 col-lg-11" style="font-weight: bolder; font-size: larger">
+                                Nội dung
+                            </td>
+                            <td class="col-1 col-md-1 col-lg-1"
+                                style="font-weight: bolder; font-size: larger; text-align: left">
+                                Deadline
+                            </td>
+                            <td hidden="hidden" class="col-0 col-md-0 col-lg-0">
+                                Trạng thái (mặc định 2)
+                            </td>
+                        </tr>
+                        </thead>
+                        <tr th:each="monthEvent, stat : ${monthEvents}" class="mb-4">
+                            <td>
+                                <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                                          th:name="|monthEvents[${stat.index}]|"
+                                          style="width:100%" rows="2" required></textarea>
+                            </td>
+                            <td>
+                                <input type="text"
+                                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
+                                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                                       th:name="|monthEvents[${stat.index}]|"
+                                        required>
+                            </td>
+                            <td hidden="hidden">
+                                <input th:value="1"
+                                       th:name="|monthEvents[${stat.index}].monthEventStatus|"
+                                       th:id="|monthEvents[${stat.index}].monthEventStatus|">
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Thêm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="col-12 ">
+            <a th:href="@{/home/manager/task}" style="text-decoration: none">
+                <button class="btn btn-outline-primary" style="float: right">
+                    Trở về trang giao việc cá nhân
+                </button>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showMonthDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
+            document.getElementById("addMonthEvent").setAttribute("href", url);
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
+</file>
+
+<file path="private.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Nhắc lịch PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+    <script type="text/javascript">
+        function parseDate(input) {
+            var parts = input.split(' ');
+            var timeParts = parts[0].split(':');
+            var dateParts = parts[1].split('-');
+            return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
+        }
+
+        function loadData() {
+            var selectedValue = $("input[name='options-outlined']:checked").val();
+            if (selectedValue === undefined) selectedValue = "";
+
+            $.ajax({
+                url: "/home/employee/filterRestful",
+                type: 'get',
+                data: {selectedValue: selectedValue},
+                dataType: "json",
+                success: function (data) {
+                    let result = '';
+                    for (let i = 0; i < data.monthEventList.length; i++) {
+                        var now = new Date();
+                        var deadlineString = data.monthEventList[i].monthEventDeadline;
+                        var deadline = parseDate(deadlineString);
+                        var timeDiffDeadline = deadline - now;
+                        var minutesDiffDeadline = Math.ceil(timeDiffDeadline / (1000 * 60));
+
+                        var rowClass = '';
+                        if (minutesDiffDeadline <= 60) {
+                            rowClass = 'warning';
+                        }
+
+                        var lastTimeResponseString = data.monthEventList[i].lastTimeResponse;
+                        var lastTimeResponse = parseDate(lastTimeResponseString);
+                        var timeDiff = lastTimeResponse - now;
+                        var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
+
+                        var remindClass = '';
+                        if (minutesDiff <= 0 && minutesDiff >= -60) {
+                            remindClass = 'remind';
+                        }
+
+                        result += `<tr class="${rowClass}">
+                            <td class="center">${i + 1}</td>
+                            <td class="justify">${data.monthEventList[i].monthEventDescription}</td>`;
+
+                        if (data.monthEventList[i].registeredDay === '00:00 01-01-2023' || data.monthEventList[i].monthEventStatus != 0) {
+                            result += `<td class="center">Không hiển thị</td>`;
+                        } else {
+                            result += `<td class="center">${data.monthEventList[i].registeredDay}</td>`;
+                        }
+
+                        result += `<td class="center">${data.monthEventList[i].monthEventDeadline}</td>`;
+
+                        if (data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
+                            result += `<td class="justify">Chưa có phản hồi</td>`;
+                        } else {
+                            result += `<td class="justify ${remindClass}">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
+                        }
+
+                        let status = data.monthEventList[i].responseStatus;
+                        let btnClass = (status === 0) ? 'btn-secondary' : (status === 2 ? 'btn-warning' : 'btn-success');
+
+                        // FIX: Thêm ?selectedValue=${selectedValue} vào link để giữ tab khi chuyển trang
+                        result += `<td class="center">
+                            <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}?selectedValue=${selectedValue}" style="text-decoration:none">
+                                <button type="button" class="btn ${btnClass}">Xem</button>
+                            </a>
+                        </td></tr>`;
+                    }
+                    $("#result").html(result);
+                },
+                error: function (e) {
+                    console.log("Error loadData AJAX");
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $("input[name='options-outlined']").change(loadData);
+            loadData();
+            setInterval(loadData, 5000);
+        });
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div>
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav>
+        <div>
+            <div th:each="security:${sercuritySchedule}" class="mb-2">
+                <h5 th:text="${security.getStr1()}"></h5>
+                <strong th:text="${security.getStr2()}+'. '"></strong>
+                <strong th:text="${security.getStr3()}+'. '"></strong>
+                <strong th:text="${security.getStr4()}"></strong>
+            </div>
+
+            <h3 class="text-primary">Nhắc nhở lịch cần làm</h3>
+
+            <div id="tabContainer" class="row mb-3 mt-3" style="display:flex; flex-wrap:wrap;">
+                <div th:if="${isManager}" data-account="ALL" style="flex:0 0 12.5%; max-width:12.5%; padding:2px;">
+                    <input type="radio" class="btn-check" name="options-outlined" id="all" value=""
+                           th:checked="${selectedValue == null or selectedValue == ''}">
+                    <label class="btn btn-outline-primary w-100 text-center" for="all">All</label>
+                </div>
+
+                <th:block th:each="acc:${userTabs}">
+                    <div th:if="${isManager} or (${accountName} == ${acc.accountName})"
+                         th:attr="data-account=${acc.accountName}"
+                         th:with="len=${#strings.length(acc.displayName)}"
+                         th:style="${len >= 9} ? 'flex: 0 0 25%; max-width: 25%; padding:2px;' : 'flex: 0 0 12.5%; max-width: 12.5%; padding:2px;'">
+
+                        <input type="radio" class="btn-check" name="options-outlined"
+                               th:id="'acc_' + ${acc.accountName}"
+                               th:value="${acc.accountName}"
+                               th:checked="${selectedValue != null and selectedValue == acc.accountName}">
+
+                        <label class="btn btn-outline-primary w-100 text-center"
+                               th:for="'acc_' + ${acc.accountName}"
+                               th:text="${acc.displayName}"
+                               style="white-space:nowrap;">
+                        </label>
+                    </div>
+                </th:block>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="new-material" th:if="${monthEventListByTime != null}">
+                    <thead id="navbar-sticky">
+                    <tr>
+                        <th class="col-0.3">STT</th>
+                        <th class="col-4.5">Nội dung công việc</th>
+                        <th class="col-1.5">Ngày giao việc</th>
+                        <th class="col-1.5">Deadline</th>
+                        <th class="col-2.5">Phản hồi gần nhất</th>
+                        <th class="col-0.7">Xem</th>
+                    </tr>
+                    </thead>
+                    <tbody id="result">
+                    <tr th:each="list,iter:${monthEventListByTime}">
+                        <td class="center" th:text="${iter.count}"></td>
+                        <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+
+                        <td class="center"
+                            th:if="${list.getRegisteredDay() == '00:00 01-01-2023' or list.getMonthEventStatus() == '1' or list.getMonthEventStatus() == '2'}"
+                            th:text="Không hiển thị"></td>
+                        <td class="center"
+                            th:if="${list.getRegisteredDay() != '00:00 01-01-2023' and list.getMonthEventStatus() == '0'}"
+                            th:text="${list.getFormattedRegisteredDay()}"></td>
+
+                        <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+
+                        <td class="justify" th:if="${list.getLastTimeResponse() == '00:00 01-01-2023'}"
+                            th:text="Chưa có phản hồi"></td>
+                        <td class="justify" th:if="${list.getLastTimeResponse() != '00:00 01-01-2023'}"
+                            th:text="${list.getLastPersonResponse()} + ' lúc ' + ${list.getFormattedLastTimeResponse()}"></td>
+
+                        <td class="center">
+                            <a th:href="@{/home/employee/private/showEventResponseForm/{id}(id=${list.getMonthEventId()}, selectedValue=${selectedValue})}"
+                               style="text-decoration:none">
+                                <button type="button" class="btn btn-secondary" th:if="${list.getResponseStatus() == '0'}">Xem</button>
+                                <button type="button" class="btn btn-warning" th:if="${list.getResponseStatus() == '2'}">Xem</button>
+                                <button type="button" class="btn btn-success" th:if="${list.getResponseStatus() == '1'}">Xem</button>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="row smaller-font">
+                <div class="col-12">
+                    <a th:href="@{/home}" style="text-decoration: none">
+                        <button class="btn btn-outline-primary" style="float: right">Trở về trang chủ</button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+<script th:inline="javascript">
+    var csrfHeader = [[${_csrf.headerName}]], csrfToken = [[${_csrf.token}]], isM = [[${isManager}]];
+
+    if (isM) {
+        var el = document.getElementById('tabContainer');
+        new Sortable(el, {
+            animation: 150,
+            draggable: "div:not([data-account='ALL'])",
+            onEnd: function () {
+                let order = [];
+                document.querySelectorAll("#tabContainer > div").forEach(e => {
+                    let acc = e.getAttribute("data-account");
+                    if (acc && acc !== "ALL") {
+                        order.push(acc);
+                    }
+                });
+
+                fetch("/home/manager/saveTabOrder", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        [csrfHeader]: csrfToken
+                    },
+                    body: JSON.stringify(order)
+                });
+            }
+        });
+    }
+</script>
+</body>
+</html>
+</file>
+
+<file path="privateEventForm.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="utf-8">
+  <title>Thêm mới việc PVT</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+  <link rel="stylesheet" th:href="@{/css/home.css}">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+      var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+        enableTime: true,
+        dateFormat: "Y-m-d\\TH:i",
+        altInput: true,
+        altFormat: "d-m-Y H:i",
+        time_24hr: true,
+      }));
+
+      document.querySelector('#form').addEventListener('submit', function (e) {
+        var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+        if (!allDatesSelected) {
+          e.preventDefault();
+          alert('Phải chọn deadline cho công việc được giao');
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+<div class="container-fluid">
+  <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+  <div>
+    <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+    <div>
+      <div class="mb-1">
+        <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
+        <a href="" id="addPrivateEvent" style="text-decoration: none">
+          <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">
+            Thêm mới công việc cá nhân
+          </button>
+        </a>
+      </div>
+
+      <form class="row" method="post"
+            th:action="@{/home/manager/task/addMonthEvent}"
+            th:object="${monthEventManager}" id="form">
+        <table>
+          <thead id="navbar-sticky">
+          <tr>
+            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
+              Nội dung
+            </td>
+            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
+              Người phụ trách
+            </td>
+            <td class="col-1 col-md-1 col-lg-1" style="font-weight: bolder; font-size: larger">
+              Deadline
+            </td>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="monthEvent, stat : ${monthEvents}">
+            <td>
+              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
+              <textarea th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                        style="width:100%" rows="2" required></textarea>
+            </td>
+            <td>
+              <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-control">
+                <option value="">-- Chọn người phụ trách --</option>
+
+                <!-- ⭐ Cả phòng -->
+                <option value="ALL" style="font-weight:bold; color:red;">
+                  🔥 Cả phòng
+                </option>
+
+                <!-- Danh sách nhân viên -->
+                <option th:each="acc : ${accounts}"
+                        th:value="${acc.accountName}"
+                        th:text="${acc.displayName}">
+                </option>
+              </select>
+            </td>
+            <td>
+              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
+              <input type="text"
+                     class="flatpickr-input"
+                     placeholder="Bấm chọn thời gian"
+                     th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                     required>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="col-12 mt-2">
+          <button type="submit" class="btn btn-primary">Thêm</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="col-12 mt-3">
+      <a th:href="@{/home/manager/task}" style="text-decoration: none">
+        <button class="btn btn-outline-primary" style="float: right">
+          Trở về trang giao việc cá nhân
+        </button>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+
+<!-- ✅ Script checkbox tách riêng, không nhét vào thẻ script có src -->
+<script>
+  function showPrivateDialog() {
+    var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
+    if (numberOfRows != null) {
+      var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+      document.getElementById("addPrivateEvent").setAttribute("href", url);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const rows = document.querySelectorAll("tr");
+    rows.forEach(row => {
+      const checkbox = row.querySelector(".all-checkbox");
+      const select = row.querySelector(".account-select");
+      if (checkbox && select) {
+        checkbox.addEventListener("change", function () {
+          if (this.checked) {
+            select.value = "";
+            select.disabled = true;
+          } else {
+            select.disabled = false;
+          }
+        });
+      }
+    });
+  });
+</script>
+</body>
+</html>
+</file>
+
+<file path="task.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Danh sách việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            var mess = /*[[${mess}]]*/ 'default';
+            if (mess != null && mess != 'default') {
+                swal({
+                    title: 'Thông báo',
+                    text: mess,
+                    icon: 'success',
+                    timer: 1500,
+                    buttons: false
+                });
+            }
+        });
+        /*]]>*/
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <div>
+            <div class="mb-1">
+                <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
+                <a href="" id="addPrivateEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">Thêm mới công việc cá
+                        nhân
+                    </button>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="new-material" th:if="${monthEventList != null}">
+                    <thead id="navbar-sticky">
+                    <tr>
+                        <th class="col-1 col-md-1 col-lg-1">STT</th>
+                        <th class="col-7 col-md-7 col-lg-7">Nội dung giao việc</th>
+                        <th class="col-1 col-md-1 col-lg-1">Deadline</th>
+                        <th class="col-3 col-md-3 col-lg-3">Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="list,iter: ${monthEventList}">
+                        <td class="center" th:text="${iter.count}"></td>
+                        <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+                        <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                        <td class="center">
+
+                            <!-- Sửa -->
+                            <a th:href="@{/home/manager/task/showEditMonthEventForm/{id} (id=${list.getMonthEventId()})}">
+                                <button type="button" class="btn btn-outline-secondary">
+                                    Chỉnh sửa
+                                </button>
+                            </a>
+                            <!-- Xóa -->
+                            <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}">
+                                <button type="button" class="btn btn-outline-danger">Xóa</button>
+                            </a>
+                            <!-- ⭐ NÚT HIDE / SHOW -->
+                            <form th:action="@{/home/manager/task/toggleHidden/{id}(id=${list.monthEventId})}"
+                                  method="post"
+                                  style="display:inline">
+                                <button type="submit"
+                                        class="btn"
+                                        th:classappend="${list.hidden} ? 'btn-success' : 'btn-warning'"
+                                        th:text="${list.hidden} ? 'Ẩn việc' : 'Hiện lịch cần làm'">
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="row smaller-font">
+                    <div class="col-5">
+                    </div>
+                    <div class="col-5">
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination" th:if="${monthEventList.totalPages > 0}"
+                                th:each="pageNumber : ${pageNumbers}" style="float: left; width: 30px">
+                                <li th:if="${currentPage==pageNumber}" class="page-item active">
+                                    <a class="page-link"
+                                       th:href="@{/home/manager/task(page=${pageNumber},size=${monthEventList.size})}"
+                                       th:text="${pageNumber}"></a>
+                                </li>
+                                <li th:unless="${currentPage==pageNumber}" class="page-item">
+                                    <a class="page-link"
+                                       th:href="@{/home/manager/task(page=${pageNumber},size=${monthEventList.size})}"
+                                       th:text="${pageNumber}"></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                    <a th:href="@{/home}" style="text-decoration: none">
+                        <button class="btn btn-outline-primary" style="float: right">
+                            Trở về trang chủ
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function showMonthDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc tháng bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/task/showAddMonthEventForm?rows=" + numberOfRows;
+            document.getElementById("addMonthEvent").setAttribute("href", url);
+        }
+    }
+    function showPrivateDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+            document.getElementById("addPrivateEvent").setAttribute("href", url);
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
+</file>
+
+<file path="video.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Video PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+          crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600&display=swap"
+          rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .video-wrapper {
+            padding: 30px 20px 50px;
+            border-top: 3px solid #1a56a0; /* ✅ đường kẻ xanh tách navbar */
+            min-height: calc(100vh - 140px);
+        }
+
+        /* Tiêu đề chính */
+        .page-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #1a56a0;
+            margin-bottom: 25px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #1a56a0;
+            display: inline-block;
+        }
+
+        /* Album tabs */
+        .album-tabs {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .album-tab {
+            padding: 10px 22px;
+            border-radius: 25px;
+            border: 1px solid #d0d4dc;
+            background: #fff;
+            color: #555;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .album-tab:hover {
+            border-color: #1a56a0;
+            color: #1a56a0;
+        }
+
+        .album-tab.active {
+            background: #1a56a0;
+            color: #fff;
+            border-color: #1a56a0;
+            font-weight: 600;
+        }
+
+        /* Video grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .video-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .video-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 25px rgba(26,86,160,0.15);
+        }
+
+        .video-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            background: #000;
+            overflow: hidden;
+        }
+
+        .video-thumb video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .play-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .video-card:hover .play-overlay {
+            background: rgba(26,86,160,0.5);
+        }
+
+        .play-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .play-btn svg {
+            width: 26px;
+            height: 26px;
+            fill: #1a56a0;
+            margin-left: 4px;
+        }
+
+        .video-info {
+            padding: 14px 16px;
+        }
+
+        .video-name {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-meta {
+            font-size: 0.82rem;
+            color: #777;
+            margin-top: 6px;
+        }
+
+        /* ── Lightbox video ── */
+        .vlightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5,5,10,0.97);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .vlightbox.active {
+            display: flex;
+            animation: lbFadeIn 0.22s ease;
+        }
+
+        @keyframes lbFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        .vl-wrap {
+            width: 88vw;
+            max-width: 1100px;
+        }
+
+        .vl-wrap video {
+            width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
+            background: #000;
+            display: block;
+        }
+
+        .vl-close {
+            position: fixed;
+            top: 18px; right: 24px;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .vl-close:hover { background: rgba(192,57,43,0.6); }
+
+        .vl-nav {
+            position: fixed;
+            top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+
+        .vl-nav:hover { background: rgba(192,57,43,0.5); }
+        .vl-prev { left: 20px; }
+        .vl-next { right: 20px; }
+
+        .vl-counter {
+            margin-top: 12px;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.1em;
+        }
+
+        .vl-caption {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.55);
+            font-weight: 300;
+        }
+
+        /* ── Empty ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        /* Back button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 35px;
+            padding: 10px 24px;
+            border: 1px solid #1a56a0;
+            border-radius: 30px;
+            color: #1a56a0;
+            font-weight: 500;
+            text-decoration: none;
+            background: #fff;
+            transition: all 0.25s;
+        }
+
+        .back-btn:hover {
+            background: #1a56a0;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <div class="video-wrapper">
+        <div class="container">
+            <h2 class="page-title">📹 Thư viện Video</h2>
+
+            <!-- Empty state -->
+            <div th:if="${videoAlbums == null or videoAlbums.isEmpty()}" class="empty-state text-center py-5">
+                <p class="fs-5 text-muted">Chưa có video nào. Hãy tạo subfolder trong thư mục video trên máy chủ.</p>
+            </div>
+
+            <div th:if="${videoAlbums != null and !videoAlbums.isEmpty()}">
+
+                <!-- Album tabs -->
+                <div class="album-tabs">
+                    <button th:each="album, stat : ${videoAlbums}"
+                            class="album-tab"
+                            th:classappend="${stat.first} ? 'active' : ''"
+                            th:text="${album.key}"
+                            th:id="'vtab-' + ${stat.index}"
+                            th:attr="onclick='switchVideoAlbum(' + ${stat.index} + ')'"></button>
+                </div>
+
+                <!-- Album panels -->
+                <div th:each="album, stat : ${videoAlbums}"
+                     th:id="'vpanel-' + ${stat.index}"
+                     class="album-panel"
+                     th:classappend="${stat.first} ? 'active' : ''">
+
+                    <div class="video-grid">
+                        <div th:each="vidUrl, vidStat : ${album.value}"
+                             class="video-card"
+                             th:data-url="${vidUrl}"
+                             th:data-index="${vidStat.index}"
+                             th:data-panel="${stat.index}"
+                             onclick="openVideoLight(this)">
+
+                            <div class="video-thumb">
+                                <video th:src="${vidUrl}" preload="metadata" muted></video>
+                                <div class="play-overlay">
+                                    <div class="play-btn">
+                                        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="video-info">
+                                <div class="video-name" th:text="${vidUrl}">
+                                    <!-- JS sẽ thay bằng tên file -->
+                                </div>
+                                <div class="video-meta"
+                                     th:text="${album.key} + ' · Video ' + (${vidStat.index + 1}) + '/' + ${vidStat.size}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <a th:href="@{/home}" class="back-btn">← Trở về trang chủ</a>
+        </div>
+    </div>
+</div>
+
+<!-- Video Lightbox -->
+<div class="vlightbox" id="vLightbox">
+    <button class="vl-close" onclick="closeVideoLight()">✕</button>
+    <button class="vl-nav vl-prev" onclick="navigateVideo(-1)">&#8592;</button>
+    <button class="vl-nav vl-next" onclick="navigateVideo(1)">&#8594;</button>
+
+    <div class="vl-wrap">
+        <video id="vl-video" controls autoplay>
+            <source id="vl-source" src="" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="vl-counter" id="vl-counter"></div>
+    <div class="vl-caption" id="vl-caption"></div>
+</div>
+<script th:inline="javascript">
+    /* Tự động lấy tên file */
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.video-name').forEach(function (el) {
+            let url = el.textContent.trim();
+            let filename = url.substring(url.lastIndexOf('/') + 1);
+            if (filename) {
+                el.textContent = decodeURIComponent(filename);
+            }
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+<script>
+    // ── Thumbnail: seek về giây 1 để hiện preview ──
+    document.querySelectorAll('.video-thumb video').forEach(v => {
+        v.addEventListener('loadedmetadata', () => { v.currentTime = 1; });
+    });
+
+    // ── Switch album ──
+    let currentVideoPanelIndex = 0;
+    let currentVideoIndex = 0;
+
+    function switchVideoAlbum(index) {
+        document.querySelectorAll('.album-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === index);
+        });
+        document.querySelectorAll('.album-panel').forEach((p, i) => {
+            p.classList.toggle('active', i === index);
+        });
+        currentVideoPanelIndex = index;
+    }
+
+    // ── Lightbox ──
+    function openVideoLight(el) {
+        currentVideoPanelIndex = parseInt(el.dataset.panel);
+        currentVideoIndex      = parseInt(el.dataset.index);
+        showVideoLight();
+        document.getElementById('vLightbox').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function showVideoLight() {
+        const panel = document.getElementById('vpanel-' + currentVideoPanelIndex);
+        const cards = panel.querySelectorAll('.video-card');
+        const total = cards.length;
+        const card  = cards[currentVideoIndex];
+
+        const video  = document.getElementById('vl-video');
+        const source = document.getElementById('vl-source');
+
+        video.pause();
+        source.src = card.dataset.url;
+        video.load();
+        video.play();
+
+        document.getElementById('vl-counter').textContent =
+            (currentVideoIndex + 1) + ' / ' + total;
+
+        const tab = document.getElementById('vtab-' + currentVideoPanelIndex);
+        const filename = card.dataset.url.split('/').pop();
+        document.getElementById('vl-caption').textContent =
+            (tab ? tab.textContent.trim() + ' · ' : '') + filename;
+    }
+
+    function navigateVideo(dir) {
+        const panel = document.getElementById('vpanel-' + currentVideoPanelIndex);
+        const total = panel.querySelectorAll('.video-card').length;
+        currentVideoIndex = (currentVideoIndex + dir + total) % total;
+        showVideoLight();
+    }
+
+    function closeVideoLight() {
+        const video = document.getElementById('vl-video');
+        video.pause();
+        document.getElementById('vLightbox').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (!document.getElementById('vLightbox').classList.contains('active')) return;
+        if (e.key === 'Escape')     closeVideoLight();
+        if (e.key === 'ArrowRight') navigateVideo(1);
+        if (e.key === 'ArrowLeft')  navigateVideo(-1);
+    });
+
+    // Fix tab đầu active
+    document.addEventListener('DOMContentLoaded', function () {
+        const firstTab = document.querySelector('.album-tab');
+        if (firstTab) {
+            document.querySelectorAll('.album-tab').forEach(t => t.classList.remove('active'));
+            firstTab.classList.add('active');
+        }
+    });
+</script>
+</body>
+</html>
+</file>
+
+<file path="weekEventForm.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Thêm mới việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true,
+                // Add any other options you need
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function(e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho công việc được giao');
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <div>
+            <div class="mb-1">
+                </h10>
+                <h3 class="text-primary mb-2">Lịch công việc cá nhân có lặp lại</h3>
+                <a href="" id="addWeekEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới việc cá nhân có lặp
+                        lại
+                    </button>
+                </a>
+            </div>
+            <div>
+                <form class="row" method="post" th:action="@{/home/manager/weeklyTask/addWeekEvent}"
+                      th:object="${monthEventManager}" id="form">
+                    <table>
+                        <thead id="navbar-sticky">
+                        <tr>
+                            <td class="col-7 col-md-7 col-lg-7" style="font-weight: bolder; font-size: larger">
+                                Nội dung
+                            </td>
+                            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
+                                Người phụ trách
+                            </td>
+                            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
+                                Gia hạn deadline tự động theo ? ngày
+                            </td>
+                            <td class="col-1 col-md-1 col-lg-1" style="font-weight: bolder; font-size: larger">
+                                Deadline
+                            </td>
+                            <td hidden="hidden" class="col-0 col-md-0 col-lg-0">
+                                Trạng thái (mặc định 2)
+                            </td>
+                        </tr>
+                        </thead>
+                        <tr th:each="weekEvent, stat : ${weekEvents}">
+                            <td>
+                                <textarea type="text" th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
+                                          th:name="|monthEvents[${stat.index}]|"
+                                          style="width:100%" rows="2" required></textarea>
+                            </td>
+                            <td>
+                                <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-control">
+                                    <option value="">-- Chọn người phụ trách --</option>
+
+                                    <!-- ⭐ Cả phòng -->
+                                    <option value="ALL" style="font-weight:bold; color:red;">
+                                        🔥 Cả phòng
+                                    </option>
+
+                                    <!-- Danh sách nhân viên -->
+                                    <option th:each="acc : ${accounts}"
+                                            th:value="${acc.accountName}"
+                                            th:text="${acc.displayName}">
+                                    </option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number"
+                                       th:field="*{monthEvents[__${stat.index}__].extendDay}"
+                                       th:name="|monthEvents[${stat.index}]|" style="width: 100%" required>
+                            </td>
+                            <td>
+                                <input type="text"
+                                       class="flatpickr-input" placeholder="Bấm chọn thời gian"
+                                       th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
+                                       th:name="|monthEvents[${stat.index}]|" required>
+                            </td>
+                            <td hidden="hidden">
+                                <input th:value="2"
+                                       th:name="|monthEvents[${stat.index}].monthEventStatus|"
+                                       th:id="|monthEvents[${stat.index}].monthEventStatus|">
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">Thêm</button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-12">
+                <a th:href="@{/home/manager/weeklyTask}" style="text-decoration: none">
+                    <button class="btn btn-outline-primary" style="float: right">
+                        Trở về trang giao việc cá nhân lặp lại định kỳ
+                    </button>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function showDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc lặp lại bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/weeklyTask/showAddWeekEventForm?rows=" + numberOfRows;
+            document.getElementById("addWeekEvent").setAttribute("href", url);
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
+</file>
+
+<file path="weeklyTask.html">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title>Danh sách việc PVT</title>
+    <base href="/">
+    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            var mess = /*[[${mess}]]*/ 'default';
+            if (mess != null && mess != 'default') {
+                swal({
+                    title: 'Thông báo',
+                    text: mess,
+                    icon: 'success',
+                    timer: 1500,
+                    buttons: false
+                });
+            }
+        });
+        /*]]>*/
+    </script>
+</head>
+<body>
+<div class="container-fluid">
+    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
+    <div>
+        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
+        <div>
+            <div class="mb-1">
+                <h3 class="text-primary mb-2">Lịch công việc cá nhân có lặp lại</h3>
+                <a href="" id="addWeekEvent" style="text-decoration: none">
+                    <button type="button" class="btn btn-primary" onclick="showDialog()">Thêm mới việc cá nhân có lặp
+                        lại
+                    </button>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered" id="new-material" th:if="${weekEventList != null}">
+                    <thead id="navbar-sticky">
+                    <tr>
+                        <th class="col-1 col-md-1 col-lg-1">STT</th>
+                        <th class="col-6 col-md-6 col-lg-6">Nội dung giao việc tuần</th>
+                        <th class="col-2 col-md-2 col-lg-2">Deadline</th>
+                        <th class="col-2 col-md-2 col-lg-2">Deadline tự động gia hạn (ngày)</th>
+                        <th class="col-1 col-md-1 col-lg-1">Xóa</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="list,iter: ${weekEventList}">
+                        <td class="center" th:text="${iter.count}"></td>
+                        <td class="justify" th:text="${list.getMonthEventDescription()}"></td>
+                        <td class="center" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                        <td class="center" th:text="${list.getExtendDay()}"></td>
+                        <td class="center">
+                            <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}">
+                                <button type="button" class="btn btn-outline-danger">Xóa</button>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="col-12">
+                    <a th:href="@{/home}" style="text-decoration: none">
+                        <button class="btn btn-outline-primary" style="float: right">
+                            Trở về trang chủ
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Xác nhận: </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn xóa
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">
+                    <a th:href="@{/home}" style="text-decoration: none">Xóa</a>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function showDialog() {
+        var numberOfRows = prompt("Hãy nhập số dòng giao việc tuần bạn muốn giao việc:");
+        if (numberOfRows != null) {
+            var url = "/home/manager/weeklyTask/showAddWeekEventForm?rows=" + numberOfRows;
+            document.getElementById("addWeekEvent").setAttribute("href", url);
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous">
+</script>
+</body>
+</html>
+</file>
+
+</files>

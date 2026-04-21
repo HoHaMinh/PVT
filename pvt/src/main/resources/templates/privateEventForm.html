@@ -1,149 +1,140 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="utf-8">
-  <title>Thêm mới việc PVT</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-  <link rel="stylesheet" th:href="@{/css/home.css}">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
-      var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
-        enableTime: true,
-        dateFormat: "Y-m-d\\TH:i",
-        altInput: true,
-        altFormat: "d-m-Y H:i",
-        time_24hr: true,
-      }));
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc cho Mobile -->
+    <title>Thêm mới việc cá nhân PVT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Flatpickr JS -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-      document.querySelector('#form').addEventListener('submit', function (e) {
-        var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
-        if (!allDatesSelected) {
-          e.preventDefault();
-          alert('Phải chọn deadline cho công việc được giao');
+    <style>
+        /* Làm đẹp Card nhập liệu */
+        .task-card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            overflow: hidden;
         }
-      });
-    });
-  </script>
+        .task-card-header {
+            background-color: #05428c;
+            color: white;
+            font-weight: bold;
+            padding: 10px 20px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var flatpickrInputs = document.querySelectorAll('.flatpickr-input');
+            var fpInstances = Array.from(flatpickrInputs).map(input => flatpickr(input, {
+                enableTime: true,
+                dateFormat: "Y-m-d\\TH:i",
+                altInput: true,
+                altFormat: "d-m-Y H:i",
+                time_24hr: true,
+            }));
+
+            document.querySelector('#form').addEventListener('submit', function (e) {
+                var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
+                if (!allDatesSelected) {
+                    e.preventDefault();
+                    alert('Phải chọn deadline cho tất cả công việc được giao!');
+                }
+            });
+        });
+
+        function showPrivateDialog() {
+            var numberOfRows = prompt("Hãy nhập số lượng công việc cá nhân bạn muốn giao:");
+            if (numberOfRows != null && numberOfRows > 0) {
+                var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
+                window.location.href = url; // Chuyển trang mượt hơn trên Mobile
+            }
+        }
+    </script>
 </head>
-<body>
-<div class="container-fluid">
-  <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
-  <div>
-    <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
-    <div>
-      <div class="mb-1">
-        <h3 class="text-primary mb-2">Lịch công việc cá nhân</h3>
-        <a href="" id="addPrivateEvent" style="text-decoration: none">
-          <button type="button" class="btn btn-primary" onclick="showPrivateDialog()">
-            Thêm mới công việc cá nhân
-          </button>
-        </a>
-      </div>
-
-      <form class="row" method="post"
-            th:action="@{/home/manager/task/addMonthEvent}"
-            th:object="${monthEventManager}" id="form">
-        <table>
-          <thead id="navbar-sticky">
-          <tr>
-            <td class="col-9 col-md-9 col-lg-9" style="font-weight: bolder; font-size: larger">
-              Nội dung
-            </td>
-            <td class="col-2 col-md-2 col-lg-2" style="font-weight: bolder; font-size: larger">
-              Người phụ trách
-            </td>
-            <td class="col-1 col-md-1 col-lg-1" style="font-weight: bolder; font-size: larger">
-              Deadline
-            </td>
-          </tr>
-          </thead>
-          <tbody>
-          <tr th:each="monthEvent, stat : ${monthEvents}">
-            <td>
-              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
-              <textarea th:field="*{monthEvents[__${stat.index}__].monthEventDescription}"
-                        style="width:100%" rows="2" required></textarea>
-            </td>
-            <td>
-              <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-control">
-                <option value="">-- Chọn người phụ trách --</option>
-
-                <!-- ⭐ Cả phòng -->
-                <option value="ALL" style="font-weight:bold; color:red;">
-                  🔥 Cả phòng
-                </option>
-
-                <!-- Danh sách nhân viên -->
-                <option th:each="acc : ${accounts}"
-                        th:value="${acc.accountName}"
-                        th:text="${acc.displayName}">
-                </option>
-              </select>
-            </td>
-            <td>
-              <!-- ✅ Bỏ th:name, chỉ giữ th:field -->
-              <input type="text"
-                     class="flatpickr-input"
-                     placeholder="Bấm chọn thời gian"
-                     th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}"
-                     required>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-        <div class="col-12 mt-2">
-          <button type="submit" class="btn btn-primary">Thêm</button>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+    
+    <div class="container mt-4 mb-5">
+        <!-- Tiêu đề và Nút thêm số lượng -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <h4 class="text-primary fw-bold m-0">Giao việc cá nhân</h4>
+            <button type="button" class="btn btn-primary shadow-sm" onclick="showPrivateDialog()">
+                + Chọn số lượng việc cần giao
+            </button>
         </div>
-      </form>
-    </div>
 
-    <div class="col-12 mt-3">
-      <a th:href="@{/home/manager/task}" style="text-decoration: none">
-        <button class="btn btn-outline-primary" style="float: right">
-          Trở về trang giao việc cá nhân
-        </button>
-      </a>
+        <!-- Form nhập liệu -->
+        <form method="post" th:action="@{/home/manager/task/addMonthEvent}" th:object="${monthEventManager}" id="form">
+            
+            <!-- Vòng lặp tạo ra các Card thay vì các thẻ <tr> -->
+            <div th:each="monthEvent, stat : ${monthEvents}" class="card task-card">
+                <div class="task-card-header">
+                    Công việc #<span th:text="${stat.count}"></span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Nội dung -->
+                        <div class="col-12">
+                            <label class="form-label">Nội dung công việc <span class="text-danger">*</span></label>
+                            <textarea th:field="*{monthEvents[__${stat.index}__].monthEventDescription}" 
+                                      class="form-control" rows="2" placeholder="Nhập nội dung..." required></textarea>
+                        </div>
+
+                        <!-- Người phụ trách -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Người phụ trách <span class="text-danger">*</span></label>
+                            <select th:field="*{monthEvents[__${stat.index}__].account.accountName}" class="form-select" required>
+                                <option value="">-- Chọn người phụ trách --</option>
+                                <option value="ALL" class="fw-bold text-danger">🔥 Cả phòng</option>
+                                <option th:each="acc : ${accounts}"
+                                        th:value="${acc.accountName}"
+                                        th:text="${acc.displayName}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Deadline -->
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Deadline <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control flatpickr-input bg-white" 
+                                   placeholder="Bấm chọn thời gian" 
+                                   th:field="*{monthEvents[__${stat.index}__].monthEventDeadline}" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút Submit và Trở về -->
+            <div th:if="${not #lists.isEmpty(monthEvents)}" class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-success px-5 fw-bold">Lưu tất cả</button>
+                <a th:href="@{/home/manager/task}" class="btn btn-outline-secondary ms-auto">
+                    Hủy & Trở về
+                </a>
+            </div>
+            
+            <!-- Thông báo nếu chưa chọn số lượng -->
+            <div th:if="${#lists.isEmpty(monthEvents)}" class="text-center py-5 text-muted">
+                <h5>Vui lòng bấm nút "Chọn số lượng việc cần giao" ở góc trên.</h5>
+            </div>
+
+        </form>
     </div>
-  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous"></script>
-
-<!-- ✅ Script checkbox tách riêng, không nhét vào thẻ script có src -->
-<script>
-  function showPrivateDialog() {
-    var numberOfRows = prompt("Hãy nhập số dòng giao việc cá nhân bạn muốn giao việc:");
-    if (numberOfRows != null) {
-      var url = "/home/manager/task/showAddPrivateEventForm?rows=" + numberOfRows;
-      document.getElementById("addPrivateEvent").setAttribute("href", url);
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    const rows = document.querySelectorAll("tr");
-    rows.forEach(row => {
-      const checkbox = row.querySelector(".all-checkbox");
-      const select = row.querySelector(".account-select");
-      if (checkbox && select) {
-        checkbox.addEventListener("change", function () {
-          if (this.checked) {
-            select.value = "";
-            select.disabled = true;
-          } else {
-            select.disabled = false;
-          }
-        });
-      }
-    });
-  });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

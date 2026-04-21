@@ -1,50 +1,93 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Xóa tài khoản</title>
-  <link rel="stylesheet" href="/css/mdb.min.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc cho Mobile -->
+    <title>Xóa tài khoản - PVT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    
+    <style>
+        /* Làm đẹp form xóa tài khoản */
+        .delete-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            background: white;
+        }
+        /* Tiêu đề màu đỏ cảnh báo */
+        .delete-card-header {
+            background-color: #dc3545; 
+            color: white;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 15px 20px;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <!-- 🔥 ĐÃ THÊM: Header và Navbar cho đồng bộ -->
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
 
-<h2 style="text-align:center">Xóa tài khoản</h2>
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <!-- Trên Mobile chiếm 100%, Tablet 80%, PC 50% -->
+            <div class="col-12 col-md-8 col-lg-6">
+                
+                <div class="card delete-card">
+                    <div class="card-header delete-card-header text-center">
+                        <h4 class="m-0 fw-bold">Xóa Tài Khoản</h4>
+                    </div>
+                    
+                    <div class="card-body p-4 p-md-5">
+                        
+                        <!-- Thông báo Thành công -->
+                        <div th:if="${message}" class="alert alert-success text-center fw-bold" role="alert">
+                            <span th:text="${message}"></span>
+                        </div>
 
-<div th:if="${message}" style="color: green; text-align:center">
-  <p th:text="${message}"></p>
+                        <!-- Thông báo Lỗi -->
+                        <div th:if="${error}" class="alert alert-danger text-center fw-bold" role="alert">
+                            <span th:text="${error}"></span>
+                        </div>
+
+                        <!-- Form nhập liệu -->
+                        <form th:action="@{/home/manager/delete-account}" method="post">
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Chọn tài khoản cần xóa <span class="text-danger">*</span></label>
+                                <select name="accountName" class="form-select form-select-lg" required>
+                                    <option value="">-- Chọn tài khoản --</option>
+                                    <!-- Hiển thị cả Tên và Username để tránh xóa nhầm người trùng tên -->
+                                    <option th:each="acc : ${accounts}"
+                                            th:value="${acc.accountName}"
+                                            th:text="${acc.name} + ' (' + ${acc.accountName} + ')'">
+                                    </option>
+                                </select>
+                                <div class="form-text text-danger fst-italic mt-2">
+                                    ⚠️ Lưu ý: Hành động này sẽ xóa toàn bộ công việc liên quan đến tài khoản này và không thể hoàn tác!
+                                </div>
+                            </div>
+
+                            <!-- Nút bấm -->
+                            <div class="d-flex flex-column flex-sm-row gap-2 mt-4 pt-3 border-top">
+                                <button type="submit" class="btn btn-danger btn-lg w-100 fw-bold"
+                                        onclick="return confirm('CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản này không?')">
+                                    Xóa tài khoản
+                                </button>
+                                <a th:href="@{/home}" class="btn btn-outline-secondary btn-lg w-100">Trở về trang chủ</a>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 </div>
 
-<div th:if="${error}" style="color: red; text-align:center">
-  <p th:text="${error}"></p>
-</div>
-
-<form th:action="@{/home/manager/delete-account}" method="post">
-
-  <div style="width: 30%; margin: auto">
-
-    <label>Chọn tài khoản</label>
-    <select name="accountName" class="form-control" required>
-      <option value="">-- Chọn tài khoản --</option>
-      <option th:each="acc : ${accounts}"
-              th:value="${acc.accountName}"
-              th:text="${acc.name}">
-      </option>
-    </select>
-
-    <br>
-
-    <button type="submit" class="btn btn-danger"
-            onclick="return confirm('Bạn có chắc muốn xóa tài khoản này?')">
-      Xóa tài khoản
-    </button>
-
-  </div>
-</form>
-
-<a th:href="@{/home}" style="text-decoration: none">
-  <button class="btn btn-outline-primary" style="float: right">
-    Trở về trang chủ
-  </button>
-</a>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

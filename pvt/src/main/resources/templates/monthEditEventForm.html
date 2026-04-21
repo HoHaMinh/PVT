@@ -2,15 +2,28 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc cho Mobile -->
     <title>Chỉnh sửa việc PVT</title>
-    <base href="/">
-    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <style>
+        /* Làm đẹp form trên Mobile */
+        .edit-form-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #05428c;
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -33,78 +46,65 @@
         });
     </script>
 </head>
-<body>
-<div class="container-fluid">
+<body class="bg-light">
+<div class="container-fluid p-0">
     <div th:replace="~{fragments :: header}"></div>
-    <div>
-        <nav th:replace="~{fragments :: nav}"></nav>
-        <div>
-            <div class="mb-1">
-                <h10 style="text-align: left" class="text-danger" th:if="${mess != null}" th:text="${mess}"></h10>
-                <h3 class="text-primary mb-2">Chỉnh sửa lịch công việc tháng/cá nhân</h3>
-            </div>
-            <div>
-                <form class="row" method="post"
-                      th:action="@{/home/manager/task/editMonthEvent(selectedValue=${selectedValue})}"
-                      th:object="${monthEditEvent}" id="form">
-                    <table>
-                        <thead id="navbar-sticky">
-                        <tr>
-                            <td hidden="hidden">Id</td>
-                            <td class="col-9" style="font-weight: bolder; font-size: larger">Nội dung</td>
-                            <td class="col-1" style="font-weight: bolder; font-size: larger; text-align: left">Deadline</td>
-                            <td class="col-2" style="font-weight: bolder; font-size: larger">Người phụ trách</td>
-                            <td hidden="hidden">Month Event Status</td>
-                            <td hidden="hidden">Response status</td>
-                            <td hidden="hidden">Last Time Response</td>
-                            <td hidden="hidden">Last Person Response</td>
-                            <td hidden="hidden">Registered Day</td>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr>
-                            <td hidden="hidden">
-                                <input type="text" th:field="*{monthEventId}">
-                            </td>
-                            <td>
-                                <textarea th:field="*{monthEventDescription}" style="width:100%;" rows="2" required></textarea>
-                            </td>
-                            <td>
-                                <input type="text" class="flatpickr-input" placeholder="Bấm chọn thời gian"
-                                       th:field="*{monthEventDeadline}" required>
-                            </td>
-                            <td>
-                                <select class="form-control" th:field="*{account.accountName}">
-                                    <option value="">-- Chọn người phụ trách --</option>
-                                    <option value="ALL" th:selected="${monthEditEvent.all}">🔥 Cả phòng</option>
-                                    <option th:each="acc : ${accountList}"
-                                            th:value="${acc.accountName}"
-                                            th:text="${acc.displayName}"
-                                            th:selected="${!monthEditEvent.all and monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
-                                    </option>
-                                </select>
-                            </td>
-                            <td hidden="hidden"><input type="text" th:field="*{monthEventStatus}"></td>
-                            <td hidden="hidden"><input type="text" th:field="*{responseStatus}"></td>
-                            <td hidden="hidden"><input type="text" th:field="*{lastTimeResponse}"></td>
-                            <td hidden="hidden"><input type="text" th:field="*{lastPersonResponse}"></td>
-                            <td hidden="hidden"><input type="text" th:field="*{registeredDay}"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                    <div class="col-12 mt-3">
-                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
-                    </div>
-                </form>
-            </div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+    
+    <div class="container mt-4">
+        <div class="mb-3">
+            <h5 class="text-danger fw-bold" th:if="${mess != null}" th:text="${mess}"></h5>
+            <h4 class="text-primary fw-bold">Chỉnh sửa lịch công việc</h4>
         </div>
 
-        <div class="col-12 mt-3">
-            <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" style="text-decoration: none">
-                <button class="btn btn-outline-primary" style="float: right">
-                    Trở lại tab cũ
-                </button>
-            </a>
+        <!-- 🔥 ĐÃ SỬA: Bỏ Table, dùng Card và Grid System -->
+        <div class="edit-form-card">
+            <form method="post" th:action="@{/home/manager/task/editMonthEvent(selectedValue=${selectedValue})}" th:object="${monthEditEvent}" id="form">
+                
+                <!-- Các trường ẩn (Hidden fields) -->
+                <input type="hidden" th:field="*{monthEventId}">
+                <input type="hidden" th:field="*{monthEventStatus}">
+                <input type="hidden" th:field="*{responseStatus}">
+                <input type="hidden" th:field="*{lastTimeResponse}">
+                <input type="hidden" th:field="*{lastPersonResponse}">
+                <input type="hidden" th:field="*{registeredDay}">
+
+                <div class="row g-4">
+                    <!-- Cột Nội dung (Chiếm 100% trên Mobile, 12 cột trên PC) -->
+                    <div class="col-12">
+                        <label class="form-label">Nội dung công việc <span class="text-danger">*</span></label>
+                        <textarea th:field="*{monthEventDescription}" class="form-control" rows="3" required placeholder="Nhập nội dung công việc..."></textarea>
+                    </div>
+
+                    <!-- Cột Deadline (Chiếm 100% trên Mobile, 6 cột trên PC) -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Deadline <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control flatpickr-input bg-white" placeholder="Bấm chọn thời gian" th:field="*{monthEventDeadline}" required>
+                    </div>
+
+                    <!-- Cột Người phụ trách (Chiếm 100% trên Mobile, 6 cột trên PC) -->
+                    <div class="col-12 col-md-6">
+                        <label class="form-label">Người phụ trách <span class="text-danger">*</span></label>
+                        <select class="form-select" th:field="*{account.accountName}">
+                            <option value="">-- Chọn người phụ trách --</option>
+                            <option value="ALL" th:selected="${monthEditEvent.all}" class="fw-bold text-danger">🔥 Cả phòng</option>
+                            <option th:each="acc : ${accountList}"
+                                    th:value="${acc.accountName}"
+                                    th:text="${acc.displayName}"
+                                    th:selected="${!monthEditEvent.all and monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Nút bấm -->
+                <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+                    <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" class="btn btn-outline-secondary ms-auto">
+                        Hủy & Trở lại
+                    </a>
+                </div>
+            </form>
         </div>
     </div>
 </div>

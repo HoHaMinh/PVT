@@ -2,31 +2,39 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trang chủ PVT</title>
     <base href="/">
-    <meta name="viewport" content="width=device-width, initial-scale=1" charset="UTF-8"/>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
-          integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/home.css}">
 </head>
 <body>
-<div class="container-fluid">
-    <div th:replace="~{fragments :: header}"></div> <!-- Dùng header của fragments -->
-    <div>
-        <nav th:replace="~{fragments :: nav}"></nav> <!-- Dùng nav của fragments -->
-        <div class="mt-2">
-            <div th:each="mess: ${message}" th:if="${message!=null}" style="display: flex; align-items: center;justify-content: center;">
-                <h3 style="color: red" th:text="${mess.getMessage()}"></h3>
-            </div>
-            <div class="home-banner">
-                <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg">
-            </div>
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div> 
+    <nav th:replace="~{fragments :: nav}"></nav> 
+    
+    <div class="container mt-3">
+        <div th:if="${message != null}" class="alert alert-warning text-center" role="alert">
+            <h5 class="text-danger m-0" th:each="mess: ${message}" th:text="${mess.getMessage()}"></h5>
         </div>
     </div>
+
+    <!-- 🔥 QUAY LẠI DÙNG .home-banner NHƯ BAN ĐẦU CHO PC -->
+    <div class="home-banner d-none d-md-block mt-2">
+        <img src="https://sudospaces.com/hoaphat-com-vn/2020/05/kv-tap-doan-trang-chu.jpg" alt="Banner Hòa Phát">
+    </div>
+
+    <!-- 🔥 VẪN GIỮ LẠI WELCOME SCREEN CHO MOBILE -->
+    <div class="welcome-screen-mobile d-md-none">
+        <div class="welcome-content">
+            <img src="https://www.hoaphat.com.vn/assets/images/logo.png" alt="Logo" class="welcome-logo">
+            <h2 class="welcome-title">Hệ thống Quản lý Công việc</h2>
+            <p class="welcome-subtitle">Phòng Vật tư - Ống thép Hòa Phát Đà Nẵng</p>
+        </div>
+    </div>
+
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
-        crossorigin="anonymous">
-</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

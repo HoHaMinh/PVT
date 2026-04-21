@@ -1,0 +1,2141 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+config/CloudflareConfig.java
+config/MyCustomAuthenticationSuccessHandler.java
+config/SecurityConfig.java
+config/WebConfig.java
+controller/AccountController.java
+controller/EventController.java
+controller/HomeController.java
+controller/ImageController.java
+controller/LoginController.java
+formatter/DateFormatter.java
+model/account/Account.java
+model/account/AccountRole.java
+model/account/Role.java
+model/dto/MonthEventManager.java
+model/dto/ResponseFilter.java
+model/dto/ResponseRestful.java
+model/dto/UserDisplayDTO.java
+model/dto/UserTabOrder.java
+model/event/MonthEvent.java
+model/event/ResponseEventInformation.java
+model/event/SercuritySchedule.java
+model/event/SpecialMessage.java
+model/UserValidate.java
+PvtApplication.java
+repository/account/IAccountRepository.java
+repository/account/IAccountRoleRepository.java
+repository/event/IMonthEventRepository.java
+repository/event/IResponseEventInformationRepository.java
+repository/event/ISercurityScheduleRepository.java
+repository/event/ISpecialMessageRepository.java
+repository/event/IUserTabOrderRepository.java
+service/account/AccountService.java
+service/account/IAccountService.java
+service/account/UserDetailsServiceImpl.java
+service/ISercurityScheduleService.java
+service/ISpecialMessageService.java
+service/monthEvent/IMonthEventService.java
+service/monthEvent/MonthEventService.java
+service/response/IResponseEventInformationService.java
+service/response/ResponseEventInformationService.java
+service/SercurityScheduleService.java
+service/SpecialMessageService.java
+service/UserTabOrderService.java
+util/GeneratePassword.java
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="config/CloudflareConfig.java">
+package com.hoaphat.pvt.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.filter.ForwardedHeaderFilter;
+
+@Configuration
+public class CloudflareConfig {
+    @Bean
+    public ForwardedHeaderFilter forwardedHeaderFilter() {
+        return new ForwardedHeaderFilter();
+    }
+}
+</file>
+
+<file path="config/MyCustomAuthenticationSuccessHandler.java">
+package com.hoaphat.pvt.config;
+
+import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.service.account.IAccountService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
+
+@Component
+public class MyCustomAuthenticationSuccessHandler implements AuthenticationSuccessHandler {
+    @Autowired
+    private IAccountService accountService;
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        String accountName = userDetails.getUsername(); // login ID — giữ nguyên không đổi
+        String displayName = accountName; // fallback nếu không tìm thấy
+
+        List<Account> accountList = accountService.findAll();
+        for (int i = 0; i < accountList.size(); i++) {
+            if (accountName.equals(accountList.get(i).getAccountName())) {
+                displayName = accountList.get(i).getName(); // chỉ ghi đè displayName
+            }
+        }
+
+        request.getSession().setAttribute("username", displayName);    // tên hiển thị: "Hồ Hà Minh"
+        request.getSession().setAttribute("accountName", accountName); // login ID: "ho.ha.minh" ✅
+        response.sendRedirect("/home");
+    }
+}
+</file>
+
+<file path="config/SecurityConfig.java">
+package com.hoaphat.pvt.config;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
+    @Autowired
+    UserDetailsService userDetailsService;
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
+    }
+
+    @Bean
+    public AuthenticationSuccessHandler myAuthenticationSuccessHandler() {
+        return new MyCustomAuthenticationSuccessHandler();
+    }
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests()
+                .antMatchers("/", "/login", "/js/**", "/css/**").permitAll()
+                .antMatchers("/home/employee/**").hasAnyRole("EMPLOYEE", "MANAGER")
+                .antMatchers("/home/manager/**").hasRole("MANAGER")
+                // ✅ Bắt tất cả route còn lại (kể cả /home) yêu cầu đăng nhập
+                .anyRequest().authenticated();
+
+        http.exceptionHandling().accessDeniedPage("/deny");
+
+        http.formLogin()
+                .loginPage("/login")
+                .loginProcessingUrl("/doLogin")
+                .usernameParameter("accountname")
+                .passwordParameter("password")
+                .defaultSuccessUrl("/home", true)
+                .successHandler(myAuthenticationSuccessHandler())
+                .failureUrl("/?error=true");
+
+        http.logout().logoutUrl("/logout");
+    }
+}
+</file>
+
+<file path="config/WebConfig.java">
+package com.hoaphat.pvt.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+    @Value("${image.folder.path}")
+    private String imageFolderPath;
+
+    @Value("${video.folder.path}")
+    private String videoFolderPath;
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/img-local/**")
+                .addResourceLocations("file:///" + imageFolderPath + "/");
+        registry.addResourceHandler("/vid-local/**")
+                .addResourceLocations("file:///" + videoFolderPath + "/");
+    }
+}
+</file>
+
+<file path="controller/AccountController.java">
+package com.hoaphat.pvt.controller;
+
+import com.hoaphat.pvt.service.account.IAccountService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@Controller
+@RequestMapping("/home/manager")
+public class AccountController {
+    @Autowired
+    private IAccountService accountService;
+
+    // Hiển thị form
+    @GetMapping("/create-account")
+    public String showForm() {
+        return "create-account";
+    }
+
+    // Xử lý submit
+    @PostMapping("/create-account")
+    public String createAccount(@RequestParam String username, @RequestParam String password, @RequestParam String name, @RequestParam String role, Model model) {
+
+        try {
+            accountService.createAccount(username, password, name, role);
+            model.addAttribute("message", "Tạo tài khoản thành công!");
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+
+        return "create-account";
+    }
+}
+</file>
+
+<file path="controller/EventController.java">
+package com.hoaphat.pvt.controller;
+import com.hoaphat.pvt.model.UserValidate;
+import com.hoaphat.pvt.model.dto.*;
+import com.hoaphat.pvt.model.event.*;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.service.*;
+import com.hoaphat.pvt.service.account.AccountService;
+import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
+import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.*;
+import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.*;
+@Controller
+public class EventController {
+    LocalDateTime timeSetToday;
+    @Autowired private IMonthEventService monthEventService;
+    @Autowired private ISercurityScheduleService sercurityScheduleService;
+    @Autowired private IResponseEventInformationService responseEventInformationService;
+    @Autowired private UserValidate userValidate;
+    @Autowired private AccountService accountService;
+    @Autowired private IAccountRepository accountRepository;
+    @Autowired private UserTabOrderService userTabOrderService;
+    @Scheduled(fixedRate = 1) public void setTime() { timeSetToday = LocalDateTime.now(); }
+    @GetMapping("/home/employee/private")
+    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> accountName, HttpServletRequest request) {
+        String currentAccountName = (String) request.getSession().getAttribute("accountName");
+        boolean isManager = request.isUserInRole("ROLE_MANAGER");
+        model.addAttribute("isManager", isManager);
+        String filter = isManager ? accountName.orElse("") : currentAccountName;
+        model.addAttribute("selectedValue", filter);
+        monthEventService.checkWeekEventDeadline(timeSetToday);
+        model.addAttribute("sercuritySchedule", sercurityScheduleService.getAll());
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+        List<UserDisplayDTO> userTabs = accountService.getUserDisplayList();
+        if (isManager) {
+            List<String> ordered = userTabOrderService.getOrderedTabs(username);
+            if (!ordered.isEmpty()) { userTabs = userTabs.stream().sorted(Comparator.comparingInt(a -> { int idx = ordered.indexOf(a.getAccountName()); return idx == -1 ? 999 : idx; })).collect(Collectors.toList()); }
+        }
+        model.addAttribute("userTabs", userTabs);
+        model.addAttribute("accountName", currentAccountName);
+        List<MonthEvent> data = monthEventService.getMonthEventListByFilter(timeSetToday, filter);
+        return new ModelAndView("private", "monthEventListByTime", data);
+    }
+    @GetMapping("/home/employee/filterRestful")
+    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
+        if (nameFilter == null) { nameFilter = ""; }
+        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(timeSetToday, nameFilter);
+        return new ResponseEntity<>(new ResponseFilter(list, nameFilter), HttpStatus.OK);
+    }
+    @GetMapping("/home/employee/private/showEventResponseForm/{id}")
+    private String showEventResponseForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String selectedValue, Model model, HttpServletRequest request) {
+        MonthEvent eventResponse = monthEventService.findById(id);
+        model.addAttribute("response", new ResponseEventInformation(eventResponse));
+        model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        model.addAttribute("selectedValue", selectedValue);
+        return "eventResponse";
+    }
+    @GetMapping("/home/employee/private/showEventResponseFormRestful/{id}")
+    public ResponseEntity<List<ResponseEventInformation>> showEventResponseFormRestful(@PathVariable("id") Integer id) { return new ResponseEntity<>(responseEventInformationService.getAllResponseById(id), HttpStatus.OK); }
+    @PostMapping("/home/employee/private/addEventResponse")
+    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation res, @RequestParam(value = "selectedValue", required = false) String selectedValue, Principal principal) {
+        res.setCreatedByUser(principal.getName());
+        res.setEventInformationResponse(StringEscapeUtils.escapeHtml4(res.getEventInformationResponse()));
+        responseEventInformationService.addResponseEventInformation(res);
+        return "redirect:/home/employee/private/showEventResponseForm/" + res.getMonthEvent().getMonthEventId() + "?selectedValue=" + selectedValue;
+    }
+    @GetMapping("/home/manager/task")
+    public String showTask(Model model, @RequestParam("page") Optional<Integer> page, @RequestParam("size") Optional<Integer> size, @RequestParam("sort") Optional<String> sort, HttpServletRequest request) {
+        int currentPage = page.orElse(1);
+        Page<MonthEvent> monthEventList = monthEventService.getMonthEventListWithPaging(PageRequest.of(currentPage - 1, size.orElse(11), Sort.by(sort.orElse("monthEventDeadline")).ascending()));
+        model.addAttribute("currentPage", currentPage);
+        model.addAttribute("monthEventList", monthEventList);
+        if (monthEventList.getTotalPages() > 1) model.addAttribute("pageNumbers", IntStream.rangeClosed(1, monthEventList.getTotalPages()).boxed().collect(Collectors.toList()));
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        return "task";
+    }
+    @GetMapping("/home/manager/task/showAddMonthEventForm")
+    private String showAddMonthEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
+        List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
+        for (int i = 0; i < rows; i++) { monthEvents.add(new MonthEvent()); }
+        model.addAttribute("monthEvents", monthEvents);
+        model.addAttribute("monthEventManager", new MonthEventManager());
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        return "monthEventForm";
+    }
+    @GetMapping("/home/manager/task/showAddPrivateEventForm")
+    private String showAddPrivateEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
+        List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
+        for (int i = 0; i < rows; i++) { monthEvents.add(new MonthEvent()); }
+        MonthEventManager manager = new MonthEventManager();
+        manager.setMonthEvents((ArrayList<MonthEvent>) monthEvents);
+        model.addAttribute("monthEventManager", manager);
+        model.addAttribute("monthEvents", monthEvents);
+        model.addAttribute("accounts", accountService.findAll());
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        return "privateEventForm";
+    }
+    @PostMapping("/home/manager/task/addMonthEvent")
+    public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
+        for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
+            if (monthEvent.getAccount() != null && "ALL".equals(monthEvent.getAccount().getAccountName())) { monthEvent.setAll(true); monthEvent.setAccount(null); }
+            else { monthEvent.setAll(false); }
+            monthEventService.addMonthEvent(monthEvent, true);
+        }
+        redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        return "redirect:/home/manager/task";
+    }
+    @GetMapping("/home/manager/task/showEditMonthEventForm/{id}")
+    private String showEditMonthEventForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String sv, Model model, HttpServletRequest request) {
+        model.addAttribute("monthEditEvent", monthEventService.findById(id));
+        model.addAttribute("accountList", accountService.findAll());
+        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        model.addAttribute("selectedValue", sv);
+        return "monthEditEventForm";
+    }
+    @PostMapping("/home/manager/task/editMonthEvent")
+    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent m, @RequestParam(value = "selectedValue", required = false) String sv, RedirectAttributes ra, Principal principal) {
+        try {
+            MonthEvent old = monthEventService.findById(m.getMonthEventId());
+            if (old != null) {
+                if (m.getAccount() != null && "ALL".equals(m.getAccount().getAccountName())) { m.setAll(true); m.setAccount(null); }
+                else if (m.getAccount() == null || m.getAccount().getAccountName() == null || m.getAccount().getAccountName().isEmpty()) { m.setAccount(old.getAccount()); m.setAll(old.getAll()); }
+                else { m.setAll(false); }
+            }
+            monthEventService.addMonthEvent(m, false);
+            ResponseEventInformation res = new ResponseEventInformation();
+            LocalDateTime dl = m.getMonthEventDeadline();
+            res.setCreatedByUser(principal.getName()); res.setCreatedByDate(dl);
+            res.setEventInformationResponse("Báo cáo lại " + dl.format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+            res.setMonthEvent(m);
+            responseEventInformationService.addResponseEventInformation(res);
+            ra.addFlashAttribute("mess", "Sửa thành công");
+            return "redirect:/home/employee/private?selectedValue=" + sv;
+        } catch (Exception e) { return "redirect:/home/employee/private?selectedValue=" + sv; }
+    }
+    @GetMapping("/home/manager/task/hide/{id}")
+    public String hideEvent(@PathVariable Integer id, @RequestParam(value = "selectedValue", required = false) String sv) {
+        MonthEvent e = monthEventService.findById(id); e.setHidden(true); monthEventService.addMonthEvent(e, false);
+        return "redirect:/home/employee/private?selectedValue=" + sv;
+    }
+    @GetMapping("/home/manager/task/show/{id}")
+    public String showEvent(@PathVariable Integer id, @RequestParam(value = "selectedValue", required = false) String sv) {
+        MonthEvent e = monthEventService.findById(id); e.setHidden(false); monthEventService.addMonthEvent(e, false);
+        return "redirect:/home/employee/private?selectedValue=" + sv;
+    }
+    @GetMapping("/home/manager/weeklyTask/delete/{id}")
+    public String deleteWeekEventTask(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String sv, RedirectAttributes ra) {
+        monthEventService.deleteWeekEvent(id); ra.addFlashAttribute("mess", "Xóa thành công");
+        return "redirect:/home/employee/private?selectedValue=" + sv;
+    }
+    @GetMapping("/home/manager/weeklyTask")
+    public ModelAndView showWeeklyTask(Model model, HttpServletRequest request) { model.addAttribute("username", (String) request.getSession().getAttribute("username")); return new ModelAndView("weeklyTask", "weekEventList", monthEventService.getWeekEventList()); }
+    @PostMapping("/home/manager/weeklyTask/addWeekEvent")
+    public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes ra) {
+        for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
+            if (monthEvent.getAccount() != null && "ALL".equals(monthEvent.getAccount().getAccountName())) { monthEvent.setAll(true); monthEvent.setAccount(null); }
+            else { monthEvent.setAll(false); }
+            monthEventService.addMonthEvent(monthEvent, true);
+        }
+        ra.addFlashAttribute("mess", "Thêm mới thành công");
+        return "redirect:/home/manager/weeklyTask";
+    }
+    @GetMapping("/home/manager/weeklyTask/showAddWeekEventForm")
+    public String showAddWeekEventForm(@RequestParam("rows") Integer rows, Model model) {
+        List<MonthEvent> weekEvents = new ArrayList<MonthEvent>(rows);
+        for (int i = 0; i < rows; i++) { weekEvents.add(new MonthEvent()); }
+        MonthEventManager manager = new MonthEventManager(); manager.setMonthEvents((ArrayList<MonthEvent>) weekEvents);
+        model.addAttribute("monthEventManager", manager); model.addAttribute("weekEvents", weekEvents);
+        model.addAttribute("accounts", accountService.findAll());
+        return "weekEventForm";
+    }
+    @GetMapping("/home/manager/delete-account") public String showDeleteAccountPage(Model model) { model.addAttribute("accounts", accountService.findAll()); return "deleteAccount"; }
+    @PostMapping("/home/manager/delete-account") public String deleteAccount(@RequestParam String accountName, Principal principal, RedirectAttributes ra) {
+        if (accountName.equals(principal.getName())) { ra.addFlashAttribute("error", "Không thể xóa chính bạn"); return "redirect:/home/manager/delete-account"; }
+        accountService.deleteAccountFull(accountName); ra.addFlashAttribute("message", "Xóa thành công");
+        return "redirect:/home/manager/delete-account";
+    }
+    @PostMapping("/home/manager/task/toggleHidden/{id}")
+    public String toggleHidden(@PathVariable Integer id, RedirectAttributes ra) {
+        MonthEvent event = monthEventService.findById(id);
+        if (event != null) { event.setHidden(!Boolean.TRUE.equals(event.getHidden())); monthEventService.addMonthEvent(event, false); }
+        ra.addFlashAttribute("mess", "Cập nhật thành công");
+        return "redirect:/home/manager/task";
+    }
+    @PostMapping("/home/manager/saveTabOrder") @ResponseBody public ResponseEntity<?> saveTabOrder(@RequestBody List<String> ots, HttpServletRequest req) { userTabOrderService.saveOrder((String) req.getSession().getAttribute("username"), ots); return ResponseEntity.ok().build(); }
+}
+</file>
+
+<file path="controller/HomeController.java">
+package com.hoaphat.pvt.controller;
+
+import com.hoaphat.pvt.service.ISpecialMessageService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+import java.time.LocalDateTime;
+
+@Controller
+public class HomeController {
+    @Autowired
+    private ISpecialMessageService specialMessageService;
+
+    @GetMapping("/home")
+    public ModelAndView showHome(Model model, HttpServletRequest request) {
+        model.addAttribute("message",specialMessageService.getAll(LocalDateTime.now()));
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+        return new ModelAndView("home");
+    }
+}
+</file>
+
+<file path="controller/ImageController.java">
+package com.hoaphat.pvt.controller;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.util.*;
+
+@Controller
+public class ImageController {
+
+    @Value("${image.folder.path}")
+    private String imageFolderPath;
+
+    // Các đuôi file ảnh hợp lệ
+    private static final List<String> IMAGE_EXTENSIONS =
+            Arrays.asList("jpg", "jpeg", "png", "gif", "webp", "bmp");
+
+    @GetMapping("/home/employee/image")
+    public String showImage(Model model, HttpServletRequest request) {
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+
+        // Map: tên subfolder → danh sách URL ảnh
+        Map<String, List<String>> albums = new LinkedHashMap<>();
+
+        File baseFolder = new File(imageFolderPath);
+
+        if (baseFolder.exists() && baseFolder.isDirectory()) {
+            File[] subFolders = baseFolder.listFiles(File::isDirectory);
+
+            if (subFolders != null) {
+                // Sắp xếp subfolder theo tên
+                Arrays.sort(subFolders, Comparator.comparing(File::getName));
+
+                for (File subFolder : subFolders) {
+                    List<String> imageUrls = new ArrayList<>();
+                    File[] files = subFolder.listFiles();
+
+                    if (files != null) {
+                        Arrays.sort(files, Comparator.comparing(File::getName));
+                        for (File file : files) {
+                            String ext = getExtension(file.getName()).toLowerCase();
+                            if (IMAGE_EXTENSIONS.contains(ext)) {
+                                // URL để truy cập ảnh
+                                String url = "/img-local/" + subFolder.getName()
+                                        + "/" + file.getName();
+                                imageUrls.add(url);
+                            }
+                        }
+                    }
+
+                    if (!imageUrls.isEmpty()) {
+                        albums.put(subFolder.getName(), imageUrls);
+                    }
+                }
+            }
+        }
+
+        model.addAttribute("albums", albums);
+        return "images";
+    }
+
+    @Value("${video.folder.path}")
+    private String videoFolderPath;
+
+    private static final List<String> VIDEO_EXTENSIONS =
+            Arrays.asList("mp4", "webm", "ogg", "mov");
+
+    @GetMapping("/home/employee/video")
+    public String showVideo(Model model, HttpServletRequest request) {
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+
+        Map<String, List<String>> videoAlbums = new LinkedHashMap<>();
+        File baseFolder = new File(videoFolderPath);
+
+        if (baseFolder.exists() && baseFolder.isDirectory()) {
+            File[] subFolders = baseFolder.listFiles(File::isDirectory);
+            if (subFolders != null) {
+                Arrays.sort(subFolders, Comparator.comparing(File::getName));
+                for (File subFolder : subFolders) {
+                    List<String> videoUrls = new ArrayList<>();
+                    File[] files = subFolder.listFiles();
+                    if (files != null) {
+                        Arrays.sort(files, Comparator.comparing(File::getName));
+                        for (File file : files) {
+                            String ext = getExtension(file.getName()).toLowerCase();
+                            if (VIDEO_EXTENSIONS.contains(ext)) {
+                                videoUrls.add("/vid-local/" + subFolder.getName()
+                                        + "/" + file.getName());
+                            }
+                        }
+                    }
+                    if (!videoUrls.isEmpty()) {
+                        videoAlbums.put(subFolder.getName(), videoUrls);
+                    }
+                }
+            }
+        }
+
+        model.addAttribute("videoAlbums", videoAlbums);
+        return "video";
+    }
+
+    private String getExtension(String filename) {
+        int dotIndex = filename.lastIndexOf('.');
+        return dotIndex >= 0 ? filename.substring(dotIndex + 1) : "";
+    }
+}
+</file>
+
+<file path="controller/LoginController.java">
+package com.hoaphat.pvt.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.http.HttpServletRequest;
+
+@Controller
+public class LoginController {
+    @GetMapping("/deny")
+    public ModelAndView deny(Model model, HttpServletRequest request) {
+        String username = (String) request.getSession().getAttribute("username");
+        model.addAttribute("username", username);
+        return new ModelAndView("deny");
+    }
+
+    @RequestMapping(value = {"/", "/login", "/logout"})
+    public String showLogin() {
+        return "login";
+    }
+}
+</file>
+
+<file path="formatter/DateFormatter.java">
+package com.hoaphat.pvt.formatter;
+
+import org.springframework.format.Formatter;
+
+import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+public class DateFormatter implements Formatter<LocalDateTime> {
+    @Override
+    public LocalDateTime parse(String text, Locale locale) throws ParseException {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        LocalDateTime deadline = LocalDateTime.parse(text, formatter);
+        return deadline;
+    }
+
+    @Override
+    public String print(LocalDateTime object, Locale locale) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return object.format(formatter);
+    }
+}
+</file>
+
+<file path="model/account/Account.java">
+package com.hoaphat.pvt.model.account;
+
+import javax.persistence.*;
+
+@Entity
+public class Account {
+    @Id
+    @Column(nullable = false)
+    private String accountName;
+
+    @Column(nullable = false, length = 128)
+    private String password;
+    @Column(name = "name")
+    private String name;
+
+    public Account() {
+    }
+
+    public Account(String accountName, String password) {
+        this.accountName = accountName;
+        this.password = password;
+    }
+
+    public Account(String accountName, String password, String name) {
+        this.accountName = accountName;
+        this.password = password;
+        this.name = name;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDisplayName() {
+        String name = this.name; // ✅ dùng tên thật
+
+        if (name == null || name.trim().isEmpty()) {
+            return this.accountName; // fallback nếu thiếu
+        }
+
+        String[] parts = name.trim().split(" ");
+        if (parts.length >= 2) {
+            return parts[parts.length - 2] + " " + parts[parts.length - 1];
+        }
+        return parts[parts.length - 1];
+    }
+}
+</file>
+
+<file path="model/account/AccountRole.java">
+package com.hoaphat.pvt.model.account;
+
+import javax.persistence.*;
+
+@Entity
+public class AccountRole {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(name = "accountName")
+    private Account account;
+
+    @ManyToOne
+    @JoinColumn(name = "roleId")
+    private Role role;
+
+    public AccountRole() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+}
+</file>
+
+<file path="model/account/Role.java">
+package com.hoaphat.pvt.model.account;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class Role {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer roleId;
+
+    private String roleName;
+
+    public Role() {
+    }
+
+    public Integer getRoleId() {
+        return roleId;
+    }
+
+    public void setRoleId(Integer roleId) {
+        this.roleId = roleId;
+    }
+
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+}
+</file>
+
+<file path="model/dto/MonthEventManager.java">
+package com.hoaphat.pvt.model.dto;
+
+import com.hoaphat.pvt.model.event.MonthEvent;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class MonthEventManager {
+    private ArrayList<MonthEvent> monthEvents;
+
+    public MonthEventManager() {
+    }
+
+    public MonthEventManager(ArrayList<MonthEvent> monthEvents) {
+        this.monthEvents = monthEvents;
+    }
+
+    public ArrayList<MonthEvent> getMonthEvents() {
+        return monthEvents;
+    }
+
+    public void setMonthEvents(ArrayList<MonthEvent> monthEvents) {
+        this.monthEvents = monthEvents;
+    }
+}
+</file>
+
+<file path="model/dto/ResponseFilter.java">
+package com.hoaphat.pvt.model.dto;
+
+import com.hoaphat.pvt.model.event.MonthEvent;
+
+import java.util.List;
+
+public class ResponseFilter {
+    private List<MonthEvent> monthEventList;
+    private String nameFilter;
+
+    public ResponseFilter() {
+    }
+
+    public ResponseFilter(List<MonthEvent> monthEventList, String nameFilter) {
+        this.monthEventList = monthEventList;
+        this.nameFilter = nameFilter;
+    }
+
+    public List<MonthEvent> getMonthEventList() {
+        return monthEventList;
+    }
+
+    public void setMonthEventList(List<MonthEvent> monthEventList) {
+        this.monthEventList = monthEventList;
+    }
+
+    public String getNameFilter() {
+        return nameFilter;
+    }
+
+    public void setNameFilter(String nameFilter) {
+        this.nameFilter = nameFilter;
+    }
+}
+</file>
+
+<file path="model/dto/ResponseRestful.java">
+package com.hoaphat.pvt.model.dto;
+
+import com.hoaphat.pvt.model.event.ResponseEventInformation;
+
+import java.util.List;
+
+public class ResponseRestful {
+    private ResponseEventInformation responseEventInformation;
+    private List<ResponseEventInformation> responseEventInformationList;
+
+    public ResponseRestful() {
+    }
+
+    public ResponseRestful(ResponseEventInformation responseEventInformation, List<ResponseEventInformation> responseEventInformationList) {
+        this.responseEventInformation = responseEventInformation;
+        this.responseEventInformationList = responseEventInformationList;
+    }
+
+    public ResponseEventInformation getResponseEventInformation() {
+        return responseEventInformation;
+    }
+
+    public void setResponseEventInformation(ResponseEventInformation responseEventInformation) {
+        this.responseEventInformation = responseEventInformation;
+    }
+
+    public List<ResponseEventInformation> getResponseEventInformationList() {
+        return responseEventInformationList;
+    }
+
+    public void setResponseEventInformationList(List<ResponseEventInformation> responseEventInformationList) {
+        this.responseEventInformationList = responseEventInformationList;
+    }
+}
+</file>
+
+<file path="model/dto/UserDisplayDTO.java">
+package com.hoaphat.pvt.model.dto;
+
+public class UserDisplayDTO {
+    private String accountName;
+    private String displayName;
+
+    public UserDisplayDTO(String accountName, String displayName) {
+        this.accountName = accountName;
+        this.displayName = displayName;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+}
+</file>
+
+<file path="model/dto/UserTabOrder.java">
+package com.hoaphat.pvt.model.dto;
+import javax.persistence.*;
+@Entity
+public class UserTabOrder {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String managerUsername;
+    private String accountName;
+    private Integer displayOrder;
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+    public String getManagerUsername() { return managerUsername; }
+    public void setManagerUsername(String managerUsername) { this.managerUsername = managerUsername; }
+    public String getAccountName() { return accountName; }
+    public void setAccountName(String accountName) { this.accountName = accountName; }
+    public Integer getDisplayOrder() { return displayOrder; }
+    public void setDisplayOrder(Integer displayOrder) { this.displayOrder = displayOrder; }
+}
+</file>
+
+<file path="model/event/MonthEvent.java">
+package com.hoaphat.pvt.model.event;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.hoaphat.pvt.model.account.Account;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.persistence.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+@Entity
+public class MonthEvent {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer monthEventId;
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String monthEventDescription;
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime monthEventDeadline;
+    @Column(columnDefinition = "int default 0")
+    private Integer monthEventStatus = 0;
+    @Column(columnDefinition = "int default 0")
+    private Integer responseStatus = 0;
+    private Integer extendDay;
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime lastTimeResponse;
+    private String lastPersonResponse;
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime registeredDay;
+
+    public MonthEvent() {
+        this.lastTimeResponse = LocalDateTime.of(2023, 1, 1, 0, 0);
+    }
+
+    public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline, Integer monthEventStatus, Integer extendDay) {
+        this.monthEventId = monthEventId;
+        this.monthEventDescription = monthEventDescription;
+        this.monthEventDeadline = monthEventDeadline;
+        this.monthEventStatus = monthEventStatus;
+        this.extendDay = extendDay;
+    }
+
+    public MonthEvent(String monthEventDescription, LocalDateTime monthEventDeadline, Integer monthEventStatus, Integer extendDay) {
+        this.monthEventDescription = monthEventDescription;
+        this.monthEventDeadline = monthEventDeadline;
+        this.monthEventStatus = monthEventStatus;
+        this.extendDay = extendDay;
+    }
+
+    public MonthEvent(String monthEventDescription, LocalDateTime monthEventDeadline) {
+        this.monthEventDescription = monthEventDescription;
+        this.monthEventDeadline = monthEventDeadline;
+        this.lastTimeResponse = LocalDateTime.of(2023, 1, 1, 0, 0);
+    }
+
+    public MonthEvent(Integer monthEventId, String monthEventDescription, LocalDateTime monthEventDeadline,
+                      Integer monthEventStatus, Integer responseStatus, Integer extendDay, LocalDateTime lastTimeResponse,
+                      String lastPersonResponse, LocalDateTime registeredDay) {
+        this.monthEventId = monthEventId;
+        this.monthEventDescription = monthEventDescription;
+        this.monthEventDeadline = monthEventDeadline;
+        this.monthEventStatus = monthEventStatus;
+        this.responseStatus = responseStatus;
+        this.extendDay = extendDay;
+        this.lastTimeResponse = lastTimeResponse;
+        this.lastPersonResponse = lastPersonResponse;
+        this.registeredDay = registeredDay;
+    }
+
+    public Integer getMonthEventId() {
+        return monthEventId;
+    }
+
+    public void setMonthEventId(Integer monthEventId) {
+        this.monthEventId = monthEventId;
+    }
+
+    public String getMonthEventDescription() {
+        return monthEventDescription;
+    }
+
+    public void setMonthEventDescription(String monthEventDescription) {
+        this.monthEventDescription = monthEventDescription;
+    }
+
+    public LocalDateTime getMonthEventDeadline() {
+        return monthEventDeadline;
+    }
+
+    public String getFormattedDeadlineByFormat() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.monthEventDeadline.format(formatter);
+    }
+
+    public void setMonthEventDeadline(LocalDateTime monthEventDeadline) {
+        this.monthEventDeadline = monthEventDeadline;
+    }
+
+    public Integer getMonthEventStatus() {
+        return monthEventStatus;
+    }
+
+    public void setMonthEventStatus(Integer monthEventStatus) {
+        this.monthEventStatus = monthEventStatus;
+    }
+
+    public Integer getExtendDay() {
+        return extendDay;
+    }
+
+    public void setExtendDay(Integer extendDay) {
+        this.extendDay = extendDay;
+    }
+
+    public Integer getResponseStatus() {
+        return responseStatus;
+    }
+
+    public void setResponseStatus(Integer responseStatus) {
+        this.responseStatus = responseStatus;
+    }
+
+    public LocalDateTime getLastTimeResponse() {
+        return lastTimeResponse;
+    }
+
+    public String getFormattedLastTimeResponse() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.lastTimeResponse.format(formatter);
+    }
+
+    public void setLastTimeResponse(LocalDateTime lastTimeResponse) {
+        this.lastTimeResponse = lastTimeResponse;
+    }
+
+    public String getLastPersonResponse() {
+        return lastPersonResponse;
+    }
+
+    public void setLastPersonResponse(String lastPersonResponse) {
+        this.lastPersonResponse = lastPersonResponse;
+    }
+
+    public LocalDateTime getRegisteredDay() {
+        return registeredDay;
+    }
+
+    public String getFormattedRegisteredDay() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.registeredDay.format(formatter);
+    }
+
+    public void setRegisteredDay(LocalDateTime registeredDay) {
+        this.registeredDay = registeredDay;
+    }
+
+    @ManyToOne
+    @JoinColumn(name = "account_name")
+    private Account account;
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+    @Column(name = "is_all")
+    private Boolean all = false;
+    public Boolean getAll() {
+        return all;
+    }
+
+    public void setAll(Boolean all) {
+        this.all = all;
+    }
+
+    @Column(name = "is_hidden")
+    private Boolean hidden = false;
+
+    public Boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(Boolean hidden) {
+        this.hidden = hidden;
+    }
+}
+</file>
+
+<file path="model/event/ResponseEventInformation.java">
+package com.hoaphat.pvt.model.event;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+@Entity
+@EntityListeners(AuditingEntityListener.class)
+public class ResponseEventInformation {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer idResponse;
+    @Column(columnDefinition = "LONGTEXT")
+    private String eventInformationResponse;
+    @ManyToOne
+    @JoinColumn(name = "month_event_id", referencedColumnName = "monthEventId")
+    private MonthEvent monthEvent;
+    @CreatedBy
+    private String createdByUser;
+    @CreatedDate
+    @JsonFormat(pattern = "HH:mm dd-MM-yyyy")
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+    private LocalDateTime createdByDate;
+
+    public ResponseEventInformation() {
+    }
+
+    public ResponseEventInformation(Integer idResponse, String eventInformationResponse, MonthEvent monthEvent, String createdByUser, LocalDateTime createdByDate) {
+        this.idResponse = idResponse;
+        this.eventInformationResponse = eventInformationResponse;
+        this.monthEvent = monthEvent;
+        this.createdByUser = createdByUser;
+        this.createdByDate = createdByDate;
+    }
+
+    public ResponseEventInformation(String eventInformationResponse, MonthEvent monthEvent, String createdByUser, LocalDateTime createdByDate) {
+        this.eventInformationResponse = eventInformationResponse;
+        this.monthEvent = monthEvent;
+        this.createdByUser = createdByUser;
+        this.createdByDate = createdByDate;
+    }
+
+    public ResponseEventInformation(MonthEvent monthEvent) {
+        this.monthEvent = monthEvent;
+    }
+
+    public Integer getIdResponse() {
+        return idResponse;
+    }
+
+    public void setIdResponse(Integer idRespose) {
+        this.idResponse = idRespose;
+    }
+
+    public String getEventInformationResponse() {
+        return eventInformationResponse;
+    }
+
+    public void setEventInformationResponse(String eventInformationResponse) {
+        this.eventInformationResponse = eventInformationResponse;
+    }
+
+    public MonthEvent getMonthEvent() {
+        return monthEvent;
+    }
+
+    public void setMonthEvent(MonthEvent monthEvent) {
+        this.monthEvent = monthEvent;
+    }
+
+    public String getCreatedByUser() {
+        return createdByUser;
+    }
+
+    public void setCreatedByUser(String createdByUser) {
+        this.createdByUser = createdByUser;
+    }
+
+    public LocalDateTime getCreatedByDate() {
+        return createdByDate;
+    }
+
+    public void setCreatedByDate(LocalDateTime createdByDate) {
+        this.createdByDate = createdByDate;
+    }
+
+    public String getFormattedCreatedByDate() {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
+        return this.createdByDate.format(formatter);
+    }
+}
+</file>
+
+<file path="model/event/SercuritySchedule.java">
+package com.hoaphat.pvt.model.event;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
+@Entity
+public class SercuritySchedule {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String str1;
+    private String str2;
+    private String str3;
+    private String str4;
+
+    public SercuritySchedule() {
+    }
+
+    public SercuritySchedule(Integer id, String str1, String str2, String str3, String str4) {
+        this.id = id;
+        this.str1 = str1;
+        this.str2 = str2;
+        this.str3 = str3;
+        this.str4 = str4;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getStr1() {
+        return str1;
+    }
+
+    public void setStr1(String str1) {
+        this.str1 = str1;
+    }
+
+    public String getStr2() {
+        return str2;
+    }
+
+    public void setStr2(String str2) {
+        this.str2 = str2;
+    }
+
+    public String getStr3() {
+        return str3;
+    }
+
+    public void setStr3(String str3) {
+        this.str3 = str3;
+    }
+
+    public String getStr4() {
+        return str4;
+    }
+
+    public void setStr4(String str4) {
+        this.str4 = str4;
+    }
+}
+</file>
+
+<file path="model/event/SpecialMessage.java">
+package com.hoaphat.pvt.model.event;
+
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import java.time.LocalDateTime;
+
+@Entity
+public class SpecialMessage {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    private String message;
+    private LocalDateTime birthday;
+
+    public SpecialMessage() {
+    }
+
+    public SpecialMessage(Integer id, String message, LocalDateTime birthday) {
+        this.id = id;
+        this.message = message;
+        this.birthday = birthday;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public LocalDateTime getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(LocalDateTime birthday) {
+        this.birthday = birthday;
+    }
+}
+</file>
+
+<file path="model/UserValidate.java">
+package com.hoaphat.pvt.model;
+
+import org.springframework.stereotype.Component;
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+
+@Component
+public class UserValidate implements Validator {
+    @Override
+    public boolean supports(Class<?> clazz) {
+        return false;
+    }
+
+    @Override
+    public void validate(Object target, Errors errors) {
+
+    }
+}
+</file>
+
+<file path="PvtApplication.java">
+package com.hoaphat.pvt;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import java.awt.*;
+import java.net.URL;
+@SpringBootApplication
+@EnableScheduling
+@EnableJpaAuditing
+public class PvtApplication {
+    public static void main(String[] args) throws Exception {
+        System.setProperty("file.encoding", "UTF-8");
+        System.setProperty("java.awt.headless", "false");
+        SpringApplication.run(PvtApplication.class, args);
+        if (SystemTray.isSupported()) { showTrayIcon(); }
+    }
+    private static void showTrayIcon() throws Exception {
+        SystemTray tray = SystemTray.getSystemTray();
+        URL iconUrl = PvtApplication.class.getResource("/static/img/icon.png");
+        Image image = Toolkit.getDefaultToolkit().getImage(iconUrl);
+        PopupMenu popup = new PopupMenu();
+        MenuItem openItem = new MenuItem("Mở trình duyệt");
+        openItem.addActionListener(e -> { try { Desktop.getDesktop().browse(new java.net.URI("http://localhost")); } catch (Exception ex) { ex.printStackTrace(); } });
+        MenuItem exitItem = new MenuItem("Tắt server");
+        exitItem.addActionListener(e -> System.exit(0));
+        popup.add(openItem); popup.addSeparator(); popup.add(exitItem);
+        TrayIcon trayIcon = new TrayIcon(image, "PVT Hòa Phát", popup);
+        trayIcon.setImageAutoSize(true);
+        trayIcon.setToolTip("PVT Server đang chạy tại localhost");
+        trayIcon.addActionListener(e -> { try { Desktop.getDesktop().browse(new java.net.URI("http://localhost")); } catch (Exception ex) { ex.printStackTrace(); } });
+        tray.add(trayIcon);
+        trayIcon.displayMessage("PVT Server", "Server đã khởi động! Truy cập: http://localhost", TrayIcon.MessageType.INFO);
+    }
+}
+</file>
+
+<file path="repository/account/IAccountRepository.java">
+package com.hoaphat.pvt.repository.account;
+
+import com.hoaphat.pvt.model.account.Account;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import java.util.List;
+
+public interface IAccountRepository extends CrudRepository<Account, String> {
+    Account findByAccountName(String accountName);
+    @Query("select a from Account a order by a.accountName asc ")
+    List<Account> findAll();
+}
+</file>
+
+<file path="repository/account/IAccountRoleRepository.java">
+package com.hoaphat.pvt.repository.account;
+
+
+import com.hoaphat.pvt.model.account.AccountRole;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
+
+public interface IAccountRoleRepository extends CrudRepository<AccountRole, Integer> {
+    @Query("select ar.role.roleName from AccountRole ar where ar.account.accountName = :accountName")
+    List<String> findAllRoleByUser(String accountName);
+
+    void deleteByAccount_AccountName(String accountName);
+}
+</file>
+
+<file path="repository/event/IMonthEventRepository.java">
+package com.hoaphat.pvt.repository.event;
+
+import com.hoaphat.pvt.model.event.MonthEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import javax.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Repository
+public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer> {
+    //    *Trang private
+    @Query("SELECT m FROM MonthEvent m " +
+            "WHERE m.monthEventDeadline > :before " +
+            "AND m.monthEventDeadline < :after " +
+            "AND m.hidden = false " +
+            "AND (m.all = true OR m.account.accountName = :accountName) " +
+            "ORDER BY m.monthEventDeadline, m.monthEventId ASC")
+    List<MonthEvent> findByAccountFilter(LocalDateTime before,
+                                         LocalDateTime after,
+                                         String accountName);
+
+    //    *Trang response
+    //    Update status = 1 khi là quản lý phản hồi
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.responseStatus = 1 where m.monthEventId = :id")
+    void updateResponseStatus1(Integer id);
+
+    //    Update status = 2 khi là nhân viên phản hồi
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.responseStatus = 2 where m.monthEventId = :id")
+    void updateResponseStatus2(Integer id);
+
+    //    *Trang task
+    @Query(value = "select m from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc",
+            countQuery = "select count(m) from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc")
+    Page<MonthEvent> findMonthEventsByMonthEventStatus(Pageable pageable);
+
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.monthEventDeadline = :now where m.monthEventId = :id")
+    void updateWeekEventDeadline(LocalDateTime now, Integer id);
+
+    //    *Trang weekly task
+    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline, m.monthEventId asc ")
+    List<MonthEvent> findWeekEvents();
+
+    @Transactional
+    @Modifying
+    @Query("update MonthEvent m set m.lastTimeResponse = :lastTimeResponse, m.lastPersonResponse = :lastPersonResponse  where m.monthEventId = :id")
+    void updateMonthEventResponse(LocalDateTime lastTimeResponse, String lastPersonResponse, Integer id);
+
+    // ✅ Chỉ lấy m.all = true, không lấy việc cá nhân
+    @Query("SELECT m FROM MonthEvent m " +
+            "WHERE m.monthEventDeadline > :before " +
+            "AND m.monthEventDeadline < :after " +
+            "AND m.all = true " +
+            "ORDER BY m.monthEventDeadline, m.monthEventId ASC")
+    List<MonthEvent> findAllFilter(LocalDateTime before, LocalDateTime after);
+
+    void deleteByAccount_AccountName(String accountName);
+}
+</file>
+
+<file path="repository/event/IResponseEventInformationRepository.java">
+package com.hoaphat.pvt.repository.event;
+
+import com.hoaphat.pvt.model.event.ResponseEventInformation;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+
+import java.util.List;
+
+@Repository
+public interface IResponseEventInformationRepository extends CrudRepository<ResponseEventInformation, Integer> {
+    @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent order by r.createdByDate desc ")
+    List<ResponseEventInformation> findResponseById(Integer idMonthEvent);
+
+    @Transactional
+    @Modifying
+    @Query("delete from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent")
+    void deleteResponseById(Integer idMonthEvent);
+
+    void deleteByMonthEvent_MonthEventIdAndEventInformationResponseStartingWith(
+            Integer monthEventId, String prefix
+    );
+}
+</file>
+
+<file path="repository/event/ISercurityScheduleRepository.java">
+package com.hoaphat.pvt.repository.event;
+
+import com.hoaphat.pvt.model.event.SercuritySchedule;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ISercurityScheduleRepository extends CrudRepository<SercuritySchedule,Integer> {
+}
+</file>
+
+<file path="repository/event/ISpecialMessageRepository.java">
+package com.hoaphat.pvt.repository.event;
+
+import com.hoaphat.pvt.model.event.SpecialMessage;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface ISpecialMessageRepository extends CrudRepository<SpecialMessage,Integer> {
+}
+</file>
+
+<file path="repository/event/IUserTabOrderRepository.java">
+package com.hoaphat.pvt.repository.event;
+
+import com.hoaphat.pvt.model.dto.UserTabOrder;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+public interface IUserTabOrderRepository extends JpaRepository<UserTabOrder, Integer> {
+
+    List<UserTabOrder> findByManagerUsernameOrderByDisplayOrderAsc(String managerUsername);
+
+    void deleteByManagerUsername(String managerUsername);
+}
+</file>
+
+<file path="service/account/AccountService.java">
+package com.hoaphat.pvt.service.account;
+
+import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.model.account.AccountRole;
+import com.hoaphat.pvt.model.account.Role;
+import com.hoaphat.pvt.model.dto.UserDisplayDTO;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
+import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class AccountService implements IAccountService {
+    @Autowired
+    private IAccountRepository accountRepository;
+    @Autowired
+    private IAccountRoleRepository accountRoleRepository;
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+    @PersistenceContext
+    private EntityManager entityManager;
+    @Autowired
+    private IMonthEventRepository monthEventRepository;
+    @Override
+    public List<Account> findAll() {
+        return accountRepository.findAll();
+    }
+
+    @Override
+    public void createAccount(String username, String password, String name, String roleName) {
+        // ❌ check trùng username
+        if (accountRepository.findByAccountName(username) != null) {
+            throw new RuntimeException("Username đã tồn tại");
+        }
+
+        // ✅ encode password
+        String encodedPassword = passwordEncoder.encode(password);
+
+        // ✅ lưu account
+        Account account = new Account(username, encodedPassword, name);
+        accountRepository.save(account);
+
+        // ✅ lấy role từ DB
+        Role role = entityManager
+                .createQuery("SELECT r FROM Role r WHERE r.roleName = :roleName", Role.class)
+                .setParameter("roleName", roleName)
+                .getSingleResult();
+
+        // ✅ gán role
+        AccountRole accountRole = new AccountRole();
+        accountRole.setAccount(account);
+        accountRole.setRole(role);
+
+        accountRoleRepository.save(accountRole);
+    }
+
+    public List<UserDisplayDTO> getUserDisplayList() {
+        List<Account> accounts = accountRepository.findAll();
+
+        Map<String, List<Account>> map = new HashMap<>();
+
+        for (Account acc : accounts) {
+            String[] parts = acc.getName().split(" ");
+            String lastName = parts[parts.length - 1];
+
+            map.computeIfAbsent(lastName, k -> new ArrayList<>()).add(acc);
+        }
+
+        List<UserDisplayDTO> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<Account>> entry : map.entrySet()) {
+            List<Account> list = entry.getValue();
+
+            for (Account acc : list) {
+                String[] parts = acc.getName().split(" ");
+
+                String display;
+
+                if (list.size() == 1) {
+                    display = parts[parts.length - 1];
+                } else {
+                    display = parts[parts.length - 2] + " " + parts[parts.length - 1];
+                }
+
+                result.add(new UserDisplayDTO(acc.getAccountName(), display));
+            }
+        }
+
+        return result;
+    }
+
+    @Transactional
+    public void deleteAccountFull(String accountName) {
+
+        // 1. Xóa role trước
+        accountRoleRepository.deleteByAccount_AccountName(accountName);
+
+        // 2. Xóa công việc
+        monthEventRepository.deleteByAccount_AccountName(accountName);
+
+        // 3. Xóa account
+        accountRepository.deleteById(accountName);
+    }
+}
+</file>
+
+<file path="service/account/IAccountService.java">
+package com.hoaphat.pvt.service.account;
+
+import com.hoaphat.pvt.model.account.Account;
+
+import java.util.List;
+
+public interface IAccountService {
+    List<Account> findAll();
+    void createAccount(String username, String password, String name, String roleName);
+}
+</file>
+
+<file path="service/account/UserDetailsServiceImpl.java">
+package com.hoaphat.pvt.service.account;
+
+import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class UserDetailsServiceImpl implements UserDetailsService {
+    @Autowired
+    IAccountRepository accountRepository;
+    @Autowired
+    IAccountRoleRepository accountRoleRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Account account = accountRepository.findByAccountName(username);
+        if (account == null) {
+            throw new UsernameNotFoundException("Không tồn tại account này");
+        }
+
+        List<String> roles = accountRoleRepository.findAllRoleByUser(username);
+        List<GrantedAuthority> authorityList = new ArrayList<>();
+        for (String roleName : roles) {
+            authorityList.add(new SimpleGrantedAuthority(roleName));
+        }
+
+        UserDetails userDetails = new User(username, account.getPassword(),authorityList);
+        return userDetails;
+    }
+}
+</file>
+
+<file path="service/ISercurityScheduleService.java">
+package com.hoaphat.pvt.service;
+
+import com.hoaphat.pvt.model.event.SercuritySchedule;
+
+import java.util.List;
+
+public interface ISercurityScheduleService {
+    List<SercuritySchedule> getAll();
+}
+</file>
+
+<file path="service/ISpecialMessageService.java">
+package com.hoaphat.pvt.service;
+
+import com.hoaphat.pvt.model.event.SpecialMessage;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+public interface ISpecialMessageService {
+    SpecialMessage getAll(LocalDateTime now);
+}
+</file>
+
+<file path="service/monthEvent/IMonthEventService.java">
+package com.hoaphat.pvt.service.monthEvent;
+
+import com.hoaphat.pvt.model.event.MonthEvent;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
+import java.util.List;
+
+public interface IMonthEventService {
+    List<MonthEvent> getMonthEventList();
+
+    Page<MonthEvent> getMonthEventListWithPaging(Pageable pageable);
+
+    void addMonthEvent(MonthEvent monthEvent, boolean flag);
+
+    List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String accountName);
+
+    List<MonthEvent> getWeekEventList();
+
+    void checkWeekEventDeadline (LocalDateTime now);
+
+    void deleteWeekEvent(Integer id);
+
+    MonthEvent findById (Integer id);
+}
+</file>
+
+<file path="service/monthEvent/MonthEventService.java">
+package com.hoaphat.pvt.service.monthEvent;
+
+import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.model.event.MonthEvent;
+import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class MonthEventService implements IMonthEventService {
+    @Autowired
+    private IMonthEventRepository monthEventRepository;
+
+    @Autowired
+    private IResponseEventInformationRepository responseEventInformationRepository;
+    @Autowired
+    private IAccountRepository accountRepository;
+    @Override
+    public List<MonthEvent> getMonthEventList() {
+        return monthEventRepository.findAll();
+    }
+
+    //    *Trang private
+    @Override
+    public List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String accountName) {
+        LocalDateTime before = now.minusDays(730);
+        LocalDateTime after = now.plusDays(30);
+
+        if (accountName == null || accountName.isEmpty()) {
+            return monthEventRepository.findAllFilter(before, after);
+        }
+
+        return monthEventRepository.findByAccountFilter(before, after, accountName);
+    }
+
+    //* Trang task
+    @Override
+    public Page<MonthEvent> getMonthEventListWithPaging(Pageable pageable) {
+        return monthEventRepository.findMonthEventsByMonthEventStatus(pageable);
+    }
+
+    //  *** flag =true là add, flag =false là edit
+    @Override
+    public void addMonthEvent(MonthEvent monthEvent, boolean flag) {
+        if (flag) {
+            monthEvent.setRegisteredDay(LocalDateTime.now());
+        }
+        if (Boolean.TRUE.equals(monthEvent.getAll())) {
+            // 👉 chọn "All"
+            monthEvent.setAccount(null);
+        } else {
+            // 👉 chọn cá nhân
+            if (monthEvent.getAccount() != null
+                    && monthEvent.getAccount().getAccountName() != null) {
+
+                String accountName = monthEvent.getAccount().getAccountName();
+
+                Account acc = accountRepository.findByAccountName(accountName);
+
+                monthEvent.setAccount(acc); // ⭐ lấy object đã tồn tại trong DB
+            }
+        } monthEventRepository.save(monthEvent);
+    }
+
+    @Override
+    public MonthEvent findById(Integer id) {
+        return monthEventRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public void deleteWeekEvent(Integer id) {
+        responseEventInformationRepository.deleteResponseById(id);
+        monthEventRepository.deleteById(id);
+    }
+
+    //    *Trang weekly task
+    @Override
+    public List<MonthEvent> getWeekEventList() {
+        return monthEventRepository.findWeekEvents();
+    }
+
+    @Override
+    public void checkWeekEventDeadline(LocalDateTime now) {
+        List<MonthEvent> weekEvents = monthEventRepository.findWeekEvents();
+        for (MonthEvent weekEvent : weekEvents) {
+            // Kiểm tra nếu tháng sự kiện có deadline
+            if (weekEvent.getMonthEventDeadline() != null) {
+                // Kiểm tra nếu deadline đã qua và extendDay là null, gán mặc định là 0
+                int extendDay = (weekEvent.getExtendDay() != null) ? weekEvent.getExtendDay() : 0;
+
+                // Kiểm tra xem deadline đã quá hạn chưa
+                if (now.isAfter(weekEvent.getMonthEventDeadline().plusHours(5))) {
+                    // Tính toán deadline mới với extendDay
+                    LocalDateTime newDeadline = weekEvent.getMonthEventDeadline().plusDays(extendDay);
+                    monthEventRepository.updateWeekEventDeadline(newDeadline, weekEvent.getMonthEventId());
+                }
+            }
+        }
+    }
+}
+</file>
+
+<file path="service/response/IResponseEventInformationService.java">
+package com.hoaphat.pvt.service.response;
+
+import com.hoaphat.pvt.model.event.ResponseEventInformation;
+
+import java.util.List;
+
+public interface IResponseEventInformationService {
+    void addResponseEventInformation(ResponseEventInformation responseEventInformation);
+    List<ResponseEventInformation> getAllResponseById(Integer id);
+
+}
+</file>
+
+<file path="service/response/ResponseEventInformationService.java">
+package com.hoaphat.pvt.service.response;
+
+import com.hoaphat.pvt.model.event.ResponseEventInformation;
+import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import javax.transaction.Transactional;
+import java.util.List;
+import java.util.Objects;
+
+@Service
+public class ResponseEventInformationService implements IResponseEventInformationService{
+    @Autowired
+    private IResponseEventInformationRepository responseEventInformationRepository;
+
+    @Autowired
+    private IMonthEventRepository monthEventRepository;
+
+    @Override
+    @Transactional
+    public void addResponseEventInformation(ResponseEventInformation responseEventInformation) {
+
+        Integer monthEventId = responseEventInformation.getMonthEvent().getMonthEventId();
+
+        // 🔥 BƯỚC 1: XÓA log "Báo cáo lại" cũ
+        if (responseEventInformation.getEventInformationResponse() != null &&
+                responseEventInformation.getEventInformationResponse().startsWith("Báo cáo lại")) {
+
+            responseEventInformationRepository
+                    .deleteByMonthEvent_MonthEventIdAndEventInformationResponseStartingWith(
+                            monthEventId,
+                            "Báo cáo lại"
+                    );
+        }
+
+        // 🔥 BƯỚC 2: logic cũ của bạn (GIỮ NGUYÊN)
+        if (Objects.equals(responseEventInformation.getCreatedByUser(), "dminhhh")
+                || Objects.equals(responseEventInformation.getCreatedByUser(), "dmont") ) {
+
+            monthEventRepository.updateResponseStatus1(monthEventId);
+
+        } else {
+
+            monthEventRepository.updateResponseStatus2(monthEventId);
+        }
+
+        // 🔥 BƯỚC 3: save
+        responseEventInformationRepository.save(responseEventInformation);
+
+        // 🔥 BƯỚC 4: update event
+        monthEventRepository.updateMonthEventResponse(
+                responseEventInformation.getCreatedByDate(),
+                responseEventInformation.getCreatedByUser(),
+                monthEventId
+        );
+    }
+
+    @Override
+    public List<com.hoaphat.pvt.model.event.ResponseEventInformation> getAllResponseById(Integer idMonthEvent) {
+        return responseEventInformationRepository.findResponseById(idMonthEvent);
+    }
+}
+</file>
+
+<file path="service/SercurityScheduleService.java">
+package com.hoaphat.pvt.service;
+
+import com.hoaphat.pvt.model.event.SercuritySchedule;
+import com.hoaphat.pvt.repository.event.ISercurityScheduleRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import java.util.List;
+
+@Service
+public class SercurityScheduleService implements ISercurityScheduleService{
+    @Autowired
+    private ISercurityScheduleRepository sercurityScheduleRepository;
+
+    @Override
+    public List<SercuritySchedule> getAll() {
+        return (List<SercuritySchedule>) sercurityScheduleRepository.findAll();
+    }
+}
+</file>
+
+<file path="service/SpecialMessageService.java">
+package com.hoaphat.pvt.service;
+
+import com.hoaphat.pvt.model.event.SpecialMessage;
+import com.hoaphat.pvt.repository.event.ISpecialMessageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Service
+public class SpecialMessageService implements ISpecialMessageService{
+    @Autowired
+    private ISpecialMessageRepository specialMessageRepository;
+
+    @Override
+    public SpecialMessage getAll(LocalDateTime now) {
+        List<SpecialMessage> specialMessageList = (List<SpecialMessage>) specialMessageRepository.findAll();
+        for (SpecialMessage s: specialMessageList
+             ) {
+            if (s.getBirthday().getMonthValue() == now.getMonthValue() && s.getBirthday().getDayOfMonth() == now.getDayOfMonth()) {
+                return s;
+            }
+        }
+       return null;
+    }
+}
+</file>
+
+<file path="service/UserTabOrderService.java">
+package com.hoaphat.pvt.service;
+import com.hoaphat.pvt.model.dto.UserTabOrder;
+import com.hoaphat.pvt.repository.event.IUserTabOrderRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import javax.transaction.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
+@Service
+@Transactional
+public class UserTabOrderService {
+    @Autowired private IUserTabOrderRepository repository;
+    public List<String> getOrderedTabs(String managerUsername) {
+        return repository.findByManagerUsernameOrderByDisplayOrderAsc(managerUsername).stream().map(UserTabOrder::getAccountName).collect(Collectors.toList());
+    }
+    public void saveOrder(String username, List<String> tabs) {
+        repository.deleteByManagerUsername(username);
+        for (int i = 0; i < tabs.size(); i++) {
+            UserTabOrder u = new UserTabOrder();
+            u.setManagerUsername(username); u.setAccountName(tabs.get(i)); u.setDisplayOrder(i);
+            repository.save(u);
+        }
+    }
+}
+</file>
+
+<file path="util/GeneratePassword.java">
+package com.hoaphat.pvt.util;
+
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
+public class GeneratePassword {
+    public static String generatePassword(String rawPass) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        return passwordEncoder.encode(rawPass);
+    }
+
+    public static void main(String[] args) {
+        System.out.println(generatePassword("pvt123"));
+    }
+}
+</file>
+
+</files>

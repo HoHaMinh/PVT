@@ -1,105 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>403 Forbidden</title>
-    <link rel="stylesheet" href="styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc cho Mobile -->
+    <title>403 Forbidden - PVT</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            /* Giữ nguyên màu nền Gradient tuyệt đẹp của bạn */
             background: linear-gradient(135deg, #ff5f6d, #ffc371);
-            color: #fff;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
-        .error-container {
-            text-align: center;
-            max-width: 400px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            border-radius: 8px;
-            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.4);
-            position: relative;
-        }
-
-        h1 {
-            font-size: 80px;
-            margin-bottom: 20px;
+        /* Hiệu ứng nảy cho số 403 */
+        .bounce-text {
             animation: bounce 2s infinite;
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.3);
         }
 
-        p {
-            font-size: 18px;
-            margin-bottom: 20px;
-        }
-
-        .home-link {
-            display: inline-block;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: #ffc371;
-            background: #ff5f6d;
-            text-decoration: none;
-            border-radius: 20px;
-            transition: background 0.3s;
-        }
-
-        .home-link:hover {
-            background: #ffc371;
-            color: #ff5f6d;
-        }
-
+        /* Hiệu ứng tỏa sóng phía sau */
         .animation-box {
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.2);
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 255, 255, 0.15);
             border-radius: 50%;
             animation: pulse 2s infinite;
             transform: translate(-50%, -50%);
-            z-index: -1;
+            z-index: 0;
+            pointer-events: none; /* Không cản trở việc bấm nút */
+        }
+
+        /* Đưa nội dung lên trên hiệu ứng sóng */
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes bounce {
-            0%, 100% {
-                transform: translateY(0);
-            }
-            50% {
-                transform: translateY(-15px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
         }
 
         @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 0.8;
-            }
-            100% {
-                transform: scale(1.5);
-                opacity: 0;
-            }
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
         }
-
     </style>
 </head>
-<body>
-<div class="error-container">
-    <h1>403</h1>
-    <p>Xin lỗi, bạn không có quyền truy cập trang này.</p>
-    <a href="/" class="home-link">Quay lại Trang Chủ</a>
-    <div class="animation-box"></div>
-</div>
+<body class="d-flex justify-content-center align-items-center">
+
+    <!-- Container chính -->
+    <div class="container px-3">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-6 col-lg-4">
+                
+                <!-- Hộp thông báo -->
+                <div class="text-center p-4 p-md-5 rounded-4 shadow-lg position-relative" style="background: rgba(0, 0, 0, 0.65);">
+                    
+                    <!-- Hiệu ứng sóng -->
+                    <div class="animation-box"></div>
+                    
+                    <!-- Nội dung -->
+                    <div class="content-wrapper">
+                        <h1 class="display-1 fw-bold text-white mb-3 bounce-text">403</h1>
+                        <p class="fs-5 text-light mb-4">Xin lỗi, bạn không có quyền truy cập trang này.</p>
+                        
+                        <!-- Nút bấm chuẩn Mobile (to, dễ bấm) -->
+                        <a href="/" class="btn btn-warning btn-lg rounded-pill fw-bold px-4 shadow">
+                            &larr; Quay lại Trang Chủ
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
