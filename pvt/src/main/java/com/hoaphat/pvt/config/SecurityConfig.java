@@ -37,7 +37,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // Giúp Cloudflare Cache được file mà không bị dính Header "no-cache" hay "Set-Cookie"
     @Override
     public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers("/img-local/**", "/vid-local/**");
+        web.ignoring().antMatchers("/img-local/**", "/vid-local/**", "/css/**", "/js/**");
     }
 
     @Override

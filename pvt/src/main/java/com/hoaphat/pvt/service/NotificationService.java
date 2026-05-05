@@ -1,5 +1,6 @@
 package com.hoaphat.pvt.service;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -11,7 +12,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class NotificationService {
 
     // Danh sách các kết nối (SseEmitter) đang mở từ các trình duyệt.
-    // Dùng CopyOnWriteArrayList để đảm bảo an toàn khi nhiều người dùng cùng lúc.
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
     /**
@@ -35,17 +35,30 @@ public class NotificationService {
     }
 
     /**
-     * Gửi tín hiệu "refresh" đến TẤT CẢ các trình duyệt đang kết nối.
-     * Trình duyệt nhận được tín hiệu này sẽ tự động gọi hàm loadData().
+     * Gửi tín hiệu "refresh" đến TẤT CẢ các trình duyệt khi có dữ liệu mới.
      */
     public void sendRefreshSignal() {
-        // Lặp qua tất cả các emitters và gửi sự kiện.
         for (SseEmitter emitter : this.emitters) {
             try {
-                // Gửi một sự kiện có tên là "refresh", dữ liệu là "update"
                 emitter.send(SseEmitter.event().name("refresh").data("update"));
             } catch (IOException e) {
-                // Nếu gửi lỗi (ví dụ: người dùng đã đóng tab), xóa emitter đó đi.
+                this.emitters.remove(emitter);
+            }
+        }
+    }
+
+    /**
+     * 🔥 Gửi tín hiệu duy trì (Heartbeat) định kỳ mỗi 20 giây.
+     * Việc này giúp Cloudflare không ngắt kết nối do "im lặng" quá 100 giây.
+     */
+    @Scheduled(fixedRate = 20000)
+    public void sendHeartbeat() {
+        for (SseEmitter emitter : this.emitters) {
+            try {
+                // Gửi sự kiện tên là "ping" để giữ kết nối sống.
+                emitter.send(SseEmitter.event().name("ping").data("heartbeat"));
+            } catch (IOException e) {
+                // Nếu trình duyệt đã đóng, xóa emitter để giải phóng bộ nhớ.
                 this.emitters.remove(emitter);
             }
         }

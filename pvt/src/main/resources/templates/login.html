@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Bắt buộc phải có cho Mobile -->
     <title>Đăng nhập web PVT</title>
-    <link rel="stylesheet" href="/css/mdb.min.css">
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
     <style>
         body {
             background-color: #f4f7f6;
@@ -38,25 +38,25 @@
 
                 <form th:action="@{/doLogin}" method="post">
                     <!-- Account input -->
-                    <div class="form-outline mb-4">
-                        <input type="text" id="form2Example1" class="form-control form-control-lg" name="accountname" required/>
-                        <label class="form-label" for="form2Example1">Account ID</label>
-                    </div>
+                    <div class="mb-3 text-start">
+    			<label class="form-label fw-bold" for="form2Example1">Account ID</label>
+    			<input type="text" id="form2Example1" class="form-control form-control-lg" name="accountname" required placeholder="Nhập ID của bạn">
+		    </div>
 
                     <!-- Password input -->
-                    <div class="form-outline mb-4">
-                        <input type="password" id="form2Example2" class="form-control form-control-lg" name="password" required/>
-                        <label class="form-label" for="form2Example2">Password</label>
-                    </div>
+                    <div class="mb-3 text-start">
+    			<label class="form-label fw-bold" for="form2Example2">Mật khẩu</label>
+    			<input type="password" id="form2Example2" class="form-control form-control-lg" name="password" required placeholder="Nhập mật khẩu">
+		    </div>
 
                     <!-- Submit button -->
-                    <button type="submit" class="btn btn-primary btn-lg btn-block">Đăng nhập</button>
+                    <button type="submit" class="btn btn-primary btn-lg w-100">Đăng nhập</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-<script src="/js/mdb.min.js"></script>
+<script th:src="@{/js/jquery4.min.js}"></script>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
 </body>
 </html>

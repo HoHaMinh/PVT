@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phản hồi công việc</title>
     <base href="/">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script th:src="@{/js/jquery4.min.js}"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 
     <style>
@@ -149,7 +149,7 @@
                 <thead class="table-light">
                 <tr>
                     <th class="text-center">STT</th>
-                    <th style="min-width: 300px;">Nội dung phản hồi</th>
+                    <th style="min-width: 200px;">Nội dung phản hồi</th>
                     <th class="text-center" style="min-width: 150px;">Thời gian</th>
                     <th class="text-center" style="min-width: 120px;">User</th>
                 </tr>
@@ -192,6 +192,6 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
 </body>
 </html>
