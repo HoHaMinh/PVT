@@ -1,6 +1,7 @@
 package com.hoaphat.pvt.service.response;
 
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
+import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class ResponseEventInformationService implements IResponseEventInformationService{
@@ -17,6 +17,9 @@ public class ResponseEventInformationService implements IResponseEventInformatio
 
     @Autowired
     private IMonthEventRepository monthEventRepository;
+
+    @Autowired
+    private IAccountRoleRepository accountRoleRepository;
 
     @Override
     @Transactional
@@ -36,13 +39,11 @@ public class ResponseEventInformationService implements IResponseEventInformatio
         }
 
         // 🔥 BƯỚC 2: logic cũ của bạn (GIỮ NGUYÊN)
-        if (Objects.equals(responseEventInformation.getCreatedByUser(), "dminhhh")
-                || Objects.equals(responseEventInformation.getCreatedByUser(), "dmont") ) {
+        boolean isManager = accountRoleRepository.findAllRoleByUser(responseEventInformation.getCreatedByUser()).contains("ROLE_MANAGER");
 
+        if (isManager) {
             monthEventRepository.updateResponseStatus1(monthEventId);
-
         } else {
-
             monthEventRepository.updateResponseStatus2(monthEventId);
         }
 
