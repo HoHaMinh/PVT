@@ -23,6 +23,20 @@
             flex: 1 1 auto;
             min-width: 100px;
         }
+        .tab-selector-shell {
+            position: relative;
+        }
+        #mobileTabToggle {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            text-align: left;
+        }
+        #mobileTabChevron {
+            flex: 0 0 auto;
+            transition: transform 0.2s ease;
+        }
         #result {
             transition: opacity 0.15s ease;
         }
@@ -32,6 +46,61 @@
         @media (min-width: 768px) {
             .user-tab-item {
                 flex: 0 0 auto;
+            }
+        }
+        @media (max-width: 767.98px) {
+            .tab-selector-shell.mobile-dropdown-mode #mobileTabToggle {
+                display: flex;
+            }
+            .tab-selector-shell.mobile-dropdown-mode #tabContainer {
+                display: none !important;
+                position: absolute;
+                top: calc(100% + 0.5rem);
+                left: 0;
+                right: 0;
+                z-index: 1050;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 0.5rem;
+                max-height: min(62vh, 440px);
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                padding: 2.5rem 0.75rem 0.75rem;
+                border: 1px solid #dee2e6;
+                border-radius: 0.75rem;
+                background: #ffffff;
+                box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.18);
+            }
+            .tab-selector-shell.mobile-dropdown-mode #tabContainer::before {
+                content: "Chạm để chọn • Giữ và kéo để sắp xếp";
+                position: absolute;
+                top: 0.65rem;
+                left: 0.75rem;
+                right: 0.75rem;
+                color: #6c757d;
+                font-size: 0.78rem;
+                text-align: center;
+            }
+            .tab-selector-shell.mobile-dropdown-mode.dropdown-open #tabContainer {
+                display: grid !important;
+            }
+            .tab-selector-shell.mobile-dropdown-mode.dropdown-open #mobileTabChevron {
+                transform: rotate(180deg);
+            }
+            .tab-selector-shell.mobile-dropdown-mode .user-tab-item {
+                flex: none;
+                width: 100%;
+                min-width: 0;
+            }
+            .tab-selector-shell.mobile-dropdown-mode .user-tab-item .btn {
+                min-height: 42px;
+                padding: 0.45rem 0.25rem;
+                font-size: 0.86rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .tab-selector-shell.mobile-dropdown-mode .user-tab-item.sortable-chosen .btn {
+                box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.2);
             }
         }
     </style>
@@ -49,6 +118,38 @@
 
         var activeDataRequest = null;
         var latestDataRequestId = 0;
+
+        function getSelectedTabLabel() {
+            var checked = document.querySelector("input[name='options-outlined']:checked");
+            if (!checked) return "Tất cả";
+            var label = checked.nextElementSibling;
+            return label && label.textContent ? label.textContent.trim() : "Tất cả";
+        }
+
+        function setMobileTabDropdownOpen(open) {
+            var shell = document.getElementById("tabSelectorShell");
+            var toggle = document.getElementById("mobileTabToggle");
+            if (!shell || !toggle || !shell.classList.contains("mobile-dropdown-mode")) return;
+            shell.classList.toggle("dropdown-open", open);
+            toggle.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+
+        function updateMobileTabSelector() {
+            var shell = document.getElementById("tabSelectorShell");
+            var container = document.getElementById("tabContainer");
+            var selectedLabel = document.getElementById("mobileSelectedTab");
+            if (!shell || !container || !selectedLabel) return;
+
+            var tabCount = container.querySelectorAll(":scope > .user-tab-item").length;
+            var useDropdown = window.innerWidth < 768 && tabCount > 12
+                    && shell.getAttribute("data-manager") === "true";
+            shell.classList.toggle("mobile-dropdown-mode", useDropdown);
+            selectedLabel.textContent = getSelectedTabLabel();
+            if (!useDropdown) {
+                shell.classList.remove("dropdown-open");
+                document.getElementById("mobileTabToggle").setAttribute("aria-expanded", "false");
+            }
+        }
 
         function getSelectedValue() {
             var selectedValue = $("input[name='options-outlined']:checked").val();
@@ -190,12 +291,28 @@
             $("input[name='options-outlined']").on("change", function () {
                 var selectedValue = getSelectedValue();
                 updateSelectedValueUrl(selectedValue, true);
+                $("#mobileSelectedTab").text(getSelectedTabLabel());
+                setMobileTabDropdownOpen(false);
                 loadData(true);
             });
+            $("#mobileTabToggle").on("click", function (event) {
+                event.stopPropagation();
+                var shell = document.getElementById("tabSelectorShell");
+                setMobileTabDropdownOpen(!shell.classList.contains("dropdown-open"));
+            });
+            $("#tabContainer").on("click", function (event) {
+                event.stopPropagation();
+            });
+            $(document).on("click", function () {
+                setMobileTabDropdownOpen(false);
+            });
+            window.addEventListener("resize", updateMobileTabSelector);
+            updateMobileTabSelector();
             loadData(false); // Tải dữ liệu lần đầu khi mở trang
 
             window.addEventListener("popstate", function () {
                 selectTabFromUrl();
+                $("#mobileSelectedTab").text(getSelectedTabLabel());
                 loadData(true);
             });
 
@@ -236,30 +353,39 @@
 
         <h4 class="text-primary fw-bold mb-3">Nhắc nhở lịch cần làm</h4>
 
-        <div id="tabContainer" class="d-flex flex-wrap gap-2 mb-4">
-            <div th:if="${isManager}" data-account="ALL" class="user-tab-item">
-                <input type="radio" class="btn-check" name="options-outlined" id="all" value=""
-                       th:checked="${selectedValue == null or selectedValue == ''}">
-                <label class="btn btn-outline-primary w-100 text-center fw-bold" for="all">Tất cả</label>
-            </div>
+        <div id="tabSelectorShell" class="tab-selector-shell mb-4"
+             th:attr="data-manager=${isManager}">
+            <button type="button" id="mobileTabToggle" class="btn btn-outline-primary w-100"
+                    aria-expanded="false" aria-controls="tabContainer">
+                <span>Đang xem: <strong id="mobileSelectedTab">Tất cả</strong></span>
+                <span id="mobileTabChevron" aria-hidden="true">▼</span>
+            </button>
 
-            <th:block th:each="acc:${userTabs}">
-                <div th:if="${isManager} or (${accountName} == ${acc.accountName})"
-                     th:attr="data-account=${acc.accountName}"
-                     class="user-tab-item">
-
-                    <input type="radio" class="btn-check" name="options-outlined"
-                           th:id="'acc_' + ${acc.accountName}"
-                           th:value="${acc.accountName}"
-                           th:checked="${selectedValue != null and selectedValue == acc.accountName}">
-
-                    <label class="btn btn-outline-primary w-100 text-center text-truncate"
-                           th:for="'acc_' + ${acc.accountName}"
-                           th:text="${acc.displayName}"
-                           th:title="${acc.displayName}">
-                    </label>
+            <div id="tabContainer" class="d-flex flex-wrap gap-2">
+                <div th:if="${isManager}" data-account="ALL" class="user-tab-item">
+                    <input type="radio" class="btn-check" name="options-outlined" id="all" value=""
+                           th:checked="${selectedValue == null or selectedValue == ''}">
+                    <label class="btn btn-outline-primary w-100 text-center fw-bold" for="all">Tất cả</label>
                 </div>
-            </th:block>
+
+                <th:block th:each="acc:${userTabs}">
+                    <div th:if="${isManager} or (${accountName} == ${acc.accountName})"
+                         th:attr="data-account=${acc.accountName}"
+                         class="user-tab-item">
+
+                        <input type="radio" class="btn-check" name="options-outlined"
+                               th:id="'acc_' + ${acc.accountName}"
+                               th:value="${acc.accountName}"
+                               th:checked="${selectedValue != null and selectedValue == acc.accountName}">
+
+                        <label class="btn btn-outline-primary w-100 text-center text-truncate"
+                               th:for="'acc_' + ${acc.accountName}"
+                               th:text="${acc.displayName}"
+                               th:title="${acc.displayName}">
+                        </label>
+                    </div>
+                </th:block>
+            </div>
         </div>
 
         <div class="table-responsive mb-4">
@@ -322,8 +448,15 @@
         var el = document.getElementById('tabContainer');
         new Sortable(el, {
             animation: 150,
+            delay: 220,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 5,
             draggable: ".user-tab-item:not([data-account='ALL'])",
             onEnd: function () {
+                var allTab = el.querySelector(".user-tab-item[data-account='ALL']");
+                if (allTab && el.firstElementChild !== allTab) {
+                    el.insertBefore(allTab, el.firstElementChild);
+                }
                 let order = [];
                 document.querySelectorAll("#tabContainer > .user-tab-item").forEach(e => {
                     let acc = e.getAttribute("data-account");

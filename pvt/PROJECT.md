@@ -973,3 +973,12 @@ Không tự ý tự động hóa hoặc thay đổi các mục này khi chưa đ
 - Không tự bịa deadline, ngày giao hoặc ngày phản hồi cho record cũ.
 - File `database-null-audit.sql` chỉ chứa truy vấn đọc để kiểm kê dữ liệu null trên database máy chủ trước khi sửa thủ công.
 - `lastTimeResponse=null` được coi là chưa có phản hồi; tên hiển thị account null/trắng fallback về account ID.
+
+### 27.5. Tab nhân viên trên mobile
+
+- PC giữ nguyên danh sách tab dạng flex-wrap và quản lý vẫn kéo thả trực tiếp để sắp xếp.
+- Mobile có tổng số tab không quá 12, tính cả tab **Tất cả**, vẫn hiển thị tab như cũ.
+- Mobile có tổng số tab lớn hơn 12 chuyển sang dropdown. Nút dropdown hiển thị tab đang chọn.
+- Dropdown dùng lưới 3 cột, có chiều cao tối đa và cuộn bên trong để danh sách đông người không kéo dài hết trang.
+- Thứ tự DOM của lưới là theo hàng: hàng đầu **Tất cả**, order 1, order 2; hàng tiếp theo order 3, order 4, order 5 và tiếp tục tương tự.
+- Tab **Tất cả** luôn đứng đầu và không kéo được. Các tab nhân viên giữ thao tác nhấn giữ rồi kéo để sắp xếp; sau khi kéo vẫn POST toàn bộ thứ tự qua `/home/manager/saveTabOrder`.
