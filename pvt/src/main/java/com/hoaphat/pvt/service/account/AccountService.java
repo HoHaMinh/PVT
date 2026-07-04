@@ -63,6 +63,34 @@ public class AccountService implements IAccountService {
         accountRoleRepository.save(accountRole);
     }
 
+    @Override
+    @Transactional
+    public void changePassword(String accountName, String currentPassword, String newPassword) {
+        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng nhập mật khẩu hiện tại.");
+        }
+        if (newPassword == null || newPassword.length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự.");
+        }
+        if (newPassword.length() > 72) {
+            throw new IllegalArgumentException("Mật khẩu mới không được vượt quá 72 ký tự.");
+        }
+
+        Account account = accountRepository.findByAccountName(accountName);
+        if (account == null) {
+            throw new IllegalArgumentException("Không tìm thấy tài khoản đang đăng nhập.");
+        }
+        if (!passwordEncoder.matches(currentPassword, account.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không đúng.");
+        }
+        if (passwordEncoder.matches(newPassword, account.getPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại.");
+        }
+
+        account.setPassword(passwordEncoder.encode(newPassword));
+        accountRepository.save(account);
+    }
+
     public List<UserDisplayDTO> getUserDisplayList() {
         List<Account> accounts = accountRepository.findAll();
 

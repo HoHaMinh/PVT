@@ -1,6 +1,7 @@
 package com.hoaphat.pvt.service.response;
 
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
+import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
@@ -26,6 +27,10 @@ public class ResponseEventInformationService implements IResponseEventInformatio
     public void addResponseEventInformation(ResponseEventInformation responseEventInformation) {
 
         Integer monthEventId = responseEventInformation.getMonthEvent().getMonthEventId();
+        MonthEvent activeEvent = monthEventRepository.findByIdForUpdate(monthEventId)
+                .filter(event -> !Boolean.TRUE.equals(event.getDeleted()))
+                .orElseThrow(() -> new IllegalArgumentException("Công việc không còn tồn tại hoặc đã được chuyển vào Thư mục đã xóa."));
+        responseEventInformation.setMonthEvent(activeEvent);
 
         // 🔥 BƯỚC 1: XÓA log "Báo cáo lại" cũ
         if (responseEventInformation.getEventInformationResponse() != null &&

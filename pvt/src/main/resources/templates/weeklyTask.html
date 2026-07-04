@@ -79,11 +79,11 @@
                     <td class="text-center fw-bold text-primary" th:text="${list.getExtendDay()}"></td>
                     <td class="text-center">
                         <!-- Nút Xóa có thêm confirm -->
-                        <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}" 
-                           class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('Bạn có chắc chắn muốn xóa công việc lặp lại này?');">
-                            Xóa
-                        </a>
+                        <form th:action="@{/home/manager/trash/move/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
+                              onsubmit="return confirm('Chuyển công việc lặp lại này vào Thư mục đã xóa?');">
+                            <input type="hidden" name="source" value="weekly">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                        </form>
                     </td>
                 </tr>
                 </tbody>

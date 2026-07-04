@@ -121,6 +121,7 @@ Session chứa:
 accountName: ID đăng nhập, ví dụ ho.ha.minh.
 username: họ tên hiển thị, ví dụ Hồ Hà Minh.
 accountName là định danh ổn định. username chỉ nên dùng để hiển thị.
+Session có timeout không hoạt động là 12 giờ để tránh phải đăng nhập lại nhiều lần trong một ngày làm việc.
 ## 8. Phân quyền
 File:
 config/SecurityConfig.java
@@ -296,8 +297,10 @@ Deadline.
 Người phụ trách.
 Sau khi sửa, controller tạo một phản hồi:
 Báo cáo lại HH:mm dd/MM/yyyy
-Hiện createdByDate của log này được đặt bằng deadline mới, không phải thời điểm sửa.
-Controller đang bắt toàn bộ exception rồi redirect mà không báo nguyên nhân. Khi cải tiến phải hiển thị lỗi thân thiện.
+createdByDate của log dùng thời điểm thực hiện thao tác sửa; nội dung log chứa deadline mới.
+Việc cập nhật công việc và tạo log phản hồi nằm trong cùng transaction: thành công toàn bộ hoặc rollback toàn bộ.
+Nếu lưu lỗi, form phải giữ dữ liệu vừa nhập và hiển thị nguyên nhân thân thiện để người dùng thử lại.
+Nút Lưu phải chống submit lặp trong lúc request trước đang xử lý.
 Ẩn/hiện
 Hiện có hai cơ chế:
 GET /hide/{id} và /show/{id}.
@@ -336,6 +339,10 @@ Không refresh toàn trang.
 Có loading nhẹ.
 Không làm bảng nhấp nháy.
 Cho phép EventSource tự reconnect.
+Khi quản lý đổi tab, URL phải cập nhật `selectedValue` ngay.
+Chỉ kết quả của request tab mới nhất được phép cập nhật bảng.
+Request cũ phải được hủy để tránh dữ liệu của tab trước ghi đè tab mới.
+Nếu session hết hoặc request lỗi, không giữ im lặng nội dung cũ; phải chuyển tới đăng nhập hoặc hiển thị lỗi có nút thử lại.
 ## 13. Phản hồi công việc
 Template:
 templates/eventResponse.html
@@ -382,9 +389,13 @@ Không tự ý thay schema trước khi thống nhất nghiệp vụ.
 ## 15. SSE NotificationService
 NotificationService giữ danh sách SseEmitter.
 Các event:
+connected -> data "ok"
 refresh -> data "update"
 ping    -> data "heartbeat"
 Heartbeat chạy mỗi 20 giây để Cloudflare không ngắt kết nối im lặng.
+Khi subscribe, server gửi `connected` ngay để commit response SSE qua proxy.
+Emitter được recycle sau 30 phút; EventSource tự reconnect.
+Refresh và heartbeat được gửi tuần tự trên daemon thread riêng, không giữ request POST chờ các trình duyệt khác.
 Emitter được xóa khi:
 Completion.
 Timeout.
@@ -658,6 +669,9 @@ Set WshShell = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 strPath = fso.GetParentFolderName(WScript.ScriptFullName)
 
+' Đảm bảo thư mục logs được tạo cạnh pvt.jar.
+WshShell.CurrentDirectory = strPath
+
 ' Thêm tham số -Dfile.encoding=UTF-8 ngay sau javaw
 WshShell.Run "javaw -Dfile.encoding=UTF-8 -jar """ & strPath & "\pvt.jar""", 0, False
 ```
@@ -665,6 +679,7 @@ WshShell.Run "javaw -Dfile.encoding=UTF-8 -jar """ & strPath & "\pvt.jar""", 0, 
 Hành vi:
 
 - Lấy thư mục chứa `run.vbs` làm thư mục triển khai.
+- Đặt working directory về thư mục triển khai để log được tạo cạnh `pvt.jar`.
 - Tìm JAR có tên chính xác `pvt.jar` trong cùng thư mục.
 - Dùng `javaw` nên ứng dụng chạy nền, không mở console.
 - Truyền `-Dfile.encoding=UTF-8` ngay khi JVM khởi động.
@@ -819,6 +834,19 @@ Vì vậy Tunnel có thể `Healthy` nhưng website vẫn lỗi 502 hoặc khôn
 | Chạy JAR mới không được | Process cũ hoặc chương trình khác đang chiếm port 80 |
 | Không thấy log lỗi | Ứng dụng chạy nền bằng `javaw` |
 
+Log chẩn đoán được ghi tự động:
+
+- `logs/pvt.log`: log Spring Boot, exception và database; xoay file tối đa 10 MB, giữ 14 file và tối đa 200 MB.
+- `logs/access/pvt-access*.log`: request thực sự đã tới embedded Tomcat, gồm thời gian, method, URL, HTTP status và thời gian xử lý.
+
+Khi gặp 502:
+
+1. Ghi lại thời điểm chính xác, URL và Cloudflare Ray ID trên trang lỗi.
+2. Tìm request POST cùng thời điểm trong access log.
+3. Nếu không có request trong access log, lỗi nằm trước Spring Boot: kiểm tra `cloudflared`, route `localhost:80`, port 80 và log Tunnel.
+4. Nếu access log có request, đối chiếu `pvt.log` để tìm exception hoặc thời gian xử lý.
+5. Form sửa việc bắt lỗi 502/503/504 ở nền và giữ nguyên dữ liệu để người dùng thử lại; không tự động POST lại vì request cũ có thể đã được xử lý.
+
 ### 24.13. Checklist kiểm tra online sau triển khai
 
 - Tunnel `PVT-SERVER` vẫn `Healthy`.
@@ -860,7 +888,6 @@ Các thông tin hoặc quy trình sau chưa được ghi nhận đầy đủ:
 - Phiên bản Java/JRE trên máy chủ.
 - Phương thức chép JAR sang máy chủ.
 - Quy trình backup/restore MySQL định kỳ.
-- Cấu hình log file lâu dài.
 - Health endpoint cho Spring Boot và database.
 - Cảnh báo tự động khi website mất kết nối.
 - Cơ chế tự khởi động MySQL sau reboot.
@@ -870,3 +897,45 @@ Các thông tin hoặc quy trình sau chưa được ghi nhận đầy đủ:
 - Cách theo dõi dung lượng thư mục ảnh và video.
 
 Không tự ý tự động hóa hoặc thay đổi các mục này khi chưa được yêu cầu. Khi cách vận hành thay đổi phải cập nhật lại phần triển khai này.
+
+## 25. Đổi mật khẩu tài khoản
+
+- Mọi tài khoản đã đăng nhập, gồm `ROLE_EMPLOYEE` và `ROLE_MANAGER`, có mục **Đổi mật khẩu** trong menu tên người dùng ở góc trên bên phải, ngay phía trên **Đăng xuất**.
+- URL biểu mẫu: `/home/account/change-password`; URL này yêu cầu đăng nhập nhưng không yêu cầu quyền quản lý.
+- Người dùng phải nhập mật khẩu hiện tại, mật khẩu mới và nhập lại mật khẩu mới.
+- Mật khẩu hiện tại được đối chiếu bằng `BCryptPasswordEncoder.matches`; tuyệt đối không giải mã hoặc ghi mật khẩu vào log.
+- Mật khẩu mới phải dài từ 6 đến 72 ký tự, khác mật khẩu hiện tại và hai lần nhập phải trùng nhau.
+- Mật khẩu mới được mã hóa BCrypt trước khi lưu vào cột `account.password`.
+- Sau khi đổi thành công, phiên hiện tại bị kết thúc và người dùng phải đăng nhập lại bằng mật khẩu mới.
+- Khi nhập sai hoặc dữ liệu không hợp lệ, hệ thống chỉ hiển thị lỗi và không thay đổi mật khẩu trong database.
+
+## 26. Thư mục đã xóa và xóa mềm công việc
+
+### 26.1. Mô hình dữ liệu
+
+- `MonthEvent.is_deleted` đánh dấu xóa mềm; mặc định là `false`.
+- Hibernate `ddl-auto=update` tạo cột mới khi chạy JAR mới. Dữ liệu hiện có phải được xem là chưa xóa.
+- Công việc đã xóa mềm vẫn còn nguyên trong bảng `month_event` và toàn bộ `ResponseEventInformation` liên quan vẫn còn nguyên.
+- Các truy vấn trang lịch, trang Task và trang việc lặp lại phải loại những bản ghi có `is_deleted=true`.
+- API xem hoặc thêm phản hồi không được phép truy cập công việc đã chuyển vào Thư mục đã xóa.
+
+### 26.2. Giao diện và quyền truy cập
+
+- Menu **Giao việc (chỉ quản lý)** có mục **Thư mục đã xóa** nằm dưới **Giao việc cá nhân lặp lại định kỳ** và trên đường phân cách trước **Tạo tài khoản**.
+- URL: `/home/manager/trash`, chỉ `ROLE_MANAGER` được truy cập theo cấu hình `/home/manager/**`.
+- Giao diện và phân trang theo trang Task, gồm các cột STT, Nội dung giao việc, Deadline và Hành động.
+- **Làm sạch thư mục** nằm cùng vị trí với **Thêm mới công việc** của trang Task.
+- Mỗi dòng chỉ có **Xóa hẳn** màu danger và **Khôi phục** màu success.
+- **Trở về trang chủ** nằm dưới cùng giống trang Task.
+- Tất cả thao tác thay đổi dữ liệu dùng HTTP POST và CSRF; không dùng link GET để xóa.
+
+### 26.3. Quy tắc nghiệp vụ
+
+- **Xóa** từ Task, việc lặp lại hoặc trang phản hồi chỉ đặt `is_deleted=true`; không xóa response.
+- **Khôi phục** đặt `is_deleted=false` và `is_hidden=false`, vì vậy công việc trở lại trạng thái Hiển thị.
+- Khôi phục giữ nguyên `monthEventStatus`: công việc thường trở lại Task; định nghĩa việc lặp lại trở lại trang việc lặp lại để không làm sai cơ chế định kỳ.
+- **Xóa hẳn** chỉ chấp nhận công việc đang ở Thư mục đã xóa. Hệ thống xóa toàn bộ response theo `month_event_id` trước, sau đó mới xóa `MonthEvent`, trong cùng transaction.
+- **Làm sạch thư mục** thực hiện cùng quy tắc cho toàn bộ bản ghi đã xóa và trả về số công việc đã xóa.
+- Mỗi thao tác xóa, khôi phục hoặc làm sạch thành công phát tín hiệu SSE để các màn hình đang mở cập nhật.
+- Không được xóa hẳn một công việc đang hoạt động bằng cách gọi trực tiếp URL.
+- Các luồng sửa, thêm response, xóa mềm, khôi phục và xóa hẳn khóa bản ghi `MonthEvent` trong transaction để tránh xung đột khi hai người thao tác đồng thời.

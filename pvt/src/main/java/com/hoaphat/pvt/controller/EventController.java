@@ -9,6 +9,8 @@ import com.hoaphat.pvt.service.account.AccountService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.*;
@@ -21,12 +23,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.*;
 
 @Controller
 public class EventController {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventController.class);
+
     // 🔥 ĐÃ XÓA: @Scheduled(fixedRate = 1) và biến timeSetToday
     
     @Autowired private IMonthEventService monthEventService;
@@ -108,28 +111,47 @@ public class EventController {
     }
 
     @PostMapping("/home/manager/task/editMonthEvent")
-    public String editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent m, @RequestParam(value = "selectedValue", required = false) String sv, RedirectAttributes ra, Principal principal) {
+    public Object editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent m,
+                                 @RequestParam(value = "selectedValue", required = false) String sv,
+                                 RedirectAttributes ra,
+                                 Principal principal,
+                                 HttpServletRequest request) {
+        boolean ajaxRequest = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+        String selectedValue = sv == null ? "" : sv;
+
         try {
-            MonthEvent old = monthEventService.findById(m.getMonthEventId());
-            if (old != null) {
-                if (m.getAccount() != null && "ALL".equals(m.getAccount().getAccountName())) { m.setAll(true); m.setAccount(null); }
-                else if (m.getAccount() == null || m.getAccount().getAccountName() == null || m.getAccount().getAccountName().isEmpty()) { m.setAccount(old.getAccount()); m.setAll(old.getAll()); }
-                else { m.setAll(false); }
-            }
-            monthEventService.addMonthEvent(m, false);
-            ResponseEventInformation res = new ResponseEventInformation();
-            LocalDateTime dl = m.getMonthEventDeadline();
-            res.setCreatedByUser(principal.getName()); res.setCreatedByDate(dl);
-            res.setEventInformationResponse("Báo cáo lại " + dl.format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
-            res.setMonthEvent(m);
-            responseEventInformationService.addResponseEventInformation(res);
+            monthEventService.editMonthEvent(m, principal.getName());
             ra.addFlashAttribute("mess", "Sửa thành công");
-            
-            // 🔥 PHÁT TÍN HIỆU: Báo có thay đổi
             notificationService.sendRefreshSignal();
-            
-            return "redirect:/home/employee/private?selectedValue=" + sv;
-        } catch (Exception e) { return "redirect:/home/employee/private?selectedValue=" + sv; }
+
+            if (ajaxRequest) {
+                Map<String, String> result = new HashMap<>();
+                result.put("redirectUrl", "/home/employee/private?selectedValue=" + selectedValue);
+                return ResponseEntity.ok(result);
+            }
+
+            ra.addAttribute("selectedValue", selectedValue);
+            return "redirect:/home/employee/private";
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Không thể sửa công việc {}: {}", m.getMonthEventId(), e.getMessage());
+            if (ajaxRequest) {
+                return ResponseEntity.badRequest()
+                        .body(Collections.singletonMap("message", e.getMessage()));
+            }
+            ra.addFlashAttribute("editError", e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Lỗi khi sửa công việc " + m.getMonthEventId(), e);
+            String message = "Không thể lưu thay đổi. Dữ liệu bạn vừa nhập vẫn được giữ lại để thử lại.";
+            if (ajaxRequest) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Collections.singletonMap("message", message));
+            }
+            ra.addFlashAttribute("editError", message);
+        }
+
+        ra.addFlashAttribute("monthEditEvent", m);
+        ra.addAttribute("selectedValue", selectedValue);
+        return "redirect:/home/manager/task/showEditMonthEventForm/" + m.getMonthEventId();
     }
 
     @GetMapping("/home/manager/task/hide/{id}")
@@ -145,16 +167,6 @@ public class EventController {
     @GetMapping("/home/manager/task/show/{id}")
     public String showEvent(@PathVariable Integer id, @RequestParam(value = "selectedValue", required = false) String sv) {
         MonthEvent e = monthEventService.findById(id); e.setHidden(false); monthEventService.addMonthEvent(e, false);
-        
-        // 🔥 PHÁT TÍN HIỆU: Báo có thay đổi
-        notificationService.sendRefreshSignal();
-        
-        return "redirect:/home/employee/private?selectedValue=" + sv;
-    }
-
-    @GetMapping("/home/manager/weeklyTask/delete/{id}")
-    public String deleteWeekEventTask(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String sv, RedirectAttributes ra) {
-        monthEventService.deleteWeekEvent(id); ra.addFlashAttribute("mess", "Xóa thành công");
         
         // 🔥 PHÁT TÍN HIỆU: Báo có thay đổi
         notificationService.sendRefreshSignal();
@@ -191,8 +203,13 @@ public class EventController {
 
     // --- CÁC HÀM CÒN LẠI KHÔNG THAY ĐỔI DỮ LIỆU NÊN KHÔNG CẦN PHÁT TÍN HIỆU ---
     @GetMapping("/home/employee/private/showEventResponseForm/{id}")
-    private String showEventResponseForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String selectedValue, Model model, HttpServletRequest request) {
+    private String showEventResponseForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String selectedValue, Model model, HttpServletRequest request, RedirectAttributes redirectAttributes) {
         MonthEvent eventResponse = monthEventService.findById(id);
+        if (eventResponse == null) {
+            redirectAttributes.addFlashAttribute("mess", "Công việc không còn tồn tại hoặc đã được chuyển vào Thư mục đã xóa.");
+            redirectAttributes.addAttribute("selectedValue", selectedValue == null ? "" : selectedValue);
+            return "redirect:/home/employee/private";
+        }
         model.addAttribute("response", new ResponseEventInformation(eventResponse));
         model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
         model.addAttribute("username", (String) request.getSession().getAttribute("username"));
@@ -200,7 +217,12 @@ public class EventController {
         return "eventResponse";
     }
     @GetMapping("/home/employee/private/showEventResponseFormRestful/{id}")
-    public ResponseEntity<List<ResponseEventInformation>> showEventResponseFormRestful(@PathVariable("id") Integer id) { return new ResponseEntity<>(responseEventInformationService.getAllResponseById(id), HttpStatus.OK); }
+    public ResponseEntity<List<ResponseEventInformation>> showEventResponseFormRestful(@PathVariable("id") Integer id) {
+        if (monthEventService.findById(id) == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return new ResponseEntity<>(responseEventInformationService.getAllResponseById(id), HttpStatus.OK);
+    }
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page, @RequestParam("size") Optional<Integer> size, @RequestParam("sort") Optional<String> sort, HttpServletRequest request) {
         int currentPage = page.orElse(1);
@@ -234,7 +256,9 @@ public class EventController {
     }
     @GetMapping("/home/manager/task/showEditMonthEventForm/{id}")
     private String showEditMonthEventForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String sv, Model model, HttpServletRequest request) {
-        model.addAttribute("monthEditEvent", monthEventService.findById(id));
+        if (!model.containsAttribute("monthEditEvent")) {
+            model.addAttribute("monthEditEvent", monthEventService.findById(id));
+        }
         model.addAttribute("accountList", accountService.findAll());
         model.addAttribute("username", (String) request.getSession().getAttribute("username"));
         model.addAttribute("selectedValue", sv);

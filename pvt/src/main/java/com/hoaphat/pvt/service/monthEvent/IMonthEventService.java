@@ -13,13 +13,23 @@ public interface IMonthEventService {
 
     void addMonthEvent(MonthEvent monthEvent, boolean flag);
 
+    void editMonthEvent(MonthEvent monthEvent, String editedBy);
+
     List<MonthEvent> getMonthEventListByFilter(LocalDateTime now, String accountName);
 
     List<MonthEvent> getWeekEventList();
 
     void checkWeekEventDeadline (LocalDateTime now);
 
-    void deleteWeekEvent(Integer id);
+    Page<MonthEvent> getDeletedMonthEventListWithPaging(Pageable pageable);
+
+    void moveToTrash(Integer id);
+
+    void restoreFromTrash(Integer id);
+
+    void permanentlyDelete(Integer id);
+
+    int emptyTrash();
 
     MonthEvent findById (Integer id);
 }

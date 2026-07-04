@@ -4,13 +4,16 @@ import com.hoaphat.pvt.model.event.MonthEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
+import javax.persistence.LockModeType;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer> {
@@ -19,6 +22,7 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
             "WHERE m.monthEventDeadline > :before " +
             "AND m.monthEventDeadline < :after " +
             "AND m.hidden = false " +
+            "AND (m.deleted = false OR m.deleted IS NULL) " +
             "AND (m.all = true OR m.account.accountName = :accountName) " +
             "ORDER BY m.monthEventDeadline, m.monthEventId ASC")
     List<MonthEvent> findByAccountFilter(LocalDateTime before,
@@ -29,19 +33,37 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     //    Update status = 1 khi là quản lý phản hồi
     @Transactional
     @Modifying
-    @Query("update MonthEvent m set m.responseStatus = 1 where m.monthEventId = :id")
+    @Query("update MonthEvent m set m.responseStatus = 1 where m.monthEventId = :id and (m.deleted = false or m.deleted is null)")
     void updateResponseStatus1(Integer id);
 
     //    Update status = 2 khi là nhân viên phản hồi
     @Transactional
     @Modifying
-    @Query("update MonthEvent m set m.responseStatus = 2 where m.monthEventId = :id")
+    @Query("update MonthEvent m set m.responseStatus = 2 where m.monthEventId = :id and (m.deleted = false or m.deleted is null)")
     void updateResponseStatus2(Integer id);
 
     //    *Trang task
-    @Query(value = "select m from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc",
-            countQuery = "select count(m) from MonthEvent m where m.monthEventStatus = 0 or m.monthEventStatus = 1 order by m.monthEventDeadline, m.monthEventId asc")
+    @Query(value = "select m from MonthEvent m where (m.monthEventStatus = 0 or m.monthEventStatus = 1) and (m.deleted = false or m.deleted is null) order by m.monthEventDeadline, m.monthEventId asc",
+            countQuery = "select count(m) from MonthEvent m where (m.monthEventStatus = 0 or m.monthEventStatus = 1) and (m.deleted = false or m.deleted is null)")
     Page<MonthEvent> findMonthEventsByMonthEventStatus(Pageable pageable);
+
+    @Query(value = "select m from MonthEvent m where m.deleted = true order by m.monthEventDeadline, m.monthEventId asc",
+            countQuery = "select count(m) from MonthEvent m where m.deleted = true")
+    Page<MonthEvent> findDeletedEvents(Pageable pageable);
+
+    @Query("select m from MonthEvent m where m.deleted = true order by m.monthEventDeadline, m.monthEventId asc")
+    List<MonthEvent> findDeletedEvents();
+
+    @Query("select m from MonthEvent m where m.monthEventId = :id and (m.deleted = false or m.deleted is null)")
+    Optional<MonthEvent> findActiveById(Integer id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from MonthEvent m where m.monthEventId = :id")
+    Optional<MonthEvent> findByIdForUpdate(Integer id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from MonthEvent m where m.deleted = true order by m.monthEventDeadline, m.monthEventId asc")
+    List<MonthEvent> findDeletedEventsForUpdate();
 
     @Transactional
     @Modifying
@@ -49,18 +71,20 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     void updateWeekEventDeadline(LocalDateTime now, Integer id);
 
     //    *Trang weekly task
-    @Query("select m from MonthEvent m where m.monthEventStatus = 2 order by m.monthEventDeadline, m.monthEventId asc ")
+    @Query("select m from MonthEvent m where m.monthEventStatus = 2 and (m.deleted = false or m.deleted is null) order by m.monthEventDeadline, m.monthEventId asc ")
     List<MonthEvent> findWeekEvents();
 
     @Transactional
     @Modifying
-    @Query("update MonthEvent m set m.lastTimeResponse = :lastTimeResponse, m.lastPersonResponse = :lastPersonResponse  where m.monthEventId = :id")
+    @Query("update MonthEvent m set m.lastTimeResponse = :lastTimeResponse, m.lastPersonResponse = :lastPersonResponse " +
+            "where m.monthEventId = :id and (m.deleted = false or m.deleted is null)")
     void updateMonthEventResponse(LocalDateTime lastTimeResponse, String lastPersonResponse, Integer id);
 
     // ✅ Chỉ lấy m.all = true, không lấy việc cá nhân
     @Query("SELECT m FROM MonthEvent m " +
             "WHERE m.monthEventDeadline > :before " +
             "AND m.monthEventDeadline < :after " +
+            "AND (m.deleted = false OR m.deleted IS NULL) " +
             "AND m.all = true " +
             "ORDER BY m.monthEventDeadline, m.monthEventId ASC")
     List<MonthEvent> findAllFilter(LocalDateTime before, LocalDateTime after);

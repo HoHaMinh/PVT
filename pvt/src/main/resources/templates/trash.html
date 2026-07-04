@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thư mục đã xóa - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script th:src="@{/js/jquery4.min.js}"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <style>
+        .table-responsive {
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background: white;
+        }
+        th { white-space: nowrap; }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+    </style>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        $(document).ready(function() {
+            var mess = /*[[${mess}]]*/ null;
+            if (mess) {
+                swal({
+                    title: 'Thông báo',
+                    text: mess,
+                    icon: 'success',
+                    timer: 1800,
+                    buttons: false
+                });
+            }
+        });
+        /*]]>*/
+    </script>
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <div class="container-fluid mt-4 px-3 px-md-4 mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h4 class="text-primary fw-bold m-0">Thư mục đã xóa</h4>
+                <div class="text-muted mt-1">Công việc và toàn bộ phản hồi vẫn được giữ cho đến khi xóa hẳn.</div>
+            </div>
+            <form th:action="@{/home/manager/trash/empty}" method="post"
+                  onsubmit="return confirm('CẢNH BÁO: Xóa hẳn toàn bộ công việc và phản hồi trong thư mục? Hành động này không thể hoàn tác.');">
+                <button type="submit" class="btn btn-danger shadow-sm"
+                        th:disabled="${monthEventList == null or monthEventList.totalElements == 0}">
+                    Làm sạch thư mục
+                </button>
+            </form>
+        </div>
+
+        <div th:if="${error}" class="alert alert-danger text-center fw-bold" role="alert" th:text="${error}"></div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-hover table-bordered bg-white m-0">
+                <thead class="table-light">
+                <tr>
+                    <th class="text-center">STT</th>
+                    <th style="min-width: 200px;">Nội dung giao việc</th>
+                    <th class="text-center" style="min-width: 150px;">Deadline</th>
+                    <th class="text-center" style="min-width: 180px;">Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${monthEventList == null or monthEventList.totalElements == 0}">
+                    <td colspan="4" class="text-center text-muted py-4">Thư mục đã xóa đang trống.</td>
+                </tr>
+                <tr th:each="list,iter : ${monthEventList}" class="align-middle">
+                    <td class="text-center fw-bold text-muted"
+                        th:text="${(currentPage - 1) * monthEventList.size + iter.count}"></td>
+                    <td class="text-start" th:text="${list.getMonthEventDescription()}"></td>
+                    <td class="text-center fw-bold text-danger" th:text="${list.getFormattedDeadlineByFormat()}"></td>
+                    <td class="text-center">
+                        <div class="action-buttons">
+                            <form th:action="@{/home/manager/trash/delete/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
+                                  onsubmit="return confirm('Xóa hẳn công việc này và toàn bộ phản hồi? Hành động này không thể hoàn tác.');">
+                                <button type="submit" class="btn btn-sm btn-danger">Xóa hẳn</button>
+                            </form>
+                            <form th:action="@{/home/manager/trash/restore/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
+                                  onsubmit="return confirm('Khôi phục công việc này về trạng thái Hiển thị?');">
+                                <button type="submit" class="btn btn-sm btn-success">Khôi phục</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <nav aria-label="Page navigation" th:if="${monthEventList != null and monthEventList.totalPages > 1}">
+                <ul class="pagination m-0">
+                    <li class="page-item" th:each="pageNumber : ${pageNumbers}"
+                        th:classappend="${currentPage == pageNumber} ? 'active' : ''">
+                        <a class="page-link"
+                           th:href="@{/home/manager/trash(page=${pageNumber},size=${monthEventList.size})}"
+                           th:text="${pageNumber}"></a>
+                    </li>
+                </ul>
+            </nav>
+            <div th:unless="${monthEventList != null and monthEventList.totalPages > 1}"></div>
+
+            <a th:href="@{/home}" class="btn btn-outline-primary rounded-pill px-4">
+                &larr; Trở về trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+</body>
+</html>

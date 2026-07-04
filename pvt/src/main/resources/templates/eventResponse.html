@@ -128,9 +128,12 @@
             <a th:href="@{/home/manager/task/showEditMonthEventForm/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" class="btn btn-outline-secondary">
                 Đổi deadline
             </a>
-            <a th:href="@{/home/manager/weeklyTask/delete/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" class="btn btn-outline-danger">
-                Quản lý xóa
-            </a>
+            <form th:action="@{/home/manager/trash/move/{id}(id=${response.getMonthEvent().getMonthEventId()})}" method="post" class="m-0"
+                  onsubmit="return confirm('Chuyển công việc và toàn bộ phản hồi vào Thư mục đã xóa?');">
+                <input type="hidden" name="source" value="private">
+                <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+                <button type="submit" class="btn btn-outline-danger">Quản lý xóa</button>
+            </form>
             <a th:if="${!response.getMonthEvent().hidden}"
                th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}" class="btn btn-outline-warning">
                 Ẩn việc

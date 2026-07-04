@@ -36,12 +36,80 @@
                 time_24hr: true
             }));
 
-            document.querySelector('#form').addEventListener('submit', function(e) {
+            function resetSubmitState() {
+                var form = document.getElementById('form');
+                var submitButton = document.getElementById('submitButton');
+                form.dataset.submitting = 'false';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Lưu thay đổi';
+            }
+
+            function showSubmitError(message) {
+                var errorBox = document.getElementById('submitError');
+                errorBox.textContent = message;
+                errorBox.classList.remove('d-none');
+            }
+
+            document.querySelector('#form').addEventListener('submit', async function(e) {
+                e.preventDefault();
                 var allDatesSelected = fpInstances.every(fp => fp.selectedDates.length > 0);
                 if (!allDatesSelected) {
-                    e.preventDefault();
                     alert('Phải chọn deadline cho công việc được giao');
+                    return;
                 }
+
+                if (this.dataset.submitting === 'true') {
+                    return;
+                }
+
+                this.dataset.submitting = 'true';
+                var submitButton = document.getElementById('submitButton');
+                var errorBox = document.getElementById('submitError');
+                var navigating = false;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Đang lưu...';
+                errorBox.classList.add('d-none');
+
+                try {
+                    var response = await fetch(this.action, {
+                        method: 'POST',
+                        body: new FormData(this),
+                        credentials: 'same-origin',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    });
+
+                    if (response.url.indexOf('/login') !== -1) {
+                        navigating = true;
+                        window.location.assign('/login?expired=true');
+                        return;
+                    }
+
+                    if (response.status === 502 || response.status === 503 || response.status === 504) {
+                        showSubmitError('Kết nối tới máy chủ đang gián đoạn (mã ' + response.status + '). Dữ liệu vẫn được giữ nguyên; vui lòng chờ vài giây rồi thử lại.');
+                        return;
+                    }
+
+                    var contentType = response.headers.get('Content-Type') || '';
+                    var result = contentType.indexOf('application/json') !== -1
+                        ? await response.json()
+                        : {};
+
+                    if (!response.ok) {
+                        showSubmitError(result.message || 'Không thể lưu thay đổi. Dữ liệu vẫn được giữ nguyên để thử lại.');
+                        return;
+                    }
+
+                    navigating = true;
+                    window.location.assign(result.redirectUrl || '/home/employee/private');
+                } catch (error) {
+                    showSubmitError('Mất kết nối tới máy chủ. Dữ liệu vẫn được giữ nguyên; vui lòng chờ vài giây rồi thử lại.');
+                } finally {
+                    if (!navigating) resetSubmitState();
+                }
+            });
+
+            window.addEventListener('pageshow', function () {
+                resetSubmitState();
             });
         });
     </script>
@@ -54,6 +122,8 @@
     <div class="container mt-4">
         <div class="mb-3">
             <h5 class="text-danger fw-bold" th:if="${mess != null}" th:text="${mess}"></h5>
+            <div class="alert alert-danger" role="alert" th:if="${editError != null}" th:text="${editError}"></div>
+            <div class="alert alert-danger d-none" role="alert" id="submitError"></div>
             <h4 class="text-primary fw-bold">Chỉnh sửa lịch công việc</h4>
         </div>
 
@@ -85,7 +155,7 @@
                     <!-- Cột Người phụ trách (Chiếm 100% trên Mobile, 6 cột trên PC) -->
                     <div class="col-12 col-md-6">
                         <label class="form-label">Người phụ trách <span class="text-danger">*</span></label>
-                        <select class="form-select" th:field="*{account.accountName}">
+                        <select class="form-select" th:field="*{account.accountName}" required>
                             <option value="">-- Chọn người phụ trách --</option>
                             <option value="ALL" th:selected="${monthEditEvent.all}" class="fw-bold text-danger">🔥 Cả phòng</option>
                             <option th:each="acc : ${accountList}"
@@ -99,7 +169,7 @@
 
                 <!-- Nút bấm -->
                 <div class="d-flex flex-wrap gap-2 mt-4 pt-3 border-top">
-                    <button type="submit" class="btn btn-primary px-4">Lưu thay đổi</button>
+                    <button type="submit" class="btn btn-primary px-4" id="submitButton">Lưu thay đổi</button>
                     <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}" class="btn btn-outline-secondary ms-auto">
                         Hủy & Trở lại
                     </a>

@@ -92,11 +92,11 @@
                             </a>
                             
                             <!-- Xóa -->
-                            <a th:href="@{/home/manager/weeklyTask/delete/{id} (id=${list.getMonthEventId()})}" 
-                               class="btn btn-sm btn-outline-danger"
-                               onclick="return confirm('Bạn có chắc chắn muốn xóa công việc này?');">
-                                Xóa
-                            </a>
+                            <form th:action="@{/home/manager/trash/move/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
+                                  onsubmit="return confirm('Chuyển công việc này vào Thư mục đã xóa?');">
+                                <input type="hidden" name="source" value="task">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                            </form>
                             
                             <!-- Ẩn / Hiện -->
                             <form th:action="@{/home/manager/task/toggleHidden/{id}(id=${list.monthEventId})}" method="post" style="margin: 0;">

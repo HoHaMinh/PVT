@@ -12,7 +12,8 @@ import java.util.List;
 
 @Repository
 public interface IResponseEventInformationRepository extends CrudRepository<ResponseEventInformation, Integer> {
-    @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent order by r.createdByDate desc ")
+    @Query("select r from ResponseEventInformation r where r.monthEvent.monthEventId = :idMonthEvent " +
+            "and (r.monthEvent.deleted = false or r.monthEvent.deleted is null) order by r.createdByDate desc ")
     List<ResponseEventInformation> findResponseById(Integer idMonthEvent);
 
     @Transactional

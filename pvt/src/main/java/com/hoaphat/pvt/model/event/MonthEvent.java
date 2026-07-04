@@ -187,4 +187,15 @@ public class MonthEvent {
     public void setHidden(Boolean hidden) {
         this.hidden = hidden;
     }
+
+    @Column(name = "is_deleted", nullable = false, columnDefinition = "boolean default false")
+    private Boolean deleted = false;
+
+    public Boolean getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Boolean deleted) {
+        this.deleted = deleted;
+    }
 }

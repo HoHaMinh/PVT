@@ -23,6 +23,12 @@
             flex: 1 1 auto;
             min-width: 100px;
         }
+        #result {
+            transition: opacity 0.15s ease;
+        }
+        #result.is-loading {
+            opacity: 0.55;
+        }
         @media (min-width: 768px) {
             .user-tab-item {
                 flex: 0 0 auto;
@@ -38,15 +44,84 @@
             return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
         }
 
-        function loadData() {
+        var activeDataRequest = null;
+        var latestDataRequestId = 0;
+
+        function getSelectedValue() {
             var selectedValue = $("input[name='options-outlined']:checked").val();
-            if (selectedValue === undefined) selectedValue = "";
-            $.ajax({
+            return selectedValue === undefined ? "" : selectedValue;
+        }
+
+        function updateSelectedValueUrl(selectedValue, addHistoryEntry) {
+            var url = new URL(window.location.href);
+            if (selectedValue) {
+                url.searchParams.set("selectedValue", selectedValue);
+            } else {
+                url.searchParams.delete("selectedValue");
+            }
+
+            var nextUrl = url.pathname + url.search + url.hash;
+            if (addHistoryEntry) {
+                window.history.pushState({selectedValue: selectedValue}, "", nextUrl);
+            } else {
+                window.history.replaceState({selectedValue: selectedValue}, "", nextUrl);
+            }
+        }
+
+        function selectTabFromUrl() {
+            var selectedValue = new URL(window.location.href).searchParams.get("selectedValue") || "";
+            var matched = false;
+            document.querySelectorAll("input[name='options-outlined']").forEach(function (input) {
+                input.checked = input.value === selectedValue;
+                if (input.checked) matched = true;
+            });
+
+            if (!matched) {
+                var allTab = document.getElementById("all");
+                var fallbackTab = allTab || document.querySelector("input[name='options-outlined']");
+                if (fallbackTab) fallbackTab.checked = true;
+            }
+        }
+
+        function isSessionExpired(xhr) {
+            var contentType = xhr.getResponseHeader("Content-Type") || "";
+            return xhr.status === 401 || xhr.status === 403 || contentType.indexOf("text/html") !== -1;
+        }
+
+        function showLoadError(message) {
+            $("#result").html(`<tr>
+                <td colspan="6" class="text-center py-4 text-danger">
+                    ${message}
+                    <button type="button" class="btn btn-sm btn-outline-primary ms-2" onclick="loadData(true)">Thử lại</button>
+                </td>
+            </tr>`);
+        }
+
+        function loadData(showLoading) {
+            var selectedValue = getSelectedValue();
+            var requestId = ++latestDataRequestId;
+
+            if (activeDataRequest && activeDataRequest.readyState !== 4) {
+                activeDataRequest.abort();
+            }
+
+            if (showLoading !== false) {
+                $("#result").addClass("is-loading").attr("aria-busy", "true");
+            }
+
+            activeDataRequest = $.ajax({
                 url: "/home/employee/filterRestful",
                 type: 'get',
                 data: {selectedValue: selectedValue},
                 dataType: "json",
+                timeout: 20000,
                 success: function (data) {
+                    if (requestId !== latestDataRequestId) return;
+                    if (!data || !Array.isArray(data.monthEventList)) {
+                        showLoadError("Dữ liệu trả về không hợp lệ.");
+                        return;
+                    }
+
                     let result = '';
                     for (let i = 0; i < data.monthEventList.length; i++) {
                         var now = new Date();
@@ -79,20 +154,47 @@
                         let status = data.monthEventList[i].responseStatus;
                         let btnClass = (status === 0) ? 'btn-secondary' : (status === 2 ? 'btn-warning' : 'btn-success');
                         result += `<td class="text-center">
-                            <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}?selectedValue=${selectedValue}" style="text-decoration:none">
+                            <a href="/home/employee/private/showEventResponseForm/${data.monthEventList[i].monthEventId}?selectedValue=${encodeURIComponent(selectedValue)}" style="text-decoration:none">
                                 <button type="button" class="btn btn-sm ${btnClass}">Xem</button>
                             </a>
                         </td></tr>`;
                     }
+                    if (result === '') {
+                        result = '<tr><td colspan="6" class="text-center py-4 text-muted">Không có công việc phù hợp.</td></tr>';
+                    }
                     $("#result").html(result);
                 },
-                error: function (e) { console.log("Error loadData AJAX"); }
+                error: function (xhr, textStatus) {
+                    if (textStatus === "abort" || requestId !== latestDataRequestId) return;
+                    if (isSessionExpired(xhr)) {
+                        window.location.assign("/login?expired=true");
+                        return;
+                    }
+                    var message = textStatus === "timeout"
+                        ? "Máy chủ phản hồi quá chậm."
+                        : "Không thể tải dữ liệu của tab này.";
+                    showLoadError(message);
+                },
+                complete: function () {
+                    if (requestId === latestDataRequestId) {
+                        $("#result").removeClass("is-loading").attr("aria-busy", "false");
+                    }
+                }
             });
         }
 
         $(document).ready(function () {
-            $("input[name='options-outlined']").change(loadData);
-            loadData(); // Tải dữ liệu lần đầu khi mở trang
+            $("input[name='options-outlined']").on("change", function () {
+                var selectedValue = getSelectedValue();
+                updateSelectedValueUrl(selectedValue, true);
+                loadData(true);
+            });
+            loadData(false); // Tải dữ liệu lần đầu khi mở trang
+
+            window.addEventListener("popstate", function () {
+                selectTabFromUrl();
+                loadData(true);
+            });
 
             // 🔥 THAY THẾ HOÀN TOÀN setInterval
             // Kết nối đến Server để "nghe" thông báo
@@ -101,7 +203,7 @@
             // Khi Server phát tín hiệu có tên là "refresh", chúng ta sẽ gọi hàm loadData()
             eventSource.addEventListener('refresh', function(event) {
                 console.log("Server báo có dữ liệu mới, đang tải lại...");
-                loadData();
+                loadData(false);
             });
 
             eventSource.onerror = function(error) {
