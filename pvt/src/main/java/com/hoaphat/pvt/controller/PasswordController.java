@@ -28,14 +28,14 @@ public class PasswordController {
     }
 
     @PostMapping("/change-password")
-    public String changePassword(@RequestParam String currentPassword,
-                                 @RequestParam String newPassword,
-                                 @RequestParam String confirmPassword,
+    public String changePassword(@RequestParam(required = false) String currentPassword,
+                                 @RequestParam(required = false) String newPassword,
+                                 @RequestParam(required = false) String confirmPassword,
                                  Authentication authentication,
                                  HttpServletRequest request,
                                  HttpServletResponse response,
                                  Model model) {
-        if (!newPassword.equals(confirmPassword)) {
+        if (newPassword == null || confirmPassword == null || !newPassword.equals(confirmPassword)) {
             model.addAttribute("error", "Xác nhận mật khẩu mới không khớp.");
             return "change-password";
         }

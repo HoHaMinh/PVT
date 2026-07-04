@@ -7,7 +7,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -92,6 +91,9 @@ public class ResponseEventInformation {
     }
 
     public String getFormattedCreatedByDate() {
+        if (this.createdByDate == null) {
+            return "Không rõ thời gian";
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
         return this.createdByDate.format(formatter);
     }

@@ -23,13 +23,19 @@ public class AccountController {
 
     // Xử lý submit
     @PostMapping("/create-account")
-    public String createAccount(@RequestParam String username, @RequestParam String password, @RequestParam String name, @RequestParam String role, Model model) {
+    public String createAccount(@RequestParam(required = false) String username,
+                                @RequestParam(required = false) String password,
+                                @RequestParam(required = false) String name,
+                                @RequestParam(required = false) String role,
+                                Model model) {
 
         try {
             accountService.createAccount(username, password, name, role);
             model.addAttribute("message", "Tạo tài khoản thành công!");
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            model.addAttribute("error", "Không thể tạo tài khoản. Vui lòng kiểm tra dữ liệu và thử lại.");
         }
 
         return "create-account";

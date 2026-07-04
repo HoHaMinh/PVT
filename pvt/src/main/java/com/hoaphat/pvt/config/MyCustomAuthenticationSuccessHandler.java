@@ -28,7 +28,10 @@ public class MyCustomAuthenticationSuccessHandler implements AuthenticationSucce
         List<Account> accountList = accountService.findAll();
         for (int i = 0; i < accountList.size(); i++) {
             if (accountName.equals(accountList.get(i).getAccountName())) {
-                displayName = accountList.get(i).getName(); // chỉ ghi đè displayName
+                String configuredName = accountList.get(i).getName();
+                if (configuredName != null && !configuredName.trim().isEmpty()) {
+                    displayName = configuredName.trim(); // chỉ ghi đè khi tên hiển thị hợp lệ
+                }
             }
         }
 

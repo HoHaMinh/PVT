@@ -69,6 +69,8 @@
     <nav th:replace="~{fragments :: nav}"></nav>
     
     <div class="container mt-4 mb-5">
+        <div th:if="${error}" class="alert alert-danger text-center fw-bold" role="alert"
+             th:text="${error}"></div>
         <!-- Tiêu đề và Nút thêm số lượng -->
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
             <h4 class="text-primary fw-bold m-0">Giao việc cá nhân</h4>

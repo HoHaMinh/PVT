@@ -42,13 +42,18 @@
                     success: function (data) {
                         let result = '';
                         for (let i = 0; i < data.length; i++) {
-                            const content = data[i].eventInformationResponse.replace(/\n/g, '<br>');
+                            const rawContent = data[i].eventInformationResponse;
+                            const content = rawContent == null
+                                ? '<span class="text-muted">Nội dung phản hồi cũ bị thiếu</span>'
+                                : rawContent.replace(/\n/g, '<br>');
+                            const createdDate = data[i].createdByDate || 'Không rõ thời gian';
+                            const createdUser = data[i].createdByUser || 'Không rõ người gửi';
                             result += `
                                 <tr class="align-middle">
                                     <td class="text-center">${i + 1}</td>
                                     <td class="text-start">${content}</td>
-                                    <td class="text-center text-muted">${data[i].createdByDate}</td>
-                                    <td class="text-center fw-bold">${data[i].createdByUser}</td>
+                                    <td class="text-center text-muted">${createdDate}</td>
+                                    <td class="text-center fw-bold">${createdUser}</td>
                                 </tr>`;
                         }
                         $("#result").html(result);
@@ -85,6 +90,15 @@
             });
             $('#responseForm').on('submit', function(e) {
                 e.preventDefault();
+                const form = this;
+                const submitButton = $('#btnSubmitResponse');
+                if (form.dataset.submitting === 'true') return;
+                if ($('#eventInformationResponse').val().trim() === '') {
+                    swal('Bắt buộc', 'Nội dung không được bỏ trống.', 'error');
+                    return;
+                }
+                form.dataset.submitting = 'true';
+                submitButton.prop('disabled', true).text('Đang gửi...');
                 $.ajax({
                     type: 'post',
                     url: $(this).attr('action'),
@@ -101,6 +115,22 @@
                             $('#eventInformationResponse').val('');
                             loadData(); // Chủ động load lại ngay sau khi mình gửi thành công
                         });
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 401 || xhr.status === 403
+                                || (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1)) {
+                            window.location.assign('/login?expired=true');
+                            return;
+                        }
+                        let message = 'Không thể gửi phản hồi. Dữ liệu vẫn được giữ lại để thử lại.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+                        swal('Không thể lưu', message, 'error');
+                    },
+                    complete: function() {
+                        form.dataset.submitting = 'false';
+                        submitButton.prop('disabled', false).text('Gửi phản hồi');
                     }
                 });
             });

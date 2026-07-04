@@ -91,6 +91,9 @@ public class MonthEvent {
     }
 
     public String getFormattedDeadlineByFormat() {
+        if (this.monthEventDeadline == null) {
+            return "Chưa có deadline";
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
         return this.monthEventDeadline.format(formatter);
     }
@@ -128,6 +131,9 @@ public class MonthEvent {
     }
 
     public String getFormattedLastTimeResponse() {
+        if (this.lastTimeResponse == null) {
+            return "Chưa có phản hồi";
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
         return this.lastTimeResponse.format(formatter);
     }
@@ -149,6 +155,9 @@ public class MonthEvent {
     }
 
     public String getFormattedRegisteredDay() {
+        if (this.registeredDay == null) {
+            return "Không rõ ngày giao";
+        }
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy");
         return this.registeredDay.format(formatter);
     }

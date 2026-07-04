@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -182,5 +183,60 @@ class MonthEventServiceTest {
         deletionOrder.verify(monthEventRepository).delete(first);
         deletionOrder.verify(responseEventInformationRepository).deleteResponseById(105);
         deletionOrder.verify(monthEventRepository).delete(second);
+    }
+
+    @Test
+    void addMonthEventsValidatesEntireBatchBeforeWriting() {
+        Account selectedAccount = new Account("dtinvn", "ignored", "Đinh Văn Tín");
+        when(accountRepository.findByAccountName("dtinvn")).thenReturn(selectedAccount);
+
+        MonthEvent valid = new MonthEvent();
+        valid.setMonthEventDescription("Công việc hợp lệ");
+        valid.setMonthEventDeadline(LocalDateTime.of(2026, 7, 5, 8, 0));
+        valid.setMonthEventStatus(0);
+        valid.setAccount(new Account("dtinvn", "ignored"));
+
+        MonthEvent invalid = new MonthEvent();
+        invalid.setMonthEventDescription("   ");
+        invalid.setMonthEventDeadline(LocalDateTime.of(2026, 7, 6, 8, 0));
+        invalid.setMonthEventStatus(0);
+        invalid.setAccount(new Account("dtinvn", "ignored"));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> monthEventService.addMonthEvents(Arrays.asList(valid, invalid), 0));
+
+        assertTrue(error.getMessage().startsWith("Dòng 2:"));
+        verify(monthEventRepository, never()).save(org.mockito.ArgumentMatchers.any(MonthEvent.class));
+    }
+
+    @Test
+    void addWeekEventRejectsExtendDayAbove365() {
+        MonthEvent event = new MonthEvent();
+        event.setMonthEventDescription("Công việc lặp lại");
+        event.setMonthEventDeadline(LocalDateTime.of(2026, 7, 5, 8, 0));
+        event.setMonthEventStatus(2);
+        event.setExtendDay(366);
+        event.setAccount(new Account("ALL", "ignored"));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> monthEventService.addMonthEvents(Collections.singletonList(event), 2));
+
+        assertEquals("Dòng 1: Số ngày gia hạn phải từ 1 đến 365.", error.getMessage());
+        verify(monthEventRepository, never()).save(org.mockito.ArgumentMatchers.any(MonthEvent.class));
+    }
+
+    @Test
+    void addMonthEventsRejectsLegacyMonthStatus() {
+        MonthEvent event = new MonthEvent();
+        event.setMonthEventDescription("Việc tháng cũ");
+        event.setMonthEventDeadline(LocalDateTime.of(2026, 7, 5, 8, 0));
+        event.setMonthEventStatus(1);
+        event.setAccount(new Account("ALL", "ignored"));
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> monthEventService.addMonthEvents(Collections.singletonList(event), 0));
+
+        assertEquals("Dòng 1: Loại công việc không hợp lệ.", error.getMessage());
+        verify(monthEventRepository, never()).save(org.mockito.ArgumentMatchers.any(MonthEvent.class));
     }
 }

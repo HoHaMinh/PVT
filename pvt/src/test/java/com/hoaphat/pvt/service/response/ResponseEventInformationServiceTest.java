@@ -72,4 +72,34 @@ class ResponseEventInformationServiceTest {
         verify(monthEventRepository).updateResponseStatus1(201);
         verify(responseRepository).save(response);
     }
+
+    @Test
+    void addResponseRejectsMissingMonthEventWithoutNullPointerException() {
+        ResponseEventInformation response = new ResponseEventInformation();
+        response.setCreatedByUser("employee.test");
+        response.setEventInformationResponse("Đã thực hiện");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> responseService.addResponseEventInformation(response));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Không xác định được công việc cần phản hồi.", error.getMessage());
+        verify(responseRepository, never()).save(any(ResponseEventInformation.class));
+    }
+
+    @Test
+    void addResponseRejectsBlankContentBeforeWriting() {
+        MonthEvent event = new MonthEvent();
+        event.setMonthEventId(202);
+        ResponseEventInformation response = new ResponseEventInformation(event);
+        response.setCreatedByUser("employee.test");
+        response.setEventInformationResponse("   ");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> responseService.addResponseEventInformation(response));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "Nội dung phản hồi không được để trống.", error.getMessage());
+        verify(responseRepository, never()).save(any(ResponseEventInformation.class));
+    }
 }

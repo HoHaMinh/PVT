@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -55,25 +56,99 @@ public class MonthEventService implements IMonthEventService {
 
     //  *** flag =true là add, flag =false là edit
     @Override
+    @Transactional
     public void addMonthEvent(MonthEvent monthEvent, boolean flag) {
         if (flag) {
-            monthEvent.setRegisteredDay(LocalDateTime.now());
+            Integer status = monthEvent == null ? null : monthEvent.getMonthEventStatus();
+            if (status == null) {
+                throw new IllegalArgumentException("Loại công việc không được để trống.");
+            }
+            addMonthEvents(Collections.singletonList(monthEvent), status);
+            return;
         }
-        if (Boolean.TRUE.equals(monthEvent.getAll())) {
-            // 👉 chọn "All"
+        if (monthEvent == null) {
+            throw new IllegalArgumentException("Không xác định được công việc cần lưu.");
+        }
+        monthEventRepository.save(monthEvent);
+    }
+
+    @Override
+    @Transactional
+    public void addMonthEvents(List<MonthEvent> monthEvents, int expectedStatus) {
+        if (expectedStatus != 0 && expectedStatus != 2) {
+            throw new IllegalArgumentException("Loại công việc không hợp lệ.");
+        }
+        if (monthEvents == null || monthEvents.isEmpty()) {
+            throw new IllegalArgumentException("Danh sách công việc không được để trống.");
+        }
+
+        LocalDateTime registeredAt = LocalDateTime.now();
+        for (int i = 0; i < monthEvents.size(); i++) {
+            try {
+                validateAndPrepareNewEvent(monthEvents.get(i), expectedStatus, registeredAt);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Dòng " + (i + 1) + ": " + e.getMessage());
+            }
+        }
+
+        // Chỉ bắt đầu ghi sau khi toàn bộ các dòng đã hợp lệ.
+        for (MonthEvent monthEvent : monthEvents) {
+            monthEventRepository.save(monthEvent);
+        }
+    }
+
+    private void validateAndPrepareNewEvent(MonthEvent monthEvent, int expectedStatus,
+                                            LocalDateTime registeredAt) {
+        if (monthEvent == null) {
+            throw new IllegalArgumentException("Công việc không được để trống.");
+        }
+        if (monthEvent.getMonthEventDescription() == null
+                || monthEvent.getMonthEventDescription().trim().isEmpty()) {
+            throw new IllegalArgumentException("Nội dung công việc không được để trống.");
+        }
+        if (monthEvent.getMonthEventDeadline() == null) {
+            throw new IllegalArgumentException("Deadline không được để trống.");
+        }
+        if (!Integer.valueOf(expectedStatus).equals(monthEvent.getMonthEventStatus())) {
+            throw new IllegalArgumentException("Loại công việc không hợp lệ.");
+        }
+
+        String selectedAccountName = monthEvent.getAccount() == null
+                ? null : monthEvent.getAccount().getAccountName();
+        if ("ALL".equals(selectedAccountName)) {
+            monthEvent.setAll(true);
             monthEvent.setAccount(null);
         } else {
-            // 👉 chọn cá nhân
-            if (monthEvent.getAccount() != null
-                    && monthEvent.getAccount().getAccountName() != null) {
-
-                String accountName = monthEvent.getAccount().getAccountName();
-
-                Account acc = accountRepository.findByAccountName(accountName);
-
-                monthEvent.setAccount(acc); // ⭐ lấy object đã tồn tại trong DB
+            if (selectedAccountName == null || selectedAccountName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Người phụ trách không được để trống.");
             }
-        } monthEventRepository.save(monthEvent);
+            Account account = accountRepository.findByAccountName(selectedAccountName.trim());
+            if (account == null) {
+                throw new IllegalArgumentException("Người phụ trách đã chọn không còn tồn tại.");
+            }
+            monthEvent.setAll(false);
+            monthEvent.setAccount(account);
+        }
+
+        if (expectedStatus == 2) {
+            if (monthEvent.getExtendDay() == null
+                    || monthEvent.getExtendDay() < 1
+                    || monthEvent.getExtendDay() > 365) {
+                throw new IllegalArgumentException("Số ngày gia hạn phải từ 1 đến 365.");
+            }
+        } else {
+            monthEvent.setExtendDay(null);
+        }
+
+        monthEvent.setMonthEventId(null);
+        monthEvent.setMonthEventDescription(monthEvent.getMonthEventDescription().trim());
+        monthEvent.setMonthEventStatus(expectedStatus);
+        monthEvent.setResponseStatus(0);
+        monthEvent.setLastTimeResponse(LocalDateTime.of(2023, 1, 1, 0, 0));
+        monthEvent.setLastPersonResponse(null);
+        monthEvent.setRegisteredDay(registeredAt);
+        monthEvent.setHidden(false);
+        monthEvent.setDeleted(false);
     }
 
     @Override
@@ -89,12 +164,15 @@ public class MonthEventService implements IMonthEventService {
         if (editedEvent.getMonthEventDeadline() == null) {
             throw new IllegalArgumentException("Deadline không được để trống.");
         }
+        if (editedBy == null || editedBy.trim().isEmpty()) {
+            throw new IllegalArgumentException("Không xác định được người sửa công việc.");
+        }
 
         MonthEvent existingEvent = monthEventRepository.findByIdForUpdate(editedEvent.getMonthEventId())
                 .filter(event -> !Boolean.TRUE.equals(event.getDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Công việc không còn tồn tại."));
 
-        existingEvent.setMonthEventDescription(editedEvent.getMonthEventDescription());
+        existingEvent.setMonthEventDescription(editedEvent.getMonthEventDescription().trim());
         existingEvent.setMonthEventDeadline(editedEvent.getMonthEventDeadline());
 
         String selectedAccountName = editedEvent.getAccount() == null
@@ -137,6 +215,7 @@ public class MonthEventService implements IMonthEventService {
     @Override
     @Transactional
     public void moveToTrash(Integer id) {
+        validateEventId(id);
         MonthEvent event = monthEventRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new IllegalArgumentException("Công việc không còn tồn tại."));
         if (Boolean.TRUE.equals(event.getDeleted())) {
@@ -149,6 +228,7 @@ public class MonthEventService implements IMonthEventService {
     @Override
     @Transactional
     public void restoreFromTrash(Integer id) {
+        validateEventId(id);
         MonthEvent event = findDeletedEvent(id);
         event.setDeleted(false);
         event.setHidden(false);
@@ -158,6 +238,7 @@ public class MonthEventService implements IMonthEventService {
     @Override
     @Transactional
     public void permanentlyDelete(Integer id) {
+        validateEventId(id);
         MonthEvent event = findDeletedEvent(id);
         responseEventInformationRepository.deleteResponseById(id);
         monthEventRepository.delete(event);
@@ -181,6 +262,12 @@ public class MonthEventService implements IMonthEventService {
             throw new IllegalArgumentException("Công việc không nằm trong Thư mục đã xóa.");
         }
         return event;
+    }
+
+    private void validateEventId(Integer id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Mã công việc không hợp lệ.");
+        }
     }
 
     //    *Trang weekly task

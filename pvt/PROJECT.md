@@ -180,7 +180,7 @@ hidden: trạng thái ẩn.
 Ý nghĩa:
 Field	Giá trị	Ý nghĩa
 monthEventStatus	0	Việc thông thường
-monthEventStatus	1	Việc tháng theo luồng cũ
+monthEventStatus	1	Việc tháng theo luồng cũ; chỉ còn để đọc và quản lý dữ liệu cũ, không tạo mới
 monthEventStatus	2	Việc lặp lại
 responseStatus	0	Chưa phản hồi
 responseStatus	1	Quản lý phản hồi
@@ -248,7 +248,6 @@ GET  /home/employee/notifications/subscribe
 Endpoint quản lý:
 GET  /home/manager/task
 GET  /home/manager/task/showAddPrivateEventForm
-GET  /home/manager/task/showAddMonthEventForm
 POST /home/manager/task/addMonthEvent
 
 GET  /home/manager/task/showEditMonthEventForm/{id}
@@ -453,7 +452,6 @@ private.html	Lịch cần làm
 eventResponse.html	Phản hồi
 task.html	Quản lý việc thường
 privateEventForm.html	Giao việc cá nhân
-monthEventForm.html	Việc tháng cũ
 monthEditEventForm.html	Sửa việc
 weeklyTask.html	Danh sách việc lặp
 weekEventForm.html	Tạo việc lặp
@@ -939,3 +937,39 @@ Không tự ý tự động hóa hoặc thay đổi các mục này khi chưa đ
 - Mỗi thao tác xóa, khôi phục hoặc làm sạch thành công phát tín hiệu SSE để các màn hình đang mở cập nhật.
 - Không được xóa hẳn một công việc đang hoạt động bằng cách gọi trực tiếp URL.
 - Các luồng sửa, thêm response, xóa mềm, khôi phục và xóa hẳn khóa bản ghi `MonthEvent` trong transaction để tránh xung đột khi hai người thao tác đồng thời.
+
+## 27. Validation và tính toàn vẹn dữ liệu
+
+### 27.1. Mốc backup trước thay đổi lớn
+
+- Trạng thái web ổn định trước đợt bổ sung validation ngày 04/07/2026 nằm tại commit `095ca02`.
+- Git tag: `backup-2026-07-04-before-validation`.
+- Mốc này gồm toàn bộ chức năng đã hoàn thành trước validation: Cloudflare/session, SSE, đổi mật khẩu và Thư mục đã xóa.
+- Không xóa hoặc di chuyển tag này. Khi cần rollback code phải kiểm tra database và worktree trước khi chuyển về tag.
+
+### 27.2. Loại công việc được tạo mới
+
+- Giao diện tạo **việc tháng cũ** đã bị loại bỏ; không còn template `monthEventForm.html` hoặc endpoint `showAddMonthEventForm`.
+- `/home/manager/task/addMonthEvent` chỉ tạo `monthEventStatus=0`.
+- `/home/manager/weeklyTask/addWeekEvent` chỉ tạo `monthEventStatus=2`.
+- Dữ liệu cũ có `monthEventStatus=1` vẫn được hiển thị trên trang Task để có thể sửa, xóa mềm hoặc khôi phục; không tự động chuyển đổi hay xóa.
+- Giá trị `ALL` chỉ là mã quy ước từ form cho lựa chọn **Cả phòng**. Server chuyển nó thành `is_all=true` và `account=null`; database không cần account tên `ALL`.
+
+### 27.3. Quy tắc validation chính
+
+- Nội dung công việc và phản hồi không được null hoặc chỉ chứa khoảng trắng; project không đặt giới hạn độ dài nghiệp vụ cho hai loại nội dung này.
+- Deadline bắt buộc và lỗi bind ngày giờ phải được trả thành thông báo thân thiện.
+- Người phụ trách phải tồn tại trong database, trừ lựa chọn `ALL`.
+- Việc lặp lại có `extendDay` từ 1 đến 365.
+- Batch công việc được kiểm tra toàn bộ trước khi ghi và lưu trong một transaction; một dòng lỗi làm rollback toàn bộ batch.
+- Tạo account yêu cầu username, password, họ tên và role hợp lệ. Password dài 6-72 ký tự. Account và role được lưu trong cùng transaction.
+- Thêm response phải kiểm tra response, MonthEvent, ID, nội dung và người gửi trước khi dereference hoặc ghi database.
+- Thứ tự tab giữ khóa `managerUsername` theo họ tên đầy đủ trong session. Danh sách gửi lên không được null, không chứa tài khoản trống hoặc không tồn tại và được loại trùng trước khi lưu.
+- Frontend phải kiểm tra kết quả POST khi lưu response, sửa việc và thứ tự tab; không được báo thành công khi server hoặc Cloudflare trả lỗi.
+
+### 27.4. Dữ liệu cũ có null
+
+- Các getter ngày giờ và JavaScript hiển thị phải null-safe để một record cũ không làm hỏng toàn trang.
+- Không tự bịa deadline, ngày giao hoặc ngày phản hồi cho record cũ.
+- File `database-null-audit.sql` chỉ chứa truy vấn đọc để kiểm kê dữ liệu null trên database máy chủ trước khi sửa thủ công.
+- `lastTimeResponse=null` được coi là chưa có phản hồi; tên hiển thị account null/trắng fallback về account ID.

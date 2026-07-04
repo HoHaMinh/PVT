@@ -6,13 +6,13 @@ import com.hoaphat.pvt.model.account.Role;
 import com.hoaphat.pvt.model.dto.UserDisplayDTO;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
+import com.hoaphat.pvt.repository.account.IRoleRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,36 +26,54 @@ public class AccountService implements IAccountService {
     private IAccountRoleRepository accountRoleRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private IRoleRepository roleRepository;
     @Autowired
     private IMonthEventRepository monthEventRepository;
+    @Autowired
+    private IResponseEventInformationRepository responseEventInformationRepository;
     @Override
     public List<Account> findAll() {
         return accountRepository.findAll();
     }
 
     @Override
+    @Transactional
     public void createAccount(String username, String password, String name, String roleName) {
-        // ❌ check trùng username
-        if (accountRepository.findByAccountName(username) != null) {
-            throw new RuntimeException("Username đã tồn tại");
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Username không được để trống.");
+        }
+        if (password == null || password.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mật khẩu không được để trống.");
+        }
+        if (password.length() < 6) {
+            throw new IllegalArgumentException("Mật khẩu phải có ít nhất 6 ký tự.");
+        }
+        if (password.length() > 72) {
+            throw new IllegalArgumentException("Mật khẩu không được vượt quá 72 ký tự.");
+        }
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Họ và tên không được để trống.");
+        }
+        if (roleName == null || roleName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Chức vụ không được để trống.");
         }
 
-        // ✅ encode password
-        String encodedPassword = passwordEncoder.encode(password);
+        username = username.trim();
+        name = name.trim().replaceAll("\\s+", " ");
 
-        // ✅ lưu account
+        if (accountRepository.findByAccountName(username) != null) {
+            throw new IllegalArgumentException("Username đã tồn tại.");
+        }
+
+        Role role = roleRepository.findByRoleName(roleName);
+        if (role == null) {
+            throw new IllegalArgumentException("Chức vụ đã chọn không tồn tại.");
+        }
+
+        String encodedPassword = passwordEncoder.encode(password);
         Account account = new Account(username, encodedPassword, name);
         accountRepository.save(account);
-
-        // ✅ lấy role từ DB
-        Role role = entityManager
-                .createQuery("SELECT r FROM Role r WHERE r.roleName = :roleName", Role.class)
-                .setParameter("roleName", roleName)
-                .getSingleResult();
-
-        // ✅ gán role
         AccountRole accountRole = new AccountRole();
         accountRole.setAccount(account);
         accountRole.setRole(role);
@@ -66,8 +84,14 @@ public class AccountService implements IAccountService {
     @Override
     @Transactional
     public void changePassword(String accountName, String currentPassword, String newPassword) {
+        if (accountName == null || accountName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Không xác định được tài khoản đang đăng nhập.");
+        }
         if (currentPassword == null || currentPassword.trim().isEmpty()) {
             throw new IllegalArgumentException("Vui lòng nhập mật khẩu hiện tại.");
+        }
+        if (currentPassword.length() > 72) {
+            throw new IllegalArgumentException("Mật khẩu hiện tại không được vượt quá 72 ký tự.");
         }
         if (newPassword == null || newPassword.length() < 6) {
             throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự.");
@@ -97,7 +121,7 @@ public class AccountService implements IAccountService {
         Map<String, List<Account>> map = new HashMap<>();
 
         for (Account acc : accounts) {
-            String[] parts = acc.getName().split(" ");
+            String[] parts = getSafeAccountName(acc).split(" ");
             String lastName = parts[parts.length - 1];
 
             map.computeIfAbsent(lastName, k -> new ArrayList<>()).add(acc);
@@ -109,7 +133,7 @@ public class AccountService implements IAccountService {
             List<Account> list = entry.getValue();
 
             for (Account acc : list) {
-                String[] parts = acc.getName().split(" ");
+                String[] parts = getSafeAccountName(acc).split(" ");
 
                 String display;
 
@@ -126,8 +150,26 @@ public class AccountService implements IAccountService {
         return result;
     }
 
+    private String getSafeAccountName(Account account) {
+        if (account.getName() == null || account.getName().trim().isEmpty()) {
+            return account.getAccountName() == null ? "Không rõ" : account.getAccountName();
+        }
+        return account.getName().trim().replaceAll("\\s+", " ");
+    }
+
     @Transactional
     public void deleteAccountFull(String accountName) {
+
+        if (accountName == null || accountName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn tài khoản cần xóa.");
+        }
+        accountName = accountName.trim();
+        if (accountRepository.findByAccountName(accountName) == null) {
+            throw new IllegalArgumentException("Tài khoản cần xóa không còn tồn tại.");
+        }
+
+        // Phải xóa phản hồi trước công việc để không vi phạm khóa ngoại.
+        responseEventInformationRepository.deleteByMonthEventAccountName(accountName);
 
         // 1. Xóa role trước
         accountRoleRepository.deleteByAccount_AccountName(accountName);

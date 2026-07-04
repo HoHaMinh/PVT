@@ -1,7 +1,12 @@
 package com.hoaphat.pvt.service.account;
 
 import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.model.account.Role;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
+import com.hoaphat.pvt.repository.account.IRoleRepository;
+import com.hoaphat.pvt.repository.event.IMonthEventRepository;
+import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,6 +27,18 @@ class AccountServiceTest {
 
     @Mock
     private BCryptPasswordEncoder passwordEncoder;
+
+    @Mock
+    private IRoleRepository roleRepository;
+
+    @Mock
+    private IAccountRoleRepository accountRoleRepository;
+
+    @Mock
+    private IMonthEventRepository monthEventRepository;
+
+    @Mock
+    private IResponseEventInformationRepository responseEventInformationRepository;
 
     @InjectMocks
     private AccountService accountService;
@@ -60,5 +77,46 @@ class AccountServiceTest {
 
         assertEquals("Mật khẩu mới phải có ít nhất 6 ký tự.", error.getMessage());
         verify(accountRepository, never()).findByAccountName("dtinvn");
+    }
+
+    @Test
+    void createAccountRejectsMissingDisplayNameBeforeWriting() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> accountService.createAccount("new.user", "123456", null, "ROLE_EMPLOYEE"));
+
+        assertEquals("Họ và tên không được để trống.", error.getMessage());
+        verify(accountRepository, never()).save(org.mockito.ArgumentMatchers.any(Account.class));
+    }
+
+    @Test
+    void createAccountRejectsMissingRoleBeforeWritingAccount() {
+        when(accountRepository.findByAccountName("new.user")).thenReturn(null);
+        when(roleRepository.findByRoleName("ROLE_EMPLOYEE")).thenReturn(null);
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> accountService.createAccount(
+                        "new.user", "123456", "Nguyễn Văn Mới", "ROLE_EMPLOYEE"));
+
+        assertEquals("Chức vụ đã chọn không tồn tại.", error.getMessage());
+        verify(accountRepository, never()).save(org.mockito.ArgumentMatchers.any(Account.class));
+        verify(accountRoleRepository, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void createAccountSavesAccountAndExistingRole() {
+        Role role = new Role();
+        role.setRoleName("ROLE_EMPLOYEE");
+        when(accountRepository.findByAccountName("new.user")).thenReturn(null);
+        when(roleRepository.findByRoleName("ROLE_EMPLOYEE")).thenReturn(role);
+        when(passwordEncoder.encode("123456")).thenReturn("encoded");
+
+        accountService.createAccount(" new.user ", "123456", " Nguyễn  Văn  Mới ", "ROLE_EMPLOYEE");
+
+        verify(accountRepository).save(org.mockito.ArgumentMatchers.argThat(account ->
+                "new.user".equals(account.getAccountName())
+                        && "Nguyễn Văn Mới".equals(account.getName())
+                        && "encoded".equals(account.getPassword())));
+        verify(accountRoleRepository).save(org.mockito.ArgumentMatchers.argThat(accountRole ->
+                accountRole.getRole() == role));
     }
 }

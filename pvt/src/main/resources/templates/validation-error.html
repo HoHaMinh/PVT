@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dữ liệu không hợp lệ - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+</head>
+<body class="bg-light">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <h4 class="text-danger fw-bold mb-3">Dữ liệu không hợp lệ</h4>
+                    <p class="mb-4" th:text="${message}">Dữ liệu gửi lên không đúng định dạng.</p>
+                    <button type="button" class="btn btn-primary" onclick="history.back()">Quay lại và kiểm tra</button>
+                    <a th:href="@{/home}" class="btn btn-outline-secondary ms-2">Trang chủ</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

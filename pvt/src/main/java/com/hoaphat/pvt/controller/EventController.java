@@ -16,6 +16,7 @@ import org.springframework.data.domain.*;
 import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -83,23 +84,56 @@ public class EventController {
     }
 
     @PostMapping("/home/employee/private/addEventResponse")
-    public String addEventResponse(@ModelAttribute("response") ResponseEventInformation res, @RequestParam(value = "selectedValue", required = false) String selectedValue, Principal principal) {
-        res.setCreatedByUser(principal.getName());
-        res.setEventInformationResponse(StringEscapeUtils.escapeHtml4(res.getEventInformationResponse()));
-        responseEventInformationService.addResponseEventInformation(res);
-        
-        // 🔥 PHÁT TÍN HIỆU: Báo cho mọi người biết có phản hồi mới
-        notificationService.sendRefreshSignal();
-        
-        return "redirect:/home/employee/private/showEventResponseForm/" + res.getMonthEvent().getMonthEventId() + "?selectedValue=" + selectedValue;
+    public Object addEventResponse(@ModelAttribute("response") ResponseEventInformation res,
+                                   BindingResult bindingResult,
+                                   @RequestParam(value = "selectedValue", required = false) String selectedValue,
+                                   Principal principal,
+                                   HttpServletRequest request,
+                                   RedirectAttributes redirectAttributes) {
+        boolean ajaxRequest = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
+        try {
+            if (bindingResult.hasErrors()) {
+                throw new IllegalArgumentException("Dữ liệu phản hồi không đúng định dạng.");
+            }
+            if (principal == null) {
+                throw new IllegalArgumentException("Phiên đăng nhập đã hết hạn.");
+            }
+            res.setCreatedByUser(principal.getName());
+            res.setEventInformationResponse(StringEscapeUtils.escapeHtml4(res.getEventInformationResponse()));
+            responseEventInformationService.addResponseEventInformation(res);
+            notificationService.sendRefreshSignal();
+
+            if (ajaxRequest) {
+                return ResponseEntity.ok(Collections.singletonMap("message", "Thêm phản hồi thành công."));
+            }
+            return "redirect:/home/employee/private/showEventResponseForm/"
+                    + res.getMonthEvent().getMonthEventId() + "?selectedValue=" + selectedValue;
+        } catch (IllegalArgumentException e) {
+            if (ajaxRequest) {
+                return ResponseEntity.badRequest()
+                        .body(Collections.singletonMap("message", e.getMessage()));
+            }
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            redirectAttributes.addAttribute("selectedValue", selectedValue == null ? "" : selectedValue);
+            return "redirect:/home/employee/private";
+        }
     }
 
     @PostMapping("/home/manager/task/addMonthEvent")
-    public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes redirectAttributes, Model model, HttpServletRequest request) {
-        for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            if (monthEvent.getAccount() != null && "ALL".equals(monthEvent.getAccount().getAccountName())) { monthEvent.setAll(true); monthEvent.setAccount(null); }
-            else { monthEvent.setAll(false); }
-            monthEventService.addMonthEvent(monthEvent, true);
+    public String addMonthEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents,
+                                BindingResult bindingResult,
+                                RedirectAttributes redirectAttributes,
+                                Model model,
+                                HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            return showPrivateEventFormError(monthEvents,
+                    "Deadline hoặc dữ liệu nhập vào không đúng định dạng.", model, request);
+        }
+        try {
+            monthEventService.addMonthEvents(
+                    monthEvents == null ? null : monthEvents.getMonthEvents(), 0);
+        } catch (IllegalArgumentException e) {
+            return showPrivateEventFormError(monthEvents, e.getMessage(), model, request);
         }
         redirectAttributes.addFlashAttribute("mess", "Thêm mới thành công");
         model.addAttribute("username", (String) request.getSession().getAttribute("username"));
@@ -112,6 +146,7 @@ public class EventController {
 
     @PostMapping("/home/manager/task/editMonthEvent")
     public Object editMonthEvent(@ModelAttribute("monthEditEvent") MonthEvent m,
+                                 BindingResult bindingResult,
                                  @RequestParam(value = "selectedValue", required = false) String sv,
                                  RedirectAttributes ra,
                                  Principal principal,
@@ -119,7 +154,26 @@ public class EventController {
         boolean ajaxRequest = "XMLHttpRequest".equals(request.getHeader("X-Requested-With"));
         String selectedValue = sv == null ? "" : sv;
 
+        if (bindingResult.hasErrors()) {
+            String message = "Deadline hoặc dữ liệu công việc không đúng định dạng.";
+            if (ajaxRequest) {
+                return ResponseEntity.badRequest()
+                        .body(Collections.singletonMap("message", message));
+            }
+            ra.addFlashAttribute("editError", message);
+            if (m != null) {
+                ra.addFlashAttribute("monthEditEvent", m);
+            }
+            ra.addAttribute("selectedValue", selectedValue);
+            return m == null || m.getMonthEventId() == null
+                    ? "redirect:/home/manager/task"
+                    : "redirect:/home/manager/task/showEditMonthEventForm/" + m.getMonthEventId();
+        }
+
         try {
+            if (principal == null) {
+                throw new IllegalArgumentException("Phiên đăng nhập đã hết hạn.");
+            }
             monthEventService.editMonthEvent(m, principal.getName());
             ra.addFlashAttribute("mess", "Sửa thành công");
             notificationService.sendRefreshSignal();
@@ -175,11 +229,20 @@ public class EventController {
     }
 
     @PostMapping("/home/manager/weeklyTask/addWeekEvent")
-    public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents, RedirectAttributes ra) {
-        for (MonthEvent monthEvent : monthEvents.getMonthEvents()) {
-            if (monthEvent.getAccount() != null && "ALL".equals(monthEvent.getAccount().getAccountName())) { monthEvent.setAll(true); monthEvent.setAccount(null); }
-            else { monthEvent.setAll(false); }
-            monthEventService.addMonthEvent(monthEvent, true);
+    public String addWeekEvent(@ModelAttribute("monthEventManager") MonthEventManager monthEvents,
+                               BindingResult bindingResult,
+                               RedirectAttributes ra,
+                               Model model,
+                               HttpServletRequest request) {
+        if (bindingResult.hasErrors()) {
+            return showWeekEventFormError(monthEvents,
+                    "Deadline, số ngày gia hạn hoặc dữ liệu nhập vào không đúng định dạng.", model, request);
+        }
+        try {
+            monthEventService.addMonthEvents(
+                    monthEvents == null ? null : monthEvents.getMonthEvents(), 2);
+        } catch (IllegalArgumentException e) {
+            return showWeekEventFormError(monthEvents, e.getMessage(), model, request);
         }
         ra.addFlashAttribute("mess", "Thêm mới thành công");
         
@@ -192,7 +255,12 @@ public class EventController {
     @PostMapping("/home/manager/task/toggleHidden/{id}")
     public String toggleHidden(@PathVariable Integer id, RedirectAttributes ra) {
         MonthEvent event = monthEventService.findById(id);
-        if (event != null) { event.setHidden(!Boolean.TRUE.equals(event.getHidden())); monthEventService.addMonthEvent(event, false); }
+        if (event == null) {
+            ra.addFlashAttribute("error", "Công việc không còn tồn tại.");
+            return "redirect:/home/manager/task";
+        }
+        event.setHidden(!Boolean.TRUE.equals(event.getHidden()));
+        monthEventService.addMonthEvent(event, false);
         ra.addFlashAttribute("mess", "Cập nhật thành công");
         
         // 🔥 PHÁT TÍN HIỆU: Báo có thay đổi
@@ -233,15 +301,6 @@ public class EventController {
         model.addAttribute("username", (String) request.getSession().getAttribute("username"));
         return "task";
     }
-    @GetMapping("/home/manager/task/showAddMonthEventForm")
-    private String showAddMonthEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
-        List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
-        for (int i = 0; i < rows; i++) { monthEvents.add(new MonthEvent()); }
-        model.addAttribute("monthEvents", monthEvents);
-        model.addAttribute("monthEventManager", new MonthEventManager());
-        model.addAttribute("username", (String) request.getSession().getAttribute("username"));
-        return "monthEventForm";
-    }
     @GetMapping("/home/manager/task/showAddPrivateEventForm")
     private String showAddPrivateEventForm(@RequestParam("rows") Integer rows, Model model, HttpServletRequest request) {
         List<MonthEvent> monthEvents = new ArrayList<MonthEvent>(rows);
@@ -276,10 +335,59 @@ public class EventController {
         return "weekEventForm";
     }
     @GetMapping("/home/manager/delete-account") public String showDeleteAccountPage(Model model) { model.addAttribute("accounts", accountService.findAll()); return "deleteAccount"; }
-    @PostMapping("/home/manager/delete-account") public String deleteAccount(@RequestParam String accountName, Principal principal, RedirectAttributes ra) {
-        if (accountName.equals(principal.getName())) { ra.addFlashAttribute("error", "Không thể xóa chính bạn"); return "redirect:/home/manager/delete-account"; }
-        accountService.deleteAccountFull(accountName); ra.addFlashAttribute("message", "Xóa thành công");
+    @PostMapping("/home/manager/delete-account") public String deleteAccount(@RequestParam(required = false) String accountName, Principal principal, RedirectAttributes ra) {
+        try {
+            if (principal == null) {
+                throw new IllegalArgumentException("Phiên đăng nhập đã hết hạn.");
+            }
+            if (accountName == null || accountName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng chọn tài khoản cần xóa.");
+            }
+            if (accountName.trim().equals(principal.getName())) {
+                throw new IllegalArgumentException("Không thể xóa chính bạn.");
+            }
+            accountService.deleteAccountFull(accountName);
+            ra.addFlashAttribute("message", "Xóa thành công");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
         return "redirect:/home/manager/delete-account";
     }
-    @PostMapping("/home/manager/saveTabOrder") @ResponseBody public ResponseEntity<?> saveTabOrder(@RequestBody List<String> ots, HttpServletRequest req) { userTabOrderService.saveOrder((String) req.getSession().getAttribute("username"), ots); return ResponseEntity.ok().build(); }
+    @PostMapping("/home/manager/saveTabOrder")
+    @ResponseBody
+    public ResponseEntity<?> saveTabOrder(@RequestBody(required = false) List<String> order,
+                                          HttpServletRequest request) {
+        try {
+            userTabOrderService.saveOrder(
+                    (String) request.getSession().getAttribute("username"), order);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Collections.singletonMap("message", e.getMessage()));
+        }
+    }
+
+    private String showPrivateEventFormError(MonthEventManager manager, String message,
+                                             Model model, HttpServletRequest request) {
+        List<MonthEvent> events = manager == null || manager.getMonthEvents() == null
+                ? Collections.emptyList() : manager.getMonthEvents();
+        model.addAttribute("error", message);
+        model.addAttribute("monthEventManager", manager == null ? new MonthEventManager() : manager);
+        model.addAttribute("monthEvents", events);
+        model.addAttribute("accounts", accountService.findAll());
+        model.addAttribute("username", request.getSession().getAttribute("username"));
+        return "privateEventForm";
+    }
+
+    private String showWeekEventFormError(MonthEventManager manager, String message,
+                                          Model model, HttpServletRequest request) {
+        List<MonthEvent> events = manager == null || manager.getMonthEvents() == null
+                ? Collections.emptyList() : manager.getMonthEvents();
+        model.addAttribute("error", message);
+        model.addAttribute("monthEventManager", manager == null ? new MonthEventManager() : manager);
+        model.addAttribute("weekEvents", events);
+        model.addAttribute("accounts", accountService.findAll());
+        model.addAttribute("username", request.getSession().getAttribute("username"));
+        return "weekEventForm";
+    }
 }
