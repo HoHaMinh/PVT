@@ -350,6 +350,10 @@ public class EventController {
             ra.addFlashAttribute("message", "Xóa thành công");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Không thể xóa tài khoản " + accountName, e);
+            ra.addFlashAttribute("error",
+                    "Không thể xóa tài khoản. Dữ liệu chưa bị thay đổi; vui lòng kiểm tra log máy chủ.");
         }
         return "redirect:/home/manager/delete-account";
     }

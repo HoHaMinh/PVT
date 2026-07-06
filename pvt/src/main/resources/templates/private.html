@@ -344,10 +344,18 @@
         
         <div th:if="${not #lists.isEmpty(sercuritySchedule)}" class="alert alert-info shadow-sm mb-4" role="alert">
             <div th:each="security:${sercuritySchedule}" class="mb-1">
-                <h6 class="alert-heading fw-bold mb-1" th:text="${security.getStr1()}"></h6>
-                <span class="text-danger fw-bold" th:text="${security.getStr2()}+'. '"></span>
-                <span class="text-danger fw-bold" th:text="${security.getStr3()}+'. '"></span>
-                <span class="text-danger fw-bold" th:text="${security.getStr4()}"></span>
+                <h6 class="alert-heading fw-bold mb-1"
+                    th:if="${security.getStr1() != null and !security.getStr1().trim().isEmpty()}"
+                    th:text="${security.getStr1()}"></h6>
+                <span class="text-danger fw-bold"
+                      th:if="${security.getStr2() != null and !security.getStr2().trim().isEmpty()}"
+                      th:text="${security.getStr2()}+'. '"></span>
+                <span class="text-danger fw-bold"
+                      th:if="${security.getStr3() != null and !security.getStr3().trim().isEmpty()}"
+                      th:text="${security.getStr3()}+'. '"></span>
+                <span class="text-danger fw-bold"
+                      th:if="${security.getStr4() != null and !security.getStr4().trim().isEmpty()}"
+                      th:text="${security.getStr4()}"></span>
             </div>
         </div>
 

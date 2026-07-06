@@ -74,6 +74,8 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     @Query("select m from MonthEvent m where m.monthEventStatus = 2 and (m.deleted = false or m.deleted is null) order by m.monthEventDeadline, m.monthEventId asc ")
     List<MonthEvent> findWeekEvents();
 
+    List<MonthEvent> findByAccount_AccountName(String accountName);
+
     @Transactional
     @Modifying
     @Query("update MonthEvent m set m.lastTimeResponse = :lastTimeResponse, m.lastPersonResponse = :lastPersonResponse " +

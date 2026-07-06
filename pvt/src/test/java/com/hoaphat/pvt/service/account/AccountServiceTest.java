@@ -2,6 +2,7 @@ package com.hoaphat.pvt.service.account;
 
 import com.hoaphat.pvt.model.account.Account;
 import com.hoaphat.pvt.model.account.Role;
+import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.account.IRoleRepository;
@@ -10,13 +11,17 @@ import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -118,5 +123,27 @@ class AccountServiceTest {
                         && "encoded".equals(account.getPassword())));
         verify(accountRoleRepository).save(org.mockito.ArgumentMatchers.argThat(accountRole ->
                 accountRole.getRole() == role));
+    }
+
+    @Test
+    void deleteAccountRemovesEveryResponseBeforeTasksAndAccount() {
+        Account account = new Account("old.user", "ignored", "Nhân viên cũ");
+        MonthEvent first = new MonthEvent();
+        first.setMonthEventId(501);
+        MonthEvent second = new MonthEvent();
+        second.setMonthEventId(502);
+        when(accountRepository.findByAccountName("old.user")).thenReturn(account);
+        when(monthEventRepository.findByAccount_AccountName("old.user"))
+                .thenReturn(Arrays.asList(first, second));
+
+        accountService.deleteAccountFull("old.user");
+
+        InOrder order = inOrder(responseEventInformationRepository, accountRoleRepository,
+                monthEventRepository, accountRepository);
+        order.verify(responseEventInformationRepository).deleteResponseById(501);
+        order.verify(responseEventInformationRepository).deleteResponseById(502);
+        order.verify(accountRoleRepository).deleteByAccount_AccountName("old.user");
+        order.verify(monthEventRepository).deleteByAccount_AccountName("old.user");
+        order.verify(accountRepository).deleteById("old.user");
     }
 }

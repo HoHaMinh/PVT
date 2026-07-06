@@ -4,6 +4,7 @@ import com.hoaphat.pvt.model.account.Account;
 import com.hoaphat.pvt.model.account.AccountRole;
 import com.hoaphat.pvt.model.account.Role;
 import com.hoaphat.pvt.model.dto.UserDisplayDTO;
+import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.account.IRoleRepository;
@@ -168,8 +169,14 @@ public class AccountService implements IAccountService {
             throw new IllegalArgumentException("Tài khoản cần xóa không còn tồn tại.");
         }
 
-        // Phải xóa phản hồi trước công việc để không vi phạm khóa ngoại.
-        responseEventInformationRepository.deleteByMonthEventAccountName(accountName);
+        // Tránh bulk DELETE qua quan hệ lồng nhau vì Hibernate/MySQL có thể tạo câu lệnh lỗi.
+        // Lấy rõ từng công việc và xóa response theo khóa chính trước khi xóa MonthEvent.
+        List<MonthEvent> assignedEvents = monthEventRepository.findByAccount_AccountName(accountName);
+        for (MonthEvent event : assignedEvents) {
+            if (event != null && event.getMonthEventId() != null) {
+                responseEventInformationRepository.deleteResponseById(event.getMonthEventId());
+            }
+        }
 
         // 1. Xóa role trước
         accountRoleRepository.deleteByAccount_AccountName(accountName);

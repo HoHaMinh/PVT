@@ -25,8 +25,4 @@ public interface IResponseEventInformationRepository extends CrudRepository<Resp
             Integer monthEventId, String prefix
     );
 
-    @Transactional
-    @Modifying
-    @Query("delete from ResponseEventInformation r where r.monthEvent.account.accountName = :accountName")
-    void deleteByMonthEventAccountName(String accountName);
 }

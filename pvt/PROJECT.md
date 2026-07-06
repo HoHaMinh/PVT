@@ -982,3 +982,10 @@ Không tự ý tự động hóa hoặc thay đổi các mục này khi chưa đ
 - Dropdown dùng lưới 3 cột, có chiều cao tối đa và cuộn bên trong để danh sách đông người không kéo dài hết trang.
 - Thứ tự DOM của lưới là theo hàng: hàng đầu **Tất cả**, order 1, order 2; hàng tiếp theo order 3, order 4, order 5 và tiếp tục tương tự.
 - Tab **Tất cả** luôn đứng đầu và không kéo được. Các tab nhân viên giữ thao tác nhấn giữ rồi kéo để sắp xếp; sau khi kéo vẫn POST toàn bộ thứ tự qua `/home/manager/saveTabOrder`.
+
+### 27.6. Sửa lỗi hồi quy sau validation
+
+- Xóa tài khoản phải lấy danh sách `MonthEvent` được giao cho account, xóa response theo từng `monthEventId`, sau đó mới xóa role, MonthEvent và Account trong cùng transaction.
+- Không dùng bulk DELETE JPQL đi xuyên quan hệ `ResponseEventInformation.monthEvent.account`, vì có thể phát sinh lỗi truy vấn lúc chạy và trả HTTP 500.
+- Form sửa deadline dùng trường `name="account.accountName"` rõ ràng để lựa chọn `ALL` không bị `th:field` ghi đè trạng thái selected.
+- `SercurityScheduleService` loại record null hoặc có cả `str1..str4` rỗng/trắng. Khi không còn record có nội dung, khối cảnh báo security không được render.

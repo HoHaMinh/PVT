@@ -105,6 +105,31 @@ class MonthEventServiceTest {
     }
 
     @Test
+    void editMonthEventKeepsAllAssignmentWithoutRequiringAnAccountRecord() {
+        Integer eventId = 3914;
+        MonthEvent existingEvent = new MonthEvent();
+        existingEvent.setMonthEventId(eventId);
+        existingEvent.setMonthEventDescription("Việc cả phòng");
+        existingEvent.setMonthEventDeadline(LocalDateTime.of(2026, 7, 7, 8, 0));
+        existingEvent.setAll(true);
+        existingEvent.setAccount(null);
+
+        MonthEvent submittedEvent = new MonthEvent();
+        submittedEvent.setMonthEventId(eventId);
+        submittedEvent.setMonthEventDescription("Việc cả phòng đã sửa");
+        submittedEvent.setMonthEventDeadline(LocalDateTime.of(2026, 7, 8, 9, 0));
+        submittedEvent.setAccount(new Account("ALL", "ignored"));
+        when(monthEventRepository.findByIdForUpdate(eventId)).thenReturn(Optional.of(existingEvent));
+
+        monthEventService.editMonthEvent(submittedEvent, "manager.test");
+
+        assertEquals(true, existingEvent.getAll());
+        assertEquals(null, existingEvent.getAccount());
+        verify(accountRepository, never()).findByAccountName("ALL");
+        verify(monthEventRepository).save(existingEvent);
+    }
+
+    @Test
     void moveToTrashKeepsEventAndAllResponses() {
         MonthEvent event = new MonthEvent();
         event.setMonthEventId(100);

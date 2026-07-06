@@ -155,13 +155,15 @@
                     <!-- Cột Người phụ trách (Chiếm 100% trên Mobile, 6 cột trên PC) -->
                     <div class="col-12 col-md-6">
                         <label class="form-label">Người phụ trách <span class="text-danger">*</span></label>
-                        <select class="form-select" th:field="*{account.accountName}" required>
+                        <select class="form-select" name="account.accountName" required>
                             <option value="">-- Chọn người phụ trách --</option>
-                            <option value="ALL" th:selected="${monthEditEvent.all}" class="fw-bold text-danger">🔥 Cả phòng</option>
+                            <option value="ALL"
+                                    th:selected="${monthEditEvent.all or (monthEditEvent.account != null and monthEditEvent.account.accountName == 'ALL')}"
+                                    class="fw-bold text-danger">🔥 Cả phòng</option>
                             <option th:each="acc : ${accountList}"
                                     th:value="${acc.accountName}"
                                     th:text="${acc.displayName}"
-                                    th:selected="${!monthEditEvent.all and monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
+                                    th:selected="${monthEditEvent.account != null and acc.accountName == monthEditEvent.account.accountName}">
                             </option>
                         </select>
                     </div>
