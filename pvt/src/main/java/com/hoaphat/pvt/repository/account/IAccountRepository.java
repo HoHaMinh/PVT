@@ -9,4 +9,5 @@ public interface IAccountRepository extends CrudRepository<Account, String> {
     Account findByAccountName(String accountName);
     @Query("select a from Account a order by a.accountName asc ")
     List<Account> findAll();
+    List<Account> findByBirthdayOrderByNameAsc(String birthday);
 }

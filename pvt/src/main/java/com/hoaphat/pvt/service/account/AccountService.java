@@ -14,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.DateTimeException;
+import java.time.MonthDay;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +42,8 @@ public class AccountService implements IAccountService {
 
     @Override
     @Transactional
-    public void createAccount(String username, String password, String name, String roleName) {
+    public void createAccount(String username, String password, String name, String roleName,
+                              String birthday) {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username không được để trống.");
         }
@@ -62,6 +65,7 @@ public class AccountService implements IAccountService {
 
         username = username.trim();
         name = name.trim().replaceAll("\\s+", " ");
+        birthday = normalizeBirthday(birthday);
 
         if (accountRepository.findByAccountName(username) != null) {
             throw new IllegalArgumentException("Username đã tồn tại.");
@@ -74,12 +78,31 @@ public class AccountService implements IAccountService {
 
         String encodedPassword = passwordEncoder.encode(password);
         Account account = new Account(username, encodedPassword, name);
+        account.setBirthday(birthday);
         accountRepository.save(account);
         AccountRole accountRole = new AccountRole();
         accountRole.setAccount(account);
         accountRole.setRole(role);
 
         accountRoleRepository.save(accountRole);
+    }
+
+    private String normalizeBirthday(String birthday) {
+        if (birthday == null || birthday.trim().isEmpty()) {
+            return null;
+        }
+        String[] parts = birthday.trim().split("/");
+        if (parts.length != 2) {
+            throw new IllegalArgumentException("Ngày sinh phải có định dạng DD/MM và không nhập năm.");
+        }
+        try {
+            int day = Integer.parseInt(parts[0]);
+            int month = Integer.parseInt(parts[1]);
+            MonthDay.of(month, day);
+            return String.format("%02d/%02d", day, month);
+        } catch (NumberFormatException | DateTimeException e) {
+            throw new IllegalArgumentException("Ngày sinh không hợp lệ. Vui lòng nhập theo định dạng DD/MM.");
+        }
     }
 
     @Override

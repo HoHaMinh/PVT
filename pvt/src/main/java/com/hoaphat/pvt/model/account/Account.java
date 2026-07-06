@@ -12,6 +12,8 @@ public class Account {
     private String password;
     @Column(name = "name")
     private String name;
+    @Column(name = "birthday", length = 5)
+    private String birthday;
 
     public Account() {
     }
@@ -49,6 +51,14 @@ public class Account {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(String birthday) {
+        this.birthday = birthday;
     }
 
     public String getDisplayName() {

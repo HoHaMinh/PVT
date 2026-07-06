@@ -87,7 +87,7 @@ class AccountServiceTest {
     @Test
     void createAccountRejectsMissingDisplayNameBeforeWriting() {
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
-                () -> accountService.createAccount("new.user", "123456", null, "ROLE_EMPLOYEE"));
+                () -> accountService.createAccount("new.user", "123456", null, "ROLE_EMPLOYEE", null));
 
         assertEquals("Họ và tên không được để trống.", error.getMessage());
         verify(accountRepository, never()).save(org.mockito.ArgumentMatchers.any(Account.class));
@@ -100,7 +100,7 @@ class AccountServiceTest {
 
         IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
                 () -> accountService.createAccount(
-                        "new.user", "123456", "Nguyễn Văn Mới", "ROLE_EMPLOYEE"));
+                        "new.user", "123456", "Nguyễn Văn Mới", "ROLE_EMPLOYEE", null));
 
         assertEquals("Chức vụ đã chọn không tồn tại.", error.getMessage());
         verify(accountRepository, never()).save(org.mockito.ArgumentMatchers.any(Account.class));
@@ -115,14 +115,42 @@ class AccountServiceTest {
         when(roleRepository.findByRoleName("ROLE_EMPLOYEE")).thenReturn(role);
         when(passwordEncoder.encode("123456")).thenReturn("encoded");
 
-        accountService.createAccount(" new.user ", "123456", " Nguyễn  Văn  Mới ", "ROLE_EMPLOYEE");
+        accountService.createAccount(" new.user ", "123456", " Nguyễn  Văn  Mới ",
+                "ROLE_EMPLOYEE", "8/3");
 
         verify(accountRepository).save(org.mockito.ArgumentMatchers.argThat(account ->
                 "new.user".equals(account.getAccountName())
                         && "Nguyễn Văn Mới".equals(account.getName())
+                        && "08/03".equals(account.getBirthday())
                         && "encoded".equals(account.getPassword())));
         verify(accountRoleRepository).save(org.mockito.ArgumentMatchers.argThat(accountRole ->
                 accountRole.getRole() == role));
+    }
+
+    @Test
+    void createAccountRejectsImpossibleBirthdayBeforeWriting() {
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class,
+                () -> accountService.createAccount("new.user", "123456", "Nguyễn Văn Mới",
+                        "ROLE_EMPLOYEE", "31/02"));
+
+        assertEquals("Ngày sinh không hợp lệ. Vui lòng nhập theo định dạng DD/MM.",
+                error.getMessage());
+        verify(accountRepository, never()).save(org.mockito.ArgumentMatchers.any(Account.class));
+    }
+
+    @Test
+    void createAccountAcceptsLeapDayWithoutAYear() {
+        Role role = new Role();
+        role.setRoleName("ROLE_EMPLOYEE");
+        when(accountRepository.findByAccountName("leap.user")).thenReturn(null);
+        when(roleRepository.findByRoleName("ROLE_EMPLOYEE")).thenReturn(role);
+        when(passwordEncoder.encode("123456")).thenReturn("encoded");
+
+        accountService.createAccount("leap.user", "123456", "Người Sinh Nhật",
+                "ROLE_EMPLOYEE", "29/02");
+
+        verify(accountRepository).save(org.mockito.ArgumentMatchers.argThat(account ->
+                "29/02".equals(account.getBirthday())));
     }
 
     @Test

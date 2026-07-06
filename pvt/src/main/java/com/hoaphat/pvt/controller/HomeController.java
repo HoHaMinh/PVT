@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Controller
 public class HomeController {
@@ -17,7 +17,7 @@ public class HomeController {
 
     @GetMapping("/home")
     public ModelAndView showHome(Model model, HttpServletRequest request) {
-        model.addAttribute("message",specialMessageService.getAll(LocalDateTime.now()));
+        model.addAttribute("celebration", specialMessageService.getTodayCelebration(LocalDate.now()));
         String username = (String) request.getSession().getAttribute("username");
         model.addAttribute("username", username);
         return new ModelAndView("home");

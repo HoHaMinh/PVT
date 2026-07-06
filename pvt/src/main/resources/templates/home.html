@@ -7,15 +7,201 @@
     <base href="/">
     <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
     <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        .celebration-stack {
+            display: grid;
+            gap: 1rem;
+        }
+        .celebration-card {
+            position: relative;
+            overflow: hidden;
+            border: 0;
+            border-radius: 20px;
+            padding: 1.5rem 1.25rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(74, 48, 102, 0.14);
+            isolation: isolate;
+        }
+        .birthday-card {
+            color: #5f3b00;
+            background: linear-gradient(135deg, #fff8d8 0%, #ffe5ee 52%, #e9e2ff 100%);
+            border: 1px solid rgba(234, 164, 33, 0.35);
+        }
+        .special-day-card {
+            color: #6d2047;
+            background: linear-gradient(135deg, #fff0f6 0%, #ffe1ec 48%, #f3e8ff 100%);
+            border: 1px solid rgba(214, 82, 139, 0.25);
+        }
+        .celebration-content {
+            position: relative;
+            z-index: 2;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .celebration-icon {
+            display: inline-block;
+            margin-bottom: 0.25rem;
+            font-size: 3rem;
+            line-height: 1;
+            animation: celebration-bounce 2.4s ease-in-out infinite;
+        }
+        .celebration-title {
+            margin-bottom: 0.75rem;
+            font-size: clamp(1.35rem, 3vw, 2rem);
+            font-weight: 800;
+        }
+        .celebration-intro,
+        .celebration-wish,
+        .special-message-content {
+            margin-bottom: 0.75rem;
+            font-size: 1.05rem;
+            line-height: 1.65;
+        }
+        .special-message-content {
+            white-space: pre-line;
+        }
+        .birthday-name-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5rem;
+            margin: 0.75rem 0 1rem;
+        }
+        .birthday-name {
+            display: inline-flex;
+            align-items: center;
+            min-height: 38px;
+            padding: 0.4rem 0.9rem;
+            border: 1px solid rgba(185, 116, 12, 0.28);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.78);
+            font-weight: 750;
+            color: #9a4d00;
+            box-shadow: 0 4px 12px rgba(138, 75, 0, 0.1);
+        }
+        .birthday-name::before {
+            content: "🎁";
+            margin-right: 0.4rem;
+        }
+        .floating-decoration {
+            position: absolute;
+            z-index: 1;
+            user-select: none;
+            pointer-events: none;
+            filter: drop-shadow(0 5px 5px rgba(90, 52, 100, 0.12));
+        }
+        .balloon-left {
+            left: 3%;
+            bottom: -0.25rem;
+            font-size: 3.2rem;
+            animation: balloon-float 3.4s ease-in-out infinite;
+        }
+        .balloon-right {
+            right: 3%;
+            top: 0.5rem;
+            font-size: 2.8rem;
+            animation: balloon-float 3.8s ease-in-out 0.5s infinite;
+        }
+        .flower-left {
+            left: 2.5%;
+            bottom: 0.25rem;
+            font-size: 3rem;
+            animation: flower-sway 3s ease-in-out infinite;
+        }
+        .flower-right {
+            right: 2.5%;
+            top: 0.25rem;
+            font-size: 3rem;
+            animation: flower-sway 3.2s ease-in-out 0.4s infinite;
+        }
+        .confetti {
+            position: absolute;
+            z-index: 0;
+            width: 9px;
+            height: 18px;
+            border-radius: 3px;
+            opacity: 0.55;
+            animation: confetti-fall 5s linear infinite;
+        }
+        .confetti-one { left: 16%; top: -20px; background: #ff6b8a; animation-delay: 0.2s; }
+        .confetti-two { left: 36%; top: -30px; background: #f2b705; animation-delay: 1.6s; }
+        .confetti-three { left: 64%; top: -25px; background: #8067d4; animation-delay: 0.8s; }
+        .confetti-four { left: 84%; top: -35px; background: #2db7a3; animation-delay: 2.3s; }
+        @keyframes celebration-bounce {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-8px) rotate(2deg); }
+        }
+        @keyframes balloon-float {
+            0%, 100% { transform: translateY(0) rotate(-4deg); }
+            50% { transform: translateY(-14px) rotate(4deg); }
+        }
+        @keyframes flower-sway {
+            0%, 100% { transform: rotate(-6deg) scale(1); }
+            50% { transform: rotate(6deg) scale(1.06); }
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(-10px) rotate(0); }
+            100% { transform: translateY(260px) rotate(420deg); }
+        }
+        @media (max-width: 575.98px) {
+            .celebration-card {
+                padding: 1.25rem 0.85rem;
+                border-radius: 16px;
+            }
+            .celebration-intro,
+            .celebration-wish,
+            .special-message-content {
+                font-size: 0.98rem;
+            }
+            .floating-decoration {
+                font-size: 2.2rem;
+                opacity: 0.72;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .celebration-card * {
+                animation: none !important;
+            }
+        }
+    </style>
 </head>
 <body>
 <div class="container-fluid p-0">
     <div th:replace="~{fragments :: header}"></div> 
     <nav th:replace="~{fragments :: nav}"></nav> 
     
-    <div class="container mt-3">
-        <div th:if="${message != null}" class="alert alert-warning text-center" role="alert">
-            <h5 class="text-danger m-0" th:each="mess: ${message}" th:text="${mess.getMessage()}"></h5>
+    <div class="container mt-3" th:if="${celebration != null}">
+        <div class="celebration-stack">
+            <section th:if="${celebration.hasBirthdays()}" class="celebration-card birthday-card"
+                     aria-label="Lời chúc sinh nhật">
+                <span class="floating-decoration balloon-left" aria-hidden="true">🎈</span>
+                <span class="floating-decoration balloon-right" aria-hidden="true">🎈</span>
+                <span class="confetti confetti-one" aria-hidden="true"></span>
+                <span class="confetti confetti-two" aria-hidden="true"></span>
+                <span class="confetti confetti-three" aria-hidden="true"></span>
+                <span class="confetti confetti-four" aria-hidden="true"></span>
+                <div class="celebration-content">
+                    <div class="celebration-icon" aria-hidden="true">🎂</div>
+                    <h3 class="celebration-title">Chúc mừng sinh nhật!</h3>
+                    <p class="celebration-intro" th:text="${celebration.getBirthdayIntroduction()}"></p>
+                    <div class="birthday-name-list">
+                        <span class="birthday-name" th:each="birthdayName : ${celebration.getBirthdayNames()}"
+                              th:text="${birthdayName}"></span>
+                    </div>
+                    <p class="celebration-wish mb-0" th:text="${celebration.getBirthdayWish()}"></p>
+                </div>
+            </section>
+
+            <section th:each="special : ${celebration.getSpecialMessages()}"
+                     class="celebration-card special-day-card" aria-label="Thông điệp ngày đặc biệt">
+                <span class="floating-decoration flower-left" aria-hidden="true">🌷</span>
+                <span class="floating-decoration flower-right" aria-hidden="true">🌸</span>
+                <div class="celebration-content">
+                    <div class="celebration-icon" aria-hidden="true">💐</div>
+                    <h3 class="celebration-title" th:text="${special.getDisplayTitle()}"></h3>
+                    <p class="special-message-content mb-0" th:text="${special.getMessage()}"></p>
+                </div>
+            </section>
         </div>
     </div>
 

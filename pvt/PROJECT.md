@@ -989,3 +989,27 @@ Không tự ý tự động hóa hoặc thay đổi các mục này khi chưa đ
 - Không dùng bulk DELETE JPQL đi xuyên quan hệ `ResponseEventInformation.monthEvent.account`, vì có thể phát sinh lỗi truy vấn lúc chạy và trả HTTP 500.
 - Form sửa deadline dùng trường `name="account.accountName"` rõ ràng để lựa chọn `ALL` không bị `th:field` ghi đè trạng thái selected.
 - `SercurityScheduleService` loại record null hoặc có cả `str1..str4` rỗng/trắng. Khi không còn record có nội dung, khối cảnh báo security không được render.
+
+## 28. Lời chúc sinh nhật và ngày đặc biệt trên Home
+
+### 28.1. Ngày sinh Account
+
+- `Account.birthday` là chuỗi `DD/MM`, không lưu và không xét năm sinh; cột cho phép null để tương thích account cũ.
+- Form tạo account có trường ngày sinh không bắt buộc. Backend chuẩn hóa `8/3` thành `08/03`, chấp nhận `29/02` và từ chối ngày không tồn tại như `31/02`.
+- Account cũ được cập nhật một lần bằng mẫu `account-birthday-update-template.sql`.
+- Mỗi lần mở `/home`, service tìm toàn bộ account có birthday trùng ngày/tháng hiện tại và dùng họ tên đầy đủ; nếu tên null/trắng thì fallback về account ID.
+- Một người dùng từ **thành viên**; nhiều người trùng sinh nhật dùng **các thành viên** và hiển thị đầy đủ tất cả tên.
+
+### 28.2. SpecialMessage
+
+- Bảng `special_message` không còn dùng để lưu từng sinh nhật cá nhân. Field `birthday` cũ của entity vẫn được giữ để làm ngày áp dụng cho thông điệp đặc biệt, tránh thay đổi schema và dữ liệu hiện có.
+- Trước mắt database giữ các record ngày 08/03 và 20/10 cùng nội dung do quản lý nhập sẵn.
+- Service trả toàn bộ SpecialMessage hợp lệ trùng ngày, không chỉ record đầu tiên; record có ngày null hoặc nội dung rỗng bị bỏ qua.
+- Nếu một ngày vừa là sinh nhật thành viên vừa là ngày đặc biệt thì Home hiển thị cả hai khối.
+
+### 28.3. Giao diện
+
+- Khối sinh nhật dùng bánh sinh nhật, bóng bay và confetti chuyển động bằng CSS; tên thành viên hiển thị dạng badge.
+- Khối ngày đặc biệt dùng hoa và hiệu ứng chuyển động nhẹ. Không phụ thuộc GIF, CDN hoặc ảnh bên ngoài.
+- Mobile giảm kích thước trang trí; thiết bị bật `prefers-reduced-motion` sẽ tự tắt animation.
+- Khi không có sinh nhật hoặc SpecialMessage phù hợp, toàn bộ vùng celebration không render và banner Home giữ bố cục cũ.

@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface IAccountService {
     List<Account> findAll();
-    void createAccount(String username, String password, String name, String roleName);
+    void createAccount(String username, String password, String name, String roleName, String birthday);
     void changePassword(String accountName, String currentPassword, String newPassword);
 }

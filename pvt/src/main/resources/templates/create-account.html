@@ -60,7 +60,8 @@
                             
                             <div class="mb-3">
                                 <label class="form-label">Username <span class="text-danger">*</span></label>
-                                <input type="text" name="username" class="form-control" required placeholder="Nhập ID đăng nhập..."/>
+                                <input type="text" name="username" class="form-control" required
+                                       th:value="${usernameValue}" placeholder="Nhập ID đăng nhập..."/>
                                 <div class="form-text text-muted fst-italic">Gợi ý: Nên lấy ID Bravo của nhân viên.</div>
                             </div>
 
@@ -72,14 +73,23 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
-                                <input type="text" name="name" class="form-control" required placeholder="Ví dụ: Nguyễn Văn A"/>
+                                <input type="text" name="name" class="form-control" required
+                                       th:value="${nameValue}" placeholder="Ví dụ: Nguyễn Văn A"/>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Ngày sinh <span class="text-muted fw-normal">(không nhập năm)</span></label>
+                                <input type="text" name="birthday" class="form-control" inputmode="numeric"
+                                       maxlength="5" pattern="(0?[1-9]|[12][0-9]|3[01])/(0?[1-9]|1[0-2])"
+                                       th:value="${birthdayValue}" placeholder="DD/MM, ví dụ 08/03"/>
+                                <div class="form-text">Dùng để tự động hiển thị lời chúc sinh nhật trên trang chủ.</div>
                             </div>
 
                             <div class="mb-4">
                                 <label class="form-label">Chức vụ <span class="text-danger">*</span></label>
                                 <select name="role" class="form-select" required>
-                                    <option value="ROLE_EMPLOYEE">Nhân viên</option>
-                                    <option value="ROLE_MANAGER" class="text-danger fw-bold">Quản lý</option>
+                                    <option value="ROLE_EMPLOYEE" th:selected="${roleValue == null or roleValue == 'ROLE_EMPLOYEE'}">Nhân viên</option>
+                                    <option value="ROLE_MANAGER" th:selected="${roleValue == 'ROLE_MANAGER'}" class="text-danger fw-bold">Quản lý</option>
                                 </select>
                             </div>
 

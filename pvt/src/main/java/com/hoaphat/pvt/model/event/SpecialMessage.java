@@ -5,6 +5,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Entity
 public class SpecialMessage {
@@ -45,5 +46,24 @@ public class SpecialMessage {
 
     public void setBirthday(LocalDateTime birthday) {
         this.birthday = birthday;
+    }
+
+    public String getFormattedDate() {
+        return birthday == null ? "" : birthday.format(DateTimeFormatter.ofPattern("dd/MM"));
+    }
+
+    public String getDisplayTitle() {
+        if (birthday == null) {
+            return "Thông điệp đặc biệt";
+        }
+        int day = birthday.getDayOfMonth();
+        int month = birthday.getMonthValue();
+        if (day == 8 && month == 3) {
+            return "Mừng Ngày Quốc tế Phụ nữ 08/03";
+        }
+        if (day == 20 && month == 10) {
+            return "Mừng Ngày Phụ nữ Việt Nam 20/10";
+        }
+        return "Thông điệp đặc biệt ngày " + getFormattedDate();
     }
 }

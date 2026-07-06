@@ -27,10 +27,15 @@ public class AccountController {
                                 @RequestParam(required = false) String password,
                                 @RequestParam(required = false) String name,
                                 @RequestParam(required = false) String role,
+                                @RequestParam(required = false) String birthday,
                                 Model model) {
 
+        model.addAttribute("usernameValue", username);
+        model.addAttribute("nameValue", name);
+        model.addAttribute("roleValue", role);
+        model.addAttribute("birthdayValue", birthday);
         try {
-            accountService.createAccount(username, password, name, role);
+            accountService.createAccount(username, password, name, role, birthday);
             model.addAttribute("message", "Tạo tài khoản thành công!");
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
