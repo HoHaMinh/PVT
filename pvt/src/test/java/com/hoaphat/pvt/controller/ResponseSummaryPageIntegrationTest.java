@@ -73,6 +73,27 @@ class ResponseSummaryPageIntegrationTest {
     }
 
     @Test
+    void managerDoesNotSeeBulkActionsWhenSummaryHasNoTasks() throws Exception {
+        ResponseSummaryView emptySummary = new ResponseSummaryView();
+        emptySummary.setAccountName("employee.two");
+        emptySummary.setEmployeeDisplayName("Employee Two");
+        emptySummary.setPeriod(ResponseSummaryPeriod.TODAY);
+        emptySummary.setTaskCount(0);
+        emptySummary.setResponseCount(0);
+        emptySummary.setTasks(Collections.emptyList());
+        when(responseSummaryService.getSummary("employee.two", ResponseSummaryPeriod.TODAY))
+                .thenReturn(emptySummary);
+
+        mockMvc.perform(get("/home/employee/response-summary")
+                        .param("accountName", "employee.two")
+                        .param("period", "TODAY")
+                        .with(user("manager.one").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("id=\"managerBulkBar\""))));
+    }
+
+    @Test
     void employeeCannotCallManagerBulkEndpoint() throws Exception {
         mockMvc.perform(post("/home/manager/response-summary/delete")
                         .param("accountName", "employee.one")

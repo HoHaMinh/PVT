@@ -43,6 +43,28 @@
         #result.is-loading {
             opacity: 0.55;
         }
+        .response-summary-title {
+            color: #05428c !important;
+            font-weight: 700;
+            animation: response-summary-title-sparkle 4s ease-in-out infinite;
+        }
+        @keyframes response-summary-title-sparkle {
+            0%, 72%, 100% {
+                text-shadow: none;
+            }
+            80% {
+                text-shadow: 0 0 0.35rem rgba(255, 255, 255, 0.95),
+                             0 0 0.7rem rgba(5, 66, 140, 0.55);
+            }
+            88% {
+                text-shadow: 0 0 0.2rem rgba(255, 255, 255, 0.7);
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .response-summary-title {
+                animation: none;
+            }
+        }
         @media (min-width: 768px) {
             .user-tab-item {
                 flex: 0 0 auto;
@@ -253,9 +275,9 @@
                             ? escapeHtml(data.responseSummary.responseCount + ' phản hồi trong '
                                 + data.responseSummary.taskCount + ' công việc')
                             : 'Chưa có phản hồi hôm nay';
-                        result += `<tr class="table-primary align-middle response-summary-row">
+                        result += `<tr class="warning align-middle response-summary-row">
                             <td class="text-center fw-bold">1</td>
-                            <td class="text-start fw-bold">${summaryTitle}</td>
+                            <td class="text-start fw-bold response-summary-title">${summaryTitle}</td>
                             <td></td>
                             <td></td>
                             <td class="text-start">${summaryDetail}</td>
@@ -453,9 +475,10 @@
                 </tr>
                 </thead>
                 <tbody id="result">
-                <tr th:if="${responseSummaryPreview != null}" class="table-primary align-middle response-summary-row">
+                <tr th:if="${responseSummaryPreview != null}" class="warning align-middle response-summary-row">
                     <td class="text-center fw-bold">1</td>
-                    <td class="text-start fw-bold" th:text="${responseSummaryPreview.title}">Tổng hợp phản hồi</td>
+                    <td class="text-start fw-bold response-summary-title"
+                        th:text="${responseSummaryPreview.title}">Tổng hợp phản hồi</td>
                     <td></td>
                     <td></td>
                     <td class="text-start"
