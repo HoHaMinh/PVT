@@ -1,12 +1,15 @@
 package com.hoaphat.pvt.service.monthEvent;
 
 import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.model.dto.DeadlineShiftOption;
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
+import com.hoaphat.pvt.service.priority.WorkPriorityService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -44,6 +47,12 @@ class MonthEventServiceTest {
 
     @Mock
     private IResponseEventInformationService responseEventInformationService;
+
+    @Mock
+    private WorkPriorityService workPriorityService;
+
+    @Mock
+    private ResponseAttachmentStorageService responseAttachmentStorageService;
 
     @InjectMocks
     private MonthEventService monthEventService;
@@ -130,6 +139,30 @@ class MonthEventServiceTest {
     }
 
     @Test
+    void changingAssignmentToAllClearsAnyPersonalPriority() {
+        Integer eventId = 3915;
+        MonthEvent existingEvent = new MonthEvent();
+        existingEvent.setMonthEventId(eventId);
+        existingEvent.setMonthEventDescription("Việc cá nhân");
+        existingEvent.setMonthEventDeadline(LocalDateTime.of(2026, 7, 7, 8, 0));
+        existingEvent.setAll(false);
+        existingEvent.setAccount(new Account("employee.one", "ignored"));
+
+        MonthEvent submittedEvent = new MonthEvent();
+        submittedEvent.setMonthEventId(eventId);
+        submittedEvent.setMonthEventDescription("Chuyển thành việc cả phòng");
+        submittedEvent.setMonthEventDeadline(LocalDateTime.of(2026, 7, 8, 9, 0));
+        submittedEvent.setAccount(new Account("ALL", "ignored"));
+        when(monthEventRepository.findByIdForUpdate(eventId)).thenReturn(Optional.of(existingEvent));
+
+        monthEventService.editMonthEvent(submittedEvent, "manager.test");
+
+        verify(workPriorityService).deleteTodayForEvent(eventId);
+        assertEquals(true, existingEvent.getAll());
+        assertEquals(null, existingEvent.getAccount());
+    }
+
+    @Test
     void moveToTrashKeepsEventAndAllResponses() {
         MonthEvent event = new MonthEvent();
         event.setMonthEventId(100);
@@ -141,6 +174,50 @@ class MonthEventServiceTest {
         verify(monthEventRepository).save(event);
         verify(responseEventInformationRepository, never()).deleteResponseById(100);
         verify(monthEventRepository, never()).delete(event);
+    }
+
+    @Test
+    void bulkDeadlineShiftValidatesEveryTaskBeforeWriting() {
+        MonthEvent personal = new MonthEvent();
+        personal.setMonthEventId(201);
+        personal.setAll(false);
+        personal.setDeleted(false);
+        personal.setMonthEventDeadline(LocalDateTime.of(2026, 7, 29, 11, 0));
+        MonthEvent allTask = new MonthEvent();
+        allTask.setMonthEventId(202);
+        allTask.setAll(true);
+        allTask.setDeleted(false);
+        allTask.setMonthEventDeadline(LocalDateTime.of(2026, 7, 29, 11, 0));
+        when(monthEventRepository.findByIdForUpdate(201)).thenReturn(Optional.of(personal));
+        when(monthEventRepository.findByIdForUpdate(202)).thenReturn(Optional.of(allTask));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> monthEventService.shiftDeadlines(Arrays.asList(201, 202),
+                        DeadlineShiftOption.ONE_DAY, "manager.one"));
+
+        verify(monthEventRepository, never()).save(org.mockito.ArgumentMatchers.any(MonthEvent.class));
+        verify(responseEventInformationService, never())
+                .addResponseEventInformation(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void bulkDeadlineShiftPreservesTaskDataAndCreatesUsualResponseForEachTask() {
+        MonthEvent first = personalEvent(203, LocalDateTime.of(2026, 7, 29, 11, 0));
+        MonthEvent second = personalEvent(204, LocalDateTime.of(2026, 7, 29, 16, 0));
+        when(monthEventRepository.findByIdForUpdate(203)).thenReturn(Optional.of(first));
+        when(monthEventRepository.findByIdForUpdate(204)).thenReturn(Optional.of(second));
+
+        monthEventService.shiftDeadlines(Arrays.asList(203, 204),
+                DeadlineShiftOption.ONE_SESSION, "manager.one");
+
+        assertEquals(LocalDateTime.of(2026, 7, 29, 16, 0), first.getMonthEventDeadline());
+        assertEquals(LocalDateTime.of(2026, 7, 30, 11, 0), second.getMonthEventDeadline());
+        assertEquals("Công việc 203", first.getMonthEventDescription());
+        assertEquals("employee.one", first.getAccount().getAccountName());
+        verify(monthEventRepository).save(first);
+        verify(monthEventRepository).save(second);
+        verify(responseEventInformationService, org.mockito.Mockito.times(2))
+                .addResponseEventInformation(org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -263,5 +340,37 @@ class MonthEventServiceTest {
 
         assertEquals("Dòng 1: Loại công việc không hợp lệ.", error.getMessage());
         verify(monthEventRepository, never()).save(org.mockito.ArgumentMatchers.any(MonthEvent.class));
+    }
+
+    @Test
+    void employeeSelfAssignmentAlwaysTargetsLoggedInAccount() {
+        Account employee = new Account("employee.one", "ignored", "Nhân viên Một");
+        when(accountRepository.findByAccountName("employee.one")).thenReturn(employee);
+
+        LocalDateTime deadline = LocalDateTime.of(2026, 7, 8, 16, 0);
+        monthEventService.addSelfAssignedEvent(
+                "employee.one", "  Việc tự giao  ", deadline);
+
+        ArgumentCaptor<MonthEvent> captor = ArgumentCaptor.forClass(MonthEvent.class);
+        verify(monthEventRepository).save(captor.capture());
+        MonthEvent saved = captor.getValue();
+        assertSame(employee, saved.getAccount());
+        assertEquals("Việc tự giao", saved.getMonthEventDescription());
+        assertEquals(deadline, saved.getMonthEventDeadline());
+        assertEquals(0, saved.getMonthEventStatus());
+        assertEquals(false, saved.getAll());
+        assertEquals(false, saved.getHidden());
+        assertEquals(false, saved.getDeleted());
+    }
+
+    private MonthEvent personalEvent(int id, LocalDateTime deadline) {
+        MonthEvent event = new MonthEvent();
+        event.setMonthEventId(id);
+        event.setMonthEventDescription("Công việc " + id);
+        event.setMonthEventDeadline(deadline);
+        event.setAll(false);
+        event.setDeleted(false);
+        event.setAccount(new Account("employee.one", "ignored"));
+        return event;
     }
 }

@@ -7,6 +7,7 @@ import java.util.List;
 public class ResponseFilter {
     private List<MonthEvent> monthEventList;
     private String nameFilter;
+    private ResponseSummaryPreview responseSummary;
 
     public ResponseFilter() {
     }
@@ -14,6 +15,13 @@ public class ResponseFilter {
     public ResponseFilter(List<MonthEvent> monthEventList, String nameFilter) {
         this.monthEventList = monthEventList;
         this.nameFilter = nameFilter;
+    }
+
+    public ResponseFilter(List<MonthEvent> monthEventList, String nameFilter,
+                          ResponseSummaryPreview responseSummary) {
+        this.monthEventList = monthEventList;
+        this.nameFilter = nameFilter;
+        this.responseSummary = responseSummary;
     }
 
     public List<MonthEvent> getMonthEventList() {
@@ -30,5 +38,13 @@ public class ResponseFilter {
 
     public void setNameFilter(String nameFilter) {
         this.nameFilter = nameFilter;
+    }
+
+    public ResponseSummaryPreview getResponseSummary() {
+        return responseSummary;
+    }
+
+    public void setResponseSummary(ResponseSummaryPreview responseSummary) {
+        this.responseSummary = responseSummary;
     }
 }

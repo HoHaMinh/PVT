@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 import javax.transaction.Transactional;
 import javax.persistence.LockModeType;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,4 +93,15 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     List<MonthEvent> findAllFilter(LocalDateTime before, LocalDateTime after);
 
     void deleteByAccount_AccountName(String accountName);
+
+    Optional<MonthEvent> findFirstByAccount_AccountNameAndAutomationSourceAndAutomationDate(
+            String accountName, String automationSource, LocalDate automationDate);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from MonthEvent m " +
+            "where m.account.accountName = :accountName " +
+            "and m.automationSource = :automationSource " +
+            "and (m.deleted = false or m.deleted is null) " +
+            "order by m.automationDate desc, m.monthEventId desc")
+    List<MonthEvent> findActiveAutomationTasksForAccount(String accountName, String automationSource);
 }

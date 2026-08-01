@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cảnh báo công nợ - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        .debt-card { border: 0; border-radius: 12px; box-shadow: 0 3px 16px rgba(0,0,0,.07); }
+        .table-responsive { border-radius: 10px; }
+        th { white-space: nowrap; }
+        .employee-heading { color: #05428c; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <main class="container-fluid mt-4 px-3 px-md-4 mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+            <div>
+                <h4 class="text-primary fw-bold mb-1">Cảnh báo công nợ</h4>
+                <div class="text-muted" th:if="${debtDashboard.scanDate != null and !debtDashboard.scanDate.isEmpty()}"
+                     th:text="${'Dữ liệu ngày ' + debtDashboard.scanDate + ' · Cập nhật: ' + debtDashboard.lastSuccessAt}"></div>
+            </div>
+            <form th:if="${isManager}" method="post" th:action="@{/home/manager/debt-alerts/sync}">
+                <button type="submit" class="btn btn-primary" th:disabled="${debtDashboard.running}">
+                    Quét lại Google Drive
+                </button>
+            </form>
+        </div>
+
+        <div th:if="${mess}" class="alert alert-success fw-bold" th:text="${mess}"></div>
+        <div th:if="${error}" class="alert alert-danger fw-bold" th:text="${error}"></div>
+
+        <div th:if="${debtDashboard.status == 'RUNNING'}" class="alert alert-info">
+            Đang đọc dữ liệu từ Google Drive. Trang sẽ tự tải lại sau vài giây.
+        </div>
+        <div th:if="${debtDashboard.status == 'WAITING'}" class="alert alert-info"
+             th:text="${debtDashboard.message}"></div>
+        <div th:if="${debtDashboard.status == 'FAILED' or debtDashboard.status == 'CONFIG_ERROR'}"
+             class="alert alert-danger">
+            <strong>Không thể cập nhật dữ liệu:</strong>
+            <span th:text="${debtDashboard.message}"></span>
+            <div th:if="${debtDashboard.lastAttemptAt != null and !debtDashboard.lastAttemptAt.isEmpty()}"
+                 class="small mt-1" th:text="${'Lần thử gần nhất: ' + debtDashboard.lastAttemptAt}"></div>
+        </div>
+        <div th:if="${debtDashboard.status == 'SKIPPED'}" class="alert alert-secondary"
+             th:text="${debtDashboard.message}"></div>
+        <div th:if="${debtDashboard.status == 'SUCCESS'}" class="alert"
+             th:classappend="${debtDashboard.alertCount > 0} ? ' alert-warning' : ' alert-success'">
+            <strong th:text="${debtDashboard.alertCount > 0 ? 'Có hồ sơ công nợ cần chú ý.' : 'Hôm nay không có hồ sơ cần cảnh báo.'}"></strong>
+            <span th:if="${debtDashboard.alertCount > 0}"
+                  th:text="${' Tổng cộng: ' + debtDashboard.alertCount + ' hồ sơ.'}"></span>
+        </div>
+
+        <section th:each="employee : ${debtDashboard.employees}" class="card debt-card mb-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">
+                    <div>
+                        <h5 class="employee-heading fw-bold mb-1">
+                            <span th:text="${employee.employeeName}"></span>
+                            <small th:if="${isManager}" class="text-muted"
+                                   th:text="${'(' + employee.accountName + ')'}"></small>
+                        </h5>
+                        <div class="text-muted" th:if="${employee.reportLabel != null and !employee.reportLabel.isEmpty()}"
+                             th:text="${employee.reportLabel}"></div>
+                    </div>
+                    <a th:if="${employee.spreadsheetUrl != null and !employee.spreadsheetUrl.isEmpty()}"
+                       th:href="${employee.spreadsheetUrl}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-primary align-self-start">Mở file Google Sheets</a>
+                </div>
+
+                <div th:if="${employee.status != 'OK'}" class="alert alert-danger py-2 mb-3">
+                    <strong th:text="${employee.status}"></strong>:
+                    <span th:text="${employee.message}"></span>
+                </div>
+
+                <div th:if="${#lists.isEmpty(employee.items)}" class="text-center text-muted py-3">
+                    Không có hồ sơ công nợ cần cảnh báo.
+                </div>
+
+                <div th:unless="${#lists.isEmpty(employee.items)}" class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle m-0">
+                        <thead class="table-light">
+                        <tr>
+                            <th>Mục</th>
+                            <th class="text-center">TT</th>
+                            <th>Nhà cung cấp</th>
+                            <th>Số hóa đơn</th>
+                            <th class="text-end">Trị giá</th>
+                            <th class="text-center">Ngày đến hạn</th>
+                            <th class="text-center">T+</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="item : ${employee.items}">
+                            <td th:text="${item.section}"></td>
+                            <td class="text-center" th:text="${item.itemOrder}"></td>
+                            <td th:text="${item.supplier}"></td>
+                            <td th:text="${item.invoiceNumber}"></td>
+                            <td class="text-end" th:text="${item.amountDisplay}"></td>
+                            <td class="text-center text-danger fw-bold" th:text="${item.dueDate}"></td>
+                            <td class="text-center fw-bold" th:classappend="${' ' + item.tPlusClass}"
+                                th:text="${item.tPlusLabel}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <div th:if="${#lists.isEmpty(debtDashboard.employees) and (debtDashboard.status == 'SUCCESS')}"
+             class="card debt-card">
+            <div class="card-body text-center text-muted py-5">
+                Chưa có dữ liệu nhân viên phù hợp với tài khoản đang đăng nhập.
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <a th:href="@{/home}" class="btn btn-outline-primary">&larr; Trở về trang chủ</a>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script th:if="${debtDashboard.running}">
+    window.setTimeout(function () { window.location.reload(); }, 8000);
+</script>
+</body>
+</html>

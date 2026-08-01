@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ưu tiên công việc - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        .priority-shell { border-radius: 12px; box-shadow: 0 3px 16px rgba(0,0,0,.07); }
+        .priority-current { color: #dc3545; font-size: 1.1rem; font-weight: 800; }
+        .all-task-row { background: #f3f4f6; color: #6c757d; }
+        .priority-select:disabled { cursor: not-allowed; opacity: .65; }
+        th { white-space: nowrap; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <div class="container-fluid mt-4 px-3 px-md-4 mb-5">
+        <h4 class="text-primary fw-bold mb-2"
+            th:text="${isManagerPriority ? 'Quản lý ưu tiên công việc' : 'Chọn ưu tiên công việc'}"></h4>
+        <p class="text-muted">
+            Mỗi ngày được ưu tiên tối đa 7 công việc; các công việc có thể trùng mức ưu tiên.
+            Công việc Cả phòng không được phép chọn.
+        </p>
+
+        <div th:if="${mess}" class="alert alert-success fw-bold" th:text="${mess}"></div>
+        <div th:if="${error}" class="alert alert-danger fw-bold" th:text="${error}"></div>
+
+        <form th:if="${isManagerPriority}" method="get" th:action="@{/home/manager/priorities}"
+              class="card priority-shell border-0 mb-4">
+            <div class="card-body">
+                <label for="accountName" class="form-label fw-bold">Chọn nhân viên cần xem</label>
+                <div class="row g-2">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <select id="accountName" name="accountName" class="form-select" required>
+                            <option value="">-- Chọn nhân viên, bao gồm cả bản thân --</option>
+                            <option th:each="acc : ${accounts}" th:value="${acc.accountName}"
+                                    th:selected="${selectedAccountName == acc.accountName}"
+                                    th:text="${acc.displayName + ' (' + acc.accountName + ')'}"></option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-auto">
+                        <button type="submit" class="btn btn-primary w-100">Xem công việc</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <div th:if="${priorityForm != null and !isManagerPriority and priorityForm.alreadySubmitted}"
+             class="alert alert-info">
+            Bạn đã chọn ưu tiên hôm nay. Danh sách dưới đây chỉ để xem và sẽ tự đặt lại vào ngày mới.
+        </div>
+
+        <form th:if="${priorityForm != null}" method="post" id="priorityForm"
+              th:action="${isManagerPriority} ? @{/home/manager/priorities} : @{/home/employee/priorities}"
+              th:object="${priorityForm}">
+            <input type="hidden" th:field="*{accountName}">
+
+            <div class="table-responsive priority-shell bg-white mb-4">
+                <table class="table table-bordered table-hover align-middle m-0">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="text-center">STT</th>
+                        <th style="min-width:260px">Nội dung công việc</th>
+                        <th class="text-center" style="min-width:150px">Deadline</th>
+                        <th th:if="${isManagerPriority and priorityForm.alreadySubmitted}"
+                            class="text-center">Ưu tiên đã chọn</th>
+                        <th class="text-center" style="min-width:180px"
+                            th:text="${isManagerPriority and priorityForm.alreadySubmitted ? 'Sửa ưu tiên' : 'Chọn ưu tiên'}"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${#lists.isEmpty(priorityForm.tasks)}">
+                        <td th:colspan="${isManagerPriority and priorityForm.alreadySubmitted ? 5 : 4}"
+                            class="text-center text-muted py-4">Không có công việc phù hợp để hiển thị.</td>
+                    </tr>
+                    <tr th:each="task,stat : *{tasks}" th:classappend="${task.allTask} ? 'all-task-row'">
+                        <td class="text-center fw-bold" th:text="${stat.count}"></td>
+                        <td>
+                            <input type="hidden" th:field="*{tasks[__${stat.index}__].monthEventId}">
+                            <span th:text="${task.description}"></span>
+                            <span th:if="${task.allTask}" class="badge bg-secondary ms-2">Cả phòng</span>
+                        </td>
+                        <td class="text-center text-danger fw-bold" th:text="${task.deadline}"></td>
+                        <td th:if="${isManagerPriority and priorityForm.alreadySubmitted}"
+                            class="text-center priority-current"
+                            th:text="${task.selectedPriority == null ? '-' : task.selectedPriority}"></td>
+                        <td class="text-center">
+                            <select class="form-select priority-select"
+                                    th:field="*{tasks[__${stat.index}__].priority}"
+                                    th:disabled="${task.allTask or (!isManagerPriority and priorityForm.alreadySubmitted)}">
+                                <option value="">KHÔNG ƯU TIÊN</option>
+                                <option th:each="level : ${#numbers.sequence(1,7)}"
+                                        th:value="${level}" th:text="${'ƯU TIÊN ' + level}"></option>
+                            </select>
+                            <small th:if="${task.allTask}" class="text-muted">Không áp dụng</small>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button th:if="${isManagerPriority or !priorityForm.alreadySubmitted}"
+                        type="submit" class="btn btn-success px-4 fw-bold">Lưu ưu tiên</button>
+                <a th:href="@{/home/employee/private}" class="btn btn-outline-primary ms-auto">&larr; Trở về lịch cần làm</a>
+            </div>
+        </form>
+
+        <div th:if="${priorityForm == null}" class="card priority-shell border-0">
+            <div class="card-body text-center text-muted py-5">Vui lòng chọn nhân viên để xem công việc.</div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var now = new Date();
+        var nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
+        window.setTimeout(function () { window.location.reload(); }, nextDay.getTime() - now.getTime());
+
+        var form = document.getElementById('priorityForm');
+        if (!form) return;
+        var selects = Array.from(form.querySelectorAll('.priority-select:not(:disabled)'));
+
+        function selectedCount() {
+            return selects.filter(function (select) { return select.value !== ''; }).length;
+        }
+
+        selects.forEach(function (select) {
+            select.dataset.previousValue = select.value;
+            select.addEventListener('change', function () {
+                if (selectedCount() > 7) {
+                    alert('Mỗi ngày chỉ được ưu tiên tối đa 7 công việc.');
+                    select.value = select.dataset.previousValue || '';
+                    return;
+                }
+                select.dataset.previousValue = select.value;
+            });
+        });
+
+        form.addEventListener('submit', function (event) {
+            if (selectedCount() > 7) {
+                event.preventDefault();
+                alert('Mỗi ngày chỉ được ưu tiên tối đa 7 công việc.');
+            }
+        });
+    });
+</script>
+</body>
+</html>

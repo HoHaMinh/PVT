@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao việc bản thân - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        .self-task-card {
+            border: 0;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,.08);
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <div class="container my-4 mb-5">
+        <div class="card self-task-card mx-auto" style="max-width: 760px;">
+            <div class="card-body p-3 p-md-4">
+                <h4 class="text-primary fw-bold mb-2">Giao việc bản thân</h4>
+                <p class="text-muted mb-4">
+                    Công việc sẽ được giao trực tiếp cho tài khoản đang đăng nhập. Bạn không thể giao cho người khác.
+                </p>
+
+                <div th:if="${error}" class="alert alert-danger fw-bold" th:text="${error}"></div>
+
+                <form method="post" th:action="@{/home/employee/self-task}"
+                      th:object="${selfTaskForm}" id="selfTaskForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nội dung công việc <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="5" th:field="*{description}"
+                                  placeholder="Nhập nội dung công việc..." required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Deadline <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control flatpickr-input bg-white"
+                               th:field="*{deadline}" placeholder="Bấm chọn thời gian" required>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-success px-4 fw-bold">Lưu công việc</button>
+                        <a th:href="@{/home/employee/private}" class="btn btn-outline-secondary ms-auto">Hủy &amp; Trở về</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        flatpickr('.flatpickr-input', {
+            enableTime: true,
+            dateFormat: 'Y-m-d\\TH:i',
+            altInput: true,
+            altFormat: 'd-m-Y H:i',
+            time_24hr: true
+        });
+    });
+</script>
+</body>
+</html>

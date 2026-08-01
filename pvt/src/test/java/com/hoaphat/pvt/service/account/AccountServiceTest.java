@@ -8,6 +8,8 @@ import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.account.IRoleRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
+import com.hoaphat.pvt.service.priority.WorkPriorityService;
+import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -44,6 +46,12 @@ class AccountServiceTest {
 
     @Mock
     private IResponseEventInformationRepository responseEventInformationRepository;
+
+    @Mock
+    private WorkPriorityService workPriorityService;
+
+    @Mock
+    private ResponseAttachmentStorageService responseAttachmentStorageService;
 
     @InjectMocks
     private AccountService accountService;

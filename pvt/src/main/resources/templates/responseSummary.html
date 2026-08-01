@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tổng hợp phản hồi - PVT</title>
+    <base href="/">
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <style>
+        .summary-shell { max-width: 1180px; }
+        .summary-toolbar {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .summary-card {
+            border: 1px solid #dfe5ec;
+            border-left: 5px solid #0d6efd;
+            border-radius: 0.8rem;
+            background: #fff;
+            box-shadow: 0 0.2rem 0.8rem rgba(27, 51, 77, 0.07);
+        }
+        .summary-card.all-task { border-left-color: #6c757d; }
+        .summary-title { line-height: 1.45; }
+        .summary-message {
+            margin-left: 1.4rem;
+            padding: 0.65rem 0.8rem;
+            border-left: 3px solid #d9e6f7;
+            background: #f8fafc;
+            border-radius: 0 0.45rem 0.45rem 0;
+        }
+        .summary-message + .summary-message { margin-top: 0.55rem; }
+        .attachment-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+        .manager-bulk-bar {
+            position: sticky;
+            bottom: 0.75rem;
+            z-index: 20;
+            padding: 0.8rem;
+            border: 1px solid #d9e2ed;
+            border-radius: 0.75rem;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: 0 0.4rem 1.2rem rgba(0,0,0,0.13);
+        }
+        @media (max-width: 575.98px) {
+            .summary-shell { padding-left: 0.65rem; padding-right: 0.65rem; }
+            .summary-toolbar, .summary-toolbar form { width: 100%; }
+            .summary-toolbar select { width: 100%; }
+            .summary-card { border-radius: 0.55rem; }
+            .summary-message { margin-left: 0; }
+            .task-heading-row { align-items: flex-start !important; }
+            .manager-bulk-bar { bottom: 0.35rem; }
+            .manager-bulk-actions { display: grid !important; grid-template-columns: 1fr 1fr; }
+            .manager-bulk-actions .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <main class="container summary-shell py-3 py-md-4">
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        <div th:if="${mess}" class="alert alert-success" th:text="${mess}"></div>
+
+        <div class="summary-toolbar mb-3">
+            <div>
+                <h3 class="text-primary fw-bold mb-1" th:text="${summary.title}">Tổng hợp phản hồi</h3>
+                <div class="text-muted">
+                    <span th:text="${summary.responseCount}">0</span> phản hồi trong
+                    <span th:text="${summary.taskCount}">0</span> công việc
+                </div>
+            </div>
+            <form method="get" th:action="@{/home/employee/response-summary}" class="d-flex gap-2 align-items-end">
+                <input type="hidden" name="accountName" th:value="${summary.accountName}">
+                <div>
+                    <label for="summaryPeriod" class="form-label small text-muted mb-1">Khoảng thời gian</label>
+                    <select id="summaryPeriod" name="period" class="form-select" onchange="this.form.submit()">
+                        <option th:each="item : ${periods}"
+                                th:value="${item.name()}"
+                                th:text="${item.displayLabel}"
+                                th:selected="${item == summary.period}"></option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div th:if="${#lists.isEmpty(summary.tasks)}" class="alert alert-info text-center py-4">
+            Không có phản hồi nào trong khoảng thời gian đã chọn.
+        </div>
+
+        <section id="summaryTaskList">
+            <article th:each="task : ${summary.tasks}"
+                     class="summary-card p-3 mb-3"
+                     th:classappend="${task.allTask} ? ' all-task' : ''">
+                <div class="d-flex justify-content-between gap-3 task-heading-row">
+                    <div class="d-flex gap-2">
+                        <input th:if="${isManager}" type="checkbox" class="form-check-input mt-1 summary-task-checkbox"
+                               name="eventIds" th:value="${task.monthEventId}"
+                               th:disabled="${!task.selectable}"
+                               th:attr="aria-label=${'Chọn công việc ' + task.description},
+                                        data-event-id=${task.monthEventId},
+                                        data-description=${task.description},
+                                        data-deadline=${task.deadlineIso},
+                                        data-deadline-label=${task.deadline}">
+                        <div>
+                            <h5 class="summary-title mb-1">
+                                <span th:if="${task.dailyPriority != null}" class="text-danger fw-bold"
+                                      th:text="${'(' + task.dailyPriority + ') '}"></span>
+                                <span th:text="${task.description}">Nội dung công việc</span>
+                                <span th:if="${task.allTask}" class="badge bg-secondary ms-1">Cả phòng</span>
+                            </h5>
+                            <div class="small text-muted">Deadline: <span th:text="${task.deadline}"></span></div>
+                        </div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-primary flex-shrink-0"
+                       th:href="@{/home/employee/private/showEventResponseForm/{id}(id=${task.monthEventId},selectedValue=${summary.accountName})}">
+                        Mở trao đổi
+                    </a>
+                </div>
+
+                <div class="mt-3">
+                    <div th:each="message : ${task.messages}" class="summary-message">
+                        <div class="small fw-bold text-primary mb-1" th:text="${'+ ' + message.createdAt}">+ 09:00 30/07</div>
+                        <div th:if="${message.content != null and !message.content.isEmpty()}"
+                             class="text-break" th:text="${message.content}"></div>
+                        <div th:if="${!#lists.isEmpty(message.attachments)}" class="attachment-list mt-2">
+                            <a th:each="attachment : ${message.attachments}"
+                               th:href="${attachment.url}" target="_blank" rel="noopener"
+                               class="btn btn-sm btn-outline-secondary"
+                               th:text="${'📎 ' + attachment.originalFileName}">Tệp đính kèm</a>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <div th:if="${isManager}" id="managerBulkBar" class="manager-bulk-bar mb-3">
+            <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                <span class="fw-bold"><span id="selectedTaskCount">0</span> công việc đã chọn</span>
+                <div class="d-flex gap-2 manager-bulk-actions">
+                    <button id="bulkDeadlineButton" type="button" class="btn btn-primary" disabled>
+                        Đổi deadline nhiều mục
+                    </button>
+                    <button id="bulkDeleteButton" type="button" class="btn btn-outline-danger" disabled>
+                        Quản lý xóa nhiều mục
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${isManager}" class="modal fade" id="bulkDeadlineModal" tabindex="-1"
+             aria-labelledby="bulkDeadlineModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <form class="modal-content" method="post"
+                      th:action="@{/home/manager/response-summary/shift-deadlines}">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="bulkDeadlineModalLabel">Đổi deadline nhiều mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="accountName" th:value="${summary.accountName}">
+                        <input type="hidden" name="period" th:value="${summary.period.name()}">
+                        <div id="deadlineSelectedIds"></div>
+                        <label for="deadlineShiftOption" class="form-label fw-bold">Dời thêm</label>
+                        <select id="deadlineShiftOption" name="shiftOption" class="form-select mb-3" required>
+                            <option th:each="option : ${deadlineShiftOptions}"
+                                    th:value="${option.name()}" th:text="${option.displayLabel}"></option>
+                        </select>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>Công việc</th>
+                                    <th style="min-width:145px">Deadline hiện tại</th>
+                                    <th style="min-width:145px">Deadline mới</th>
+                                </tr>
+                                </thead>
+                                <tbody id="deadlinePreviewRows"></tbody>
+                            </table>
+                        </div>
+                        <div class="small text-muted mt-2">
+                            “1 buổi”: trước 12h chuyển thành 16h cùng ngày; từ 12h trở đi chuyển thành 11h ngày kế tiếp.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${isManager}" class="modal fade" id="bulkDeleteModal" tabindex="-1"
+             aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <form class="modal-content" method="post"
+                      th:action="@{/home/manager/response-summary/delete}">
+                    <div class="modal-header">
+                        <h5 class="modal-title text-danger" id="bulkDeleteModalLabel">Quản lý xóa nhiều mục</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="accountName" th:value="${summary.accountName}">
+                        <input type="hidden" name="period" th:value="${summary.period.name()}">
+                        <div id="deleteSelectedIds"></div>
+                        <p>Các công việc sau sẽ được chuyển vào <strong>Thư mục đã xóa</strong>:</p>
+                        <ul id="deletePreviewList" class="mb-0"></ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-danger">Chuyển vào thư mục đã xóa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <a th:href="@{/home/employee/private(selectedValue=${summary.accountName})}"
+               class="btn btn-outline-dark">&larr; Trở lại tab cũ</a>
+        </div>
+    </main>
+</div>
+
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script>
+    (function () {
+        var checkboxes = Array.prototype.slice.call(
+                document.querySelectorAll('.summary-task-checkbox:not(:disabled)'));
+        var count = document.getElementById('selectedTaskCount');
+        var deadlineButton = document.getElementById('bulkDeadlineButton');
+        var deleteButton = document.getElementById('bulkDeleteButton');
+        if (!count || !deadlineButton || !deleteButton) return;
+
+        function selectedTasks() {
+            return checkboxes.filter(function (item) { return item.checked; }).map(function (item) {
+                return {
+                    id: item.dataset.eventId,
+                    description: item.dataset.description || '',
+                    deadline: item.dataset.deadline || '',
+                    deadlineLabel: item.dataset.deadlineLabel || ''
+                };
+            });
+        }
+
+        function updateSelection() {
+            var selected = checkboxes.filter(function (item) { return item.checked; }).length;
+            count.textContent = selected;
+            deadlineButton.disabled = selected === 0;
+            deleteButton.disabled = selected === 0;
+        }
+        checkboxes.forEach(function (item) { item.addEventListener('change', updateSelection); });
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function hiddenEventIds(container, tasks) {
+            container.innerHTML = tasks.map(function (task) {
+                return '<input type="hidden" name="eventIds" value="' + escapeHtml(task.id) + '">';
+            }).join('');
+        }
+
+        function parseDeadline(value) {
+            if (!value) return null;
+            var date = new Date(value);
+            return isNaN(date.getTime()) ? null : date;
+        }
+
+        function shiftedDeadline(source, option) {
+            var result = new Date(source.getTime());
+            if (option === 'ONE_SESSION') {
+                if (result.getHours() < 12) {
+                    result.setHours(16, 0, 0, 0);
+                } else {
+                    result.setDate(result.getDate() + 1);
+                    result.setHours(11, 0, 0, 0);
+                }
+            } else {
+                var days = option === 'THREE_DAYS' ? 3 : (option === 'TWO_DAYS' ? 2 : 1);
+                result.setDate(result.getDate() + days);
+            }
+            return result;
+        }
+
+        function twoDigits(number) { return number < 10 ? '0' + number : String(number); }
+
+        function formatDeadline(date) {
+            return twoDigits(date.getHours()) + ':' + twoDigits(date.getMinutes()) + ' '
+                + twoDigits(date.getDate()) + '/' + twoDigits(date.getMonth() + 1) + '/' + date.getFullYear();
+        }
+
+        function renderDeadlinePreview() {
+            var tasks = selectedTasks();
+            var option = document.getElementById('deadlineShiftOption').value;
+            hiddenEventIds(document.getElementById('deadlineSelectedIds'), tasks);
+            document.getElementById('deadlinePreviewRows').innerHTML = tasks.map(function (task) {
+                var source = parseDeadline(task.deadline);
+                var nextLabel = source ? formatDeadline(shiftedDeadline(source, option)) : 'Không xác định';
+                return '<tr><td>' + escapeHtml(task.description) + '</td><td>'
+                    + escapeHtml(task.deadlineLabel) + '</td><td class="fw-bold text-primary">'
+                    + escapeHtml(nextLabel) + '</td></tr>';
+            }).join('');
+        }
+
+        deadlineButton.addEventListener('click', function () {
+            renderDeadlinePreview();
+            new bootstrap.Modal(document.getElementById('bulkDeadlineModal')).show();
+        });
+        document.getElementById('deadlineShiftOption').addEventListener('change', renderDeadlinePreview);
+
+        deleteButton.addEventListener('click', function () {
+            var tasks = selectedTasks();
+            hiddenEventIds(document.getElementById('deleteSelectedIds'), tasks);
+            document.getElementById('deletePreviewList').innerHTML = tasks.map(function (task) {
+                return '<li class="mb-1">' + escapeHtml(task.description) + '</li>';
+            }).join('');
+            new bootstrap.Modal(document.getElementById('bulkDeleteModal')).show();
+        });
+        updateSelection();
+    })();
+</script>
+</body>
+</html>

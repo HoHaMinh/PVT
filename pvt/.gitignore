@@ -36,3 +36,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# Shortcut được tạo riêng theo đường dẫn trên từng máy chủ
+Run web PVT.lnk

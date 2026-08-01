@@ -8,6 +8,11 @@ import com.hoaphat.pvt.service.*;
 import com.hoaphat.pvt.service.account.AccountService;
 import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import com.hoaphat.pvt.config.ResponseChatProperties;
+import com.hoaphat.pvt.service.priority.WorkPriorityService;
+import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
+import com.hoaphat.pvt.service.response.ResponseSummaryService;
+import org.springframework.core.io.Resource;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +23,12 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -36,6 +43,8 @@ public class EventController {
     @Autowired private IMonthEventService monthEventService;
     @Autowired private ISercurityScheduleService sercurityScheduleService;
     @Autowired private IResponseEventInformationService responseEventInformationService;
+    @Autowired private ResponseChatProperties responseChatProperties;
+    @Autowired private ResponseAttachmentStorageService responseAttachmentStorageService;
     @Autowired private UserValidate userValidate;
     @Autowired private AccountService accountService;
     @Autowired private IAccountRepository accountRepository;
@@ -43,6 +52,8 @@ public class EventController {
 
     // 🔥 THÊM MỚI: Nhúng NotificationService
     @Autowired private NotificationService notificationService;
+    @Autowired private WorkPriorityService workPriorityService;
+    @Autowired private ResponseSummaryService responseSummaryService;
 
     // 🔥 THÊM MỚI: API để giao diện kết nối vào "nghe" thông báo
     @GetMapping("/home/employee/notifications/subscribe")
@@ -73,19 +84,35 @@ public class EventController {
         model.addAttribute("accountName", currentAccountName);
         
         List<MonthEvent> data = monthEventService.getMonthEventListByFilter(now, filter);
+        workPriorityService.applyTodayPriorities(data, filter);
+        if (filter != null && !filter.trim().isEmpty()) {
+            model.addAttribute("responseSummaryPreview", responseSummaryService.getTodayPreview(filter));
+        }
         return new ModelAndView("private", "monthEventListByTime", data);
     }
 
     @GetMapping("/home/employee/filterRestful")
-    public ResponseEntity<ResponseFilter> showFilterRestful(@RequestParam(value = "selectedValue", required = false) String nameFilter) {
-        if (nameFilter == null) { nameFilter = ""; }
-        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(LocalDateTime.now(), nameFilter);
-        return new ResponseEntity<>(new ResponseFilter(list, nameFilter), HttpStatus.OK);
+    public ResponseEntity<ResponseFilter> showFilterRestful(
+            @RequestParam(value = "selectedValue", required = false) String nameFilter,
+            Principal principal,
+            HttpServletRequest request) {
+        String filter;
+        if (request.isUserInRole("ROLE_MANAGER")) {
+            filter = nameFilter == null ? "" : nameFilter.trim();
+        } else {
+            filter = principal == null ? "" : principal.getName();
+        }
+        List<MonthEvent> list = monthEventService.getMonthEventListByFilter(LocalDateTime.now(), filter);
+        workPriorityService.applyTodayPriorities(list, filter);
+        ResponseSummaryPreview preview = filter.isEmpty()
+                ? null : responseSummaryService.getTodayPreview(filter);
+        return new ResponseEntity<>(new ResponseFilter(list, filter, preview), HttpStatus.OK);
     }
 
     @PostMapping("/home/employee/private/addEventResponse")
     public Object addEventResponse(@ModelAttribute("response") ResponseEventInformation res,
                                    BindingResult bindingResult,
+                                   @RequestParam(value = "attachments", required = false) MultipartFile[] attachments,
                                    @RequestParam(value = "selectedValue", required = false) String selectedValue,
                                    Principal principal,
                                    HttpServletRequest request,
@@ -100,7 +127,7 @@ public class EventController {
             }
             res.setCreatedByUser(principal.getName());
             res.setEventInformationResponse(StringEscapeUtils.escapeHtml4(res.getEventInformationResponse()));
-            responseEventInformationService.addResponseEventInformation(res);
+            responseAttachmentStorageService.addResponseWithAttachments(res, attachments);
             notificationService.sendRefreshSignal();
 
             if (ajaxRequest) {
@@ -271,7 +298,7 @@ public class EventController {
 
     // --- CÁC HÀM CÒN LẠI KHÔNG THAY ĐỔI DỮ LIỆU NÊN KHÔNG CẦN PHÁT TÍN HIỆU ---
     @GetMapping("/home/employee/private/showEventResponseForm/{id}")
-    private String showEventResponseForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String selectedValue, Model model, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+    private String showEventResponseForm(@PathVariable("id") Integer id, @RequestParam(value = "selectedValue", required = false) String selectedValue, Model model, HttpServletRequest request, RedirectAttributes redirectAttributes, Principal principal) {
         MonthEvent eventResponse = monthEventService.findById(id);
         if (eventResponse == null) {
             redirectAttributes.addFlashAttribute("mess", "Công việc không còn tồn tại hoặc đã được chuyển vào Thư mục đã xóa.");
@@ -281,15 +308,45 @@ public class EventController {
         model.addAttribute("response", new ResponseEventInformation(eventResponse));
         model.addAttribute("listResponse", responseEventInformationService.getAllResponseById(id));
         model.addAttribute("username", (String) request.getSession().getAttribute("username"));
+        model.addAttribute("currentAccountName", principal == null ? "" : principal.getName());
         model.addAttribute("selectedValue", selectedValue);
-        return "eventResponse";
+        model.addAttribute("responseChatMaxImages", responseChatProperties.getMaxImagesPerMessage());
+        model.addAttribute("responseChatMaxAttachments", responseChatProperties.getMaxAttachmentsPerMessage());
+        model.addAttribute("responseChatMaxAttachmentSizeBytes", responseChatProperties.getMaxAttachmentSizeBytes());
+        return responseChatProperties.isEnabled() ? "eventResponseChat" : "eventResponse";
     }
     @GetMapping("/home/employee/private/showEventResponseFormRestful/{id}")
-    public ResponseEntity<List<ResponseEventInformation>> showEventResponseFormRestful(@PathVariable("id") Integer id) {
+    public ResponseEntity<List<ResponseChatMessageView>> showEventResponseFormRestful(@PathVariable("id") Integer id) {
         if (monthEventService.findById(id) == null) {
             return ResponseEntity.notFound().build();
         }
-        return new ResponseEntity<>(responseEventInformationService.getAllResponseById(id), HttpStatus.OK);
+        return new ResponseEntity<>(
+                responseAttachmentStorageService.toChatMessageViews(
+                        responseEventInformationService.getAllResponseById(id)),
+                HttpStatus.OK);
+    }
+    @GetMapping("/home/employee/private/response-attachment/{id}")
+    public ResponseEntity<Resource> showResponseAttachment(@PathVariable("id") Integer id) {
+        try {
+            ResponseAttachmentStorageService.AttachmentFile attachmentFile =
+                    responseAttachmentStorageService.loadAttachment(id);
+            MediaType mediaType = MediaType.parseMediaType(
+                    attachmentFile.getAttachment().getContentType());
+            String fileName = attachmentFile.getAttachment().getOriginalFileName()
+                    .replace("\r", "")
+                    .replace("\n", "")
+                    .replace("\"", "");
+            ContentDisposition disposition = ContentDisposition.inline()
+                    .filename(fileName, StandardCharsets.UTF_8)
+                    .build();
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            disposition.toString())
+                    .body(attachmentFile.getResource());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     @GetMapping("/home/manager/task")
     public String showTask(Model model, @RequestParam("page") Optional<Integer> page, @RequestParam("size") Optional<Integer> size, @RequestParam("sort") Optional<String> sort, HttpServletRequest request) {

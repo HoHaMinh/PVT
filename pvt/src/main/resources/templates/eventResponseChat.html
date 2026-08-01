@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trao đổi công việc</title>
+    <base href="/">
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <script th:src="@{/js/jquery4.min.js}"></script>
+    <style>
+        body { background: #eef2f7; }
+        .task-chat-page { max-width: min(96vw, 1560px); margin: 0 auto; }
+        .task-summary {
+            background: linear-gradient(135deg, #fff9df, #fff);
+            border: 1px solid #f1dc87;
+            border-left: 5px solid #ffc107;
+            border-radius: 14px;
+            padding: 14px 16px;
+        }
+        .chat-shell {
+            background: #fff;
+            border: 1px solid #dfe5ec;
+            border-radius: 16px;
+            box-shadow: 0 8px 28px rgba(16, 50, 89, .08);
+            overflow: hidden;
+        }
+        .chat-titlebar {
+            padding: 12px 18px;
+            border-bottom: 1px solid #e7ebf0;
+            background: #f8fafc;
+        }
+        .chat-messages {
+            height: clamp(330px, calc(100vh - 470px), 620px);
+            min-height: 330px;
+            overflow-y: auto;
+            padding: 18px;
+            background-color: #f4f7fb;
+            background-image: radial-gradient(#dbe3ed 0.6px, transparent 0.6px);
+            background-size: 18px 18px;
+            scroll-behavior: smooth;
+        }
+        .message-row { display: flex; margin-bottom: 13px; }
+        .message-row.mine { justify-content: flex-end; }
+        .message-wrap { max-width: min(72%, 920px); }
+        .message-meta {
+            color: #6c7886;
+            font-size: .78rem;
+            margin: 0 8px 4px;
+        }
+        .message-row.mine .message-meta { text-align: right; }
+        .message-bubble {
+            padding: 10px 14px;
+            border-radius: 16px 16px 16px 4px;
+            background: #fff;
+            border: 1px solid #dfe5ec;
+            color: #1f2937;
+            line-height: 1.45;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            box-shadow: 0 2px 8px rgba(16, 50, 89, .06);
+        }
+        .message-row.mine .message-bubble {
+            color: #fff;
+            background: #0d6efd;
+            border-color: #0d6efd;
+            border-radius: 16px 16px 4px 16px;
+        }
+        .message-attachments {
+            display: grid;
+            gap: 7px;
+            margin-top: 7px;
+        }
+        .message-attachments.attachment-count-1 { grid-template-columns: minmax(220px, 420px); }
+        .message-attachments.attachment-count-2 { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+        .message-attachments.attachment-count-3 { grid-template-columns: repeat(3, minmax(140px, 1fr)); }
+        .message-attachment-link {
+            display: block;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #d8e1ec;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(16, 50, 89, .08);
+            cursor: zoom-in;
+            padding: 0;
+            width: 100%;
+        }
+        .message-image {
+            display: block;
+            width: 100%;
+            max-height: 260px;
+            object-fit: cover;
+        }
+        .file-attachment-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 64px;
+            padding: 10px 12px;
+            border: 1px solid #d8e1ec;
+            border-radius: 14px;
+            background: #fff;
+            color: #1f2937;
+            text-align: left;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(16, 50, 89, .08);
+        }
+        .file-attachment-card:hover {
+            color: #0d6efd;
+            border-color: #9ec5fe;
+            background: #f8fbff;
+        }
+        .file-icon {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            font-size: .78rem;
+            background: #6c757d;
+        }
+        .file-icon.pdf { background: #dc3545; }
+        .file-icon.word { background: #0d6efd; }
+        .file-icon.excel { background: #198754; }
+        .file-info { min-width: 0; flex: 1; }
+        .file-name {
+            font-size: .9rem;
+            font-weight: 600;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .file-meta { font-size: .74rem; color: #6c7886; }
+        .chat-empty { color: #758294; text-align: center; padding: 80px 12px; }
+        .chat-composer {
+            padding: 12px;
+            border-top: 1px solid #e1e7ee;
+            background: #fff;
+        }
+        .composer-box {
+            display: flex;
+            align-items: flex-end;
+            gap: 9px;
+            padding: 7px 7px 7px 9px;
+            border: 1px solid #cfd8e3;
+            border-radius: 18px;
+            background: #f8fafc;
+        }
+        .composer-box:focus-within {
+            border-color: #86b7fe;
+            box-shadow: 0 0 0 .2rem rgba(13, 110, 253, .12);
+        }
+        .composer-input {
+            flex: 1;
+            min-height: 38px;
+            max-height: 140px;
+            resize: none;
+            border: 0;
+            outline: 0;
+            box-shadow: none !important;
+            background: transparent;
+            padding: 8px 0;
+        }
+        .attach-button {
+            width: 40px;
+            height: 40px;
+            flex: 0 0 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #0d6efd;
+            background: #eaf2ff;
+            border: 0;
+            font-size: 1.1rem;
+        }
+        .attach-button:hover { background: #dbeafe; }
+        .send-button {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
+            border-radius: 50%;
+            font-size: 1.15rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .send-button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+        .attachment-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 5px 0;
+        }
+        .preview-item {
+            width: 86px;
+            border: 1px solid #d8e1ec;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .preview-item img {
+            display: block;
+            width: 86px;
+            height: 66px;
+            object-fit: cover;
+        }
+        .preview-file-icon {
+            width: 86px;
+            height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: 700;
+            background: #6c757d;
+        }
+        .preview-file-icon.pdf { background: #dc3545; }
+        .preview-file-icon.word { background: #0d6efd; }
+        .preview-file-icon.excel { background: #198754; }
+        .preview-name {
+            font-size: .68rem;
+            color: #536071;
+            padding: 3px 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .clear-attachments {
+            border: 0;
+            background: transparent;
+            color: #dc3545;
+            font-size: .78rem;
+            padding: 0 3px;
+        }
+        .composer-help { color: #7b8794; font-size: .76rem; margin: 6px 8px 0; }
+        .composer-status { min-height: 18px; font-size: .82rem; margin: 4px 8px 0; }
+        .back-label-short { display: none; }
+
+        .image-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 1080;
+            display: none;
+            grid-template-rows: minmax(0, 1fr) auto;
+            gap: 10px;
+            padding: 16px;
+            background: rgba(4, 12, 24, .94);
+            overscroll-behavior: contain;
+        }
+        .image-lightbox.show { display: grid; }
+        .lightbox-viewport {
+            position: relative;
+            min-width: 0;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .04);
+            touch-action: none;
+            user-select: none;
+            cursor: zoom-in;
+        }
+        .lightbox-viewport.is-zoomed { cursor: grab; }
+        .lightbox-viewport.is-dragging { cursor: grabbing; }
+        .lightbox-viewport.is-dragging .lightbox-image { transition: none; }
+        .lightbox-image {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transform-origin: center center;
+            will-change: transform;
+            transition: transform .12s ease-out;
+            pointer-events: none;
+            -webkit-user-drag: none;
+        }
+        .lightbox-footer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .lightbox-caption {
+            color: #e6edf6;
+            font-size: .9rem;
+            text-align: center;
+            max-width: min(92vw, 900px);
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        .lightbox-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px;
+            border: 1px solid rgba(255, 255, 255, .16);
+            border-radius: 12px;
+            background: rgba(12, 25, 43, .88);
+        }
+        .lightbox-tool-button {
+            min-width: 42px;
+            height: 40px;
+            padding: 0 12px;
+            border: 1px solid rgba(255, 255, 255, .2);
+            border-radius: 9px;
+            color: #fff;
+            background: rgba(255, 255, 255, .1);
+            font-weight: 700;
+        }
+        .lightbox-tool-button:hover:not(:disabled),
+        .lightbox-tool-button:focus-visible {
+            background: rgba(255, 255, 255, .2);
+        }
+        .lightbox-tool-button:disabled { opacity: .38; }
+        .lightbox-reset-button { font-size: .82rem; font-weight: 600; }
+        .lightbox-zoom-level {
+            min-width: 58px;
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+        }
+        .lightbox-hint {
+            color: #aebccc;
+            font-size: .75rem;
+            text-align: center;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            z-index: 2;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 0;
+            color: #fff;
+            background: rgba(255, 255, 255, .16);
+            font-size: 1.8rem;
+            line-height: 1;
+        }
+        @media (max-width: 767.98px) {
+            .task-chat-page { padding-left: 0 !important; padding-right: 0 !important; }
+            .page-actions, .task-summary { margin-left: 10px; margin-right: 10px; }
+            .page-actions {
+                flex-wrap: nowrap !important;
+                align-items: center;
+                gap: .35rem !important;
+                overflow-x: auto;
+                padding-bottom: 2px;
+                scrollbar-width: none;
+            }
+            .page-actions::-webkit-scrollbar { display: none; }
+            .manager-action-group {
+                flex: 1 1 auto;
+                min-width: 0;
+                flex-wrap: nowrap !important;
+                gap: .35rem !important;
+            }
+            .page-actions .btn {
+                white-space: nowrap;
+                font-size: .78rem;
+                padding: .32rem .46rem;
+            }
+            .back-action {
+                margin-left: .15rem !important;
+                flex: 0 0 auto;
+            }
+            .page-actions > .btn-outline-dark.ms-auto {
+                margin-left: .15rem !important;
+                flex: 0 0 auto;
+                font-size: 0;
+            }
+            .page-actions > .btn-outline-dark.ms-auto::before {
+                content: "\2190  Tab cũ";
+                font-size: .78rem;
+            }
+            .back-label-full { display: none; }
+            .back-label-short { display: inline; }
+            .chat-shell { border-radius: 0; border-left: 0; border-right: 0; }
+            .chat-messages { height: calc(100vh - 390px); min-height: 330px; padding: 13px 10px; }
+            .message-wrap { max-width: 88%; }
+            .message-attachments.attachment-count-1 { grid-template-columns: minmax(180px, 1fr); }
+            .message-attachments.attachment-count-2,
+            .message-attachments.attachment-count-3 { grid-template-columns: repeat(2, minmax(104px, 1fr)); }
+            .composer-help { display: none; }
+            .image-lightbox { padding: 8px; gap: 7px; }
+            .lightbox-viewport { border-radius: 8px; }
+            .lightbox-footer { gap: 6px; }
+            .lightbox-toolbar { gap: 5px; padding: 5px; }
+            .lightbox-tool-button { min-width: 40px; height: 40px; padding: 0 10px; }
+            .lightbox-hint { font-size: .7rem; }
+        }
+
+        @media (min-width: 1200px) {
+            .chat-messages { padding: 22px 26px; }
+            .task-summary { padding: 12px 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <main class="task-chat-page container-fluid py-3 px-md-4">
+        <div class="task-summary mb-3">
+            <div class="small text-muted fw-bold mb-1">CÔNG VIỆC ĐANG TRAO ĐỔI</div>
+            <div class="fw-bold text-danger fs-5"
+                 th:text="${response.getMonthEvent().getMonthEventDescription()}"></div>
+        </div>
+
+        <div class="page-actions d-flex flex-wrap gap-2 mb-3">
+            <div sec:authorize="hasRole('ROLE_MANAGER')" class="manager-action-group d-flex flex-wrap gap-2">
+                <a th:href="@{/home/manager/task/showEditMonthEventForm/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}"
+                   class="btn btn-sm btn-outline-secondary">Đổi deadline</a>
+                <form th:action="@{/home/manager/trash/move/{id}(id=${response.getMonthEvent().getMonthEventId()})}"
+                      method="post" class="m-0"
+                      onsubmit="return confirm('Chuyển công việc và toàn bộ phản hồi vào Thư mục đã xóa?');">
+                    <input type="hidden" name="source" value="private">
+                    <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Quản lý xóa</button>
+                </form>
+                <a th:if="${!response.getMonthEvent().hidden}"
+                   th:href="@{/home/manager/task/hide/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}"
+                   class="btn btn-sm btn-outline-warning">Ẩn việc</a>
+                <a th:if="${response.getMonthEvent().hidden}"
+                   th:href="@{/home/manager/task/show/{id}(id=${response.getMonthEvent().getMonthEventId()}, selectedValue=${selectedValue})}"
+                   class="btn btn-sm btn-outline-success">Hiện việc</a>
+            </div>
+            <a th:href="@{/home/employee/private(selectedValue=${selectedValue})}"
+               class="btn btn-sm btn-outline-dark ms-auto">&larr; Trở lại tab cũ</a>
+        </div>
+
+        <section class="chat-shell">
+            <div class="chat-titlebar d-flex align-items-center justify-content-between">
+                <div>
+                    <strong>Trao đổi công việc</strong>
+                    <div class="small text-muted">Nội dung mới sẽ tự động cập nhật</div>
+                </div>
+                <span id="connectionState" class="badge bg-light text-secondary">Đang kết nối...</span>
+            </div>
+
+            <div id="chatMessages" class="chat-messages" aria-live="polite">
+                <div class="chat-empty">Đang tải nội dung trao đổi...</div>
+            </div>
+
+            <div class="chat-composer">
+                <form id="responseChatForm" method="post"
+                      enctype="multipart/form-data"
+                      th:action="@{/home/employee/private/addEventResponse(selectedValue=${selectedValue})}"
+                      th:object="${response}">
+                    <input type="hidden" th:field="*{monthEvent}">
+                    <div class="composer-box">
+                        <button type="button" id="attachImageButton" class="attach-button"
+                                aria-label="Đính kèm ảnh" title="Đính kèm ảnh">&#128247;</button>
+                        <input type="file" id="chatImages" name="attachments"
+                               accept="image/*" multiple hidden>
+                        <textarea th:field="*{eventInformationResponse}" id="chatInput"
+                                  class="form-control composer-input" rows="1"
+                                  maxlength="1000000"
+                                  placeholder="Nhập phản hồi..."></textarea>
+                        <button type="submit" id="chatSendButton" class="btn btn-primary send-button"
+                                aria-label="Gửi phản hồi" title="Gửi phản hồi" disabled>&#10148;</button>
+                    </div>
+                    <div id="attachmentPreview" class="attachment-preview"></div>
+                    <div class="d-flex justify-content-between">
+                        <div class="composer-help">Enter để gửi · Shift + Enter để xuống dòng</div>
+                        <div id="composerStatus" class="composer-status"></div>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="imageLightbox" class="image-lightbox" role="dialog" aria-modal="true"
+     aria-label="Xem ảnh phản hồi" aria-hidden="true">
+    <button type="button" id="lightboxClose" class="lightbox-close"
+            aria-label="Đóng ảnh">&times;</button>
+    <div id="lightboxViewport" class="lightbox-viewport">
+        <img id="lightboxImage" class="lightbox-image" src="" alt="" draggable="false">
+    </div>
+    <div class="lightbox-footer">
+        <div id="lightboxCaption" class="lightbox-caption"></div>
+        <div class="lightbox-toolbar" role="toolbar" aria-label="Điều khiển thu phóng ảnh">
+            <button type="button" id="lightboxZoomOut" class="lightbox-tool-button"
+                    aria-label="Thu nhỏ ảnh" title="Thu nhỏ">&minus;</button>
+            <output id="lightboxZoomLevel" class="lightbox-zoom-level" aria-live="polite">100%</output>
+            <button type="button" id="lightboxZoomIn" class="lightbox-tool-button"
+                    aria-label="Phóng to ảnh" title="Phóng to">+</button>
+            <button type="button" id="lightboxReset" class="lightbox-tool-button lightbox-reset-button"
+                    title="Đưa ảnh về vừa màn hình">Vừa màn hình</button>
+        </div>
+        <div class="lightbox-hint">Lăn chuột hoặc chụm hai ngón để zoom · Kéo để xem vùng ảnh đã phóng</div>
+    </div>
+</div>
+
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script th:inline="javascript">
+/*<![CDATA[*/
+$(function () {
+    const currentAccount = /*[[${currentAccountName}]]*/ '';
+    const maxImages = Number(/*[[${responseChatMaxAttachments}]]*/ 8) || 8;
+    const listElement = document.getElementById('chatMessages');
+    const input = document.getElementById('chatInput');
+    const imageInput = document.getElementById('chatImages');
+    const attachButton = document.getElementById('attachImageButton');
+    const previewElement = document.getElementById('attachmentPreview');
+    const form = document.getElementById('responseChatForm');
+    const sendButton = document.getElementById('chatSendButton');
+    const statusElement = document.getElementById('composerStatus');
+    const connectionState = document.getElementById('connectionState');
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxViewport = document.getElementById('lightboxViewport');
+    const lightboxImage = document.getElementById('lightboxImage');
+    const lightboxCaption = document.getElementById('lightboxCaption');
+    const lightboxClose = document.getElementById('lightboxClose');
+    const lightboxZoomOut = document.getElementById('lightboxZoomOut');
+    const lightboxZoomIn = document.getElementById('lightboxZoomIn');
+    const lightboxZoomLevel = document.getElementById('lightboxZoomLevel');
+    const lightboxReset = document.getElementById('lightboxReset');
+    let firstLoad = true;
+    let lightboxActive = false;
+    let previewUrls = [];
+    let shouldStickMessagesToBottom = true;
+    let lightboxScale = 1;
+    let lightboxPanX = 0;
+    let lightboxPanY = 0;
+    let lightboxDragStart = null;
+    let lightboxPinchStart = null;
+    const lightboxPointers = new Map();
+    const minLightboxScale = 1;
+    const maxLightboxScale = 5;
+
+    imageInput.accept = 'image/*,.pdf,.doc,.docx,.rtf,.odt,.xls,.xlsx,.xlsm,.xlsb,.csv,.ods';
+    attachButton.innerHTML = '&#128206;';
+    attachButton.title = 'Đính kèm ảnh/file';
+    attachButton.setAttribute('aria-label', 'Đính kèm ảnh/file');
+
+    function decodeStoredText(value) {
+        if (value == null) return '';
+        const decoder = document.createElement('textarea');
+        decoder.innerHTML = String(value);
+        return decoder.value;
+    }
+
+    function isNearBottom() {
+        return listElement.scrollHeight - listElement.scrollTop - listElement.clientHeight < 90;
+    }
+
+    function scrollMessagesToBottom() {
+        if (!shouldStickMessagesToBottom) return;
+        const oldBehavior = listElement.style.scrollBehavior;
+        listElement.style.scrollBehavior = 'auto';
+        void listElement.offsetHeight;
+        listElement.scrollTop = listElement.scrollHeight;
+        listElement.style.scrollBehavior = oldBehavior;
+    }
+
+    function scheduleBottomScroll() {
+        scrollMessagesToBottom();
+        window.requestAnimationFrame(scrollMessagesToBottom);
+        window.requestAnimationFrame(function () {
+            window.requestAnimationFrame(scrollMessagesToBottom);
+        });
+        [80, 220, 520, 900, 1400, 2200].forEach(function (delay) {
+            window.setTimeout(scrollMessagesToBottom, delay);
+        });
+    }
+
+    function scrollPageToComposerOnMobile() {
+        if (!window.matchMedia('(max-width: 767.98px)').matches) return;
+        const composer = document.querySelector('.chat-composer');
+        if (!composer) return;
+        const composerBottom = composer.getBoundingClientRect().bottom + window.pageYOffset;
+        const destination = Math.max(0, composerBottom - window.innerHeight + 12);
+        window.scrollTo({ top: destination, behavior: 'auto' });
+    }
+
+    function keepMessagesPinnedToBottomAfterMediaLoad(scrollPageToComposer) {
+        scheduleBottomScroll();
+        if (scrollPageToComposer) {
+            window.requestAnimationFrame(scrollPageToComposerOnMobile);
+            window.setTimeout(scrollPageToComposerOnMobile, 160);
+        }
+
+        const images = listElement.querySelectorAll('.message-image');
+        Array.prototype.forEach.call(images, function (image) {
+            if (image.complete && image.naturalWidth > 0 && image.decode) {
+                image.decode().then(scheduleBottomScroll).catch(scheduleBottomScroll);
+                return;
+            }
+            if (image.complete) return;
+            image.addEventListener('load', scheduleBottomScroll, { once: true });
+            image.addEventListener('error', scheduleBottomScroll, { once: true });
+        });
+    }
+
+    function clampLightboxValue(value, minimum, maximum) {
+        return Math.min(maximum, Math.max(minimum, value));
+    }
+
+    function renderLightboxTransform() {
+        const maxPanX = Math.max(0,
+            (lightboxImage.clientWidth * lightboxScale - lightboxViewport.clientWidth) / 2);
+        const maxPanY = Math.max(0,
+            (lightboxImage.clientHeight * lightboxScale - lightboxViewport.clientHeight) / 2);
+        lightboxPanX = clampLightboxValue(lightboxPanX, -maxPanX, maxPanX);
+        lightboxPanY = clampLightboxValue(lightboxPanY, -maxPanY, maxPanY);
+        lightboxImage.style.transform = 'translate3d(' + lightboxPanX + 'px,'
+            + lightboxPanY + 'px,0) scale(' + lightboxScale + ')';
+        lightboxZoomLevel.textContent = Math.round(lightboxScale * 100) + '%';
+        lightboxZoomOut.disabled = lightboxScale <= minLightboxScale;
+        lightboxZoomIn.disabled = lightboxScale >= maxLightboxScale;
+        lightboxReset.disabled = lightboxScale === 1 && lightboxPanX === 0 && lightboxPanY === 0;
+        lightboxViewport.classList.toggle('is-zoomed', lightboxScale > 1);
+    }
+
+    function setLightboxZoom(nextScale, clientX, clientY) {
+        const oldScale = lightboxScale;
+        const boundedScale = clampLightboxValue(nextScale, minLightboxScale, maxLightboxScale);
+        if (boundedScale === oldScale) return;
+        if (Number.isFinite(clientX) && Number.isFinite(clientY)) {
+            const viewportRect = lightboxViewport.getBoundingClientRect();
+            const focusX = clientX - viewportRect.left - viewportRect.width / 2;
+            const focusY = clientY - viewportRect.top - viewportRect.height / 2;
+            const ratio = boundedScale / oldScale;
+            lightboxPanX = focusX - (focusX - lightboxPanX) * ratio;
+            lightboxPanY = focusY - (focusY - lightboxPanY) * ratio;
+        }
+        lightboxScale = boundedScale;
+        if (lightboxScale === 1) {
+            lightboxPanX = 0;
+            lightboxPanY = 0;
+        }
+        renderLightboxTransform();
+    }
+
+    function resetLightboxView() {
+        lightboxScale = 1;
+        lightboxPanX = 0;
+        lightboxPanY = 0;
+        lightboxDragStart = null;
+        lightboxPinchStart = null;
+        lightboxPointers.clear();
+        lightboxViewport.classList.remove('is-dragging');
+        renderLightboxTransform();
+    }
+
+    function lightboxPointerDistance() {
+        const points = Array.from(lightboxPointers.values());
+        if (points.length < 2) return 0;
+        return Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+    }
+
+    function beginLightboxPinch() {
+        lightboxPinchStart = {
+            distance: lightboxPointerDistance(),
+            scale: lightboxScale
+        };
+        lightboxDragStart = null;
+    }
+
+    function hideLightbox() {
+        lightboxActive = false;
+        lightbox.classList.remove('show');
+        lightbox.setAttribute('aria-hidden', 'true');
+        resetLightboxView();
+        lightboxImage.src = '';
+        lightboxImage.alt = '';
+        lightboxCaption.textContent = '';
+        document.body.style.overflow = '';
+    }
+
+    function closeLightbox() {
+        if (history.state && history.state.pvtResponseImageLightbox) {
+            history.back();
+            return;
+        }
+        hideLightbox();
+    }
+
+    function openLightbox(url, caption) {
+        resetLightboxView();
+        lightboxImage.src = url;
+        lightboxImage.alt = caption || 'Ảnh phản hồi';
+        lightboxCaption.textContent = caption || '';
+        lightbox.classList.add('show');
+        lightbox.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        lightboxActive = true;
+        window.requestAnimationFrame(function () {
+            renderLightboxTransform();
+            lightboxClose.focus();
+        });
+        if (!history.state || !history.state.pvtResponseImageLightbox) {
+            history.pushState({ pvtResponseImageLightbox: true }, '');
+        }
+    }
+
+    function selectedImageCount() {
+        return imageInput.files ? imageInput.files.length : 0;
+    }
+
+    function revokePreviewUrls() {
+        previewUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+        previewUrls = [];
+    }
+
+    function updateSendState() {
+        const hasText = input.value.trim().length > 0;
+        const hasImages = selectedImageCount() > 0;
+        const tooManyImages = selectedImageCount() > maxImages;
+        const submitting = form.dataset.submitting === 'true';
+        sendButton.disabled = submitting || tooManyImages || (!hasText && !hasImages);
+        if (tooManyImages) {
+            statusElement.className = 'composer-status text-danger';
+            statusElement.textContent = 'Mỗi lần gửi tối đa ' + maxImages + ' ảnh.';
+        } else if (!submitting && statusElement.textContent.indexOf('tối đa') >= 0) {
+            statusElement.textContent = '';
+        }
+    }
+
+    function renderImagePreview() {
+        revokePreviewUrls();
+        previewElement.innerHTML = '';
+        if (!imageInput.files || imageInput.files.length === 0) {
+            updateSendState();
+            return;
+        }
+
+        Array.prototype.forEach.call(imageInput.files, function (file) {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+
+            const image = document.createElement('img');
+            const url = URL.createObjectURL(file);
+            previewUrls.push(url);
+            image.src = url;
+            image.alt = file.name || 'Ảnh đính kèm';
+
+            const name = document.createElement('div');
+            name.className = 'preview-name';
+            name.textContent = file.name || 'Ảnh';
+
+            item.appendChild(image);
+            item.appendChild(name);
+            previewElement.appendChild(item);
+        });
+
+        const clearButton = document.createElement('button');
+        clearButton.type = 'button';
+        clearButton.className = 'clear-attachments';
+        clearButton.textContent = 'Bỏ ảnh';
+        clearButton.addEventListener('click', function () {
+            imageInput.value = '';
+            renderImagePreview();
+            input.focus();
+        });
+        previewElement.appendChild(clearButton);
+        updateSendState();
+    }
+
+    function replaceFileExtension(fileName, extension) {
+        const safeName = fileName || 'image';
+        const dotIndex = safeName.lastIndexOf('.');
+        const baseName = dotIndex > 0 ? safeName.substring(0, dotIndex) : safeName;
+        return baseName + '.' + extension;
+    }
+
+    function loadImageForCompression(file) {
+        return new Promise(function (resolve, reject) {
+            const url = URL.createObjectURL(file);
+            const image = new Image();
+            image.onload = function () {
+                URL.revokeObjectURL(url);
+                resolve(image);
+            };
+            image.onerror = function () {
+                URL.revokeObjectURL(url);
+                reject(new Error('Không thể đọc ảnh.'));
+            };
+            image.src = url;
+        });
+    }
+
+    function canvasToBlob(canvas, type, quality) {
+        return new Promise(function (resolve) {
+            canvas.toBlob(resolve, type, quality);
+        });
+    }
+
+    async function compressImageIfUseful(file) {
+        if (!file || !file.type || file.type.indexOf('image/') !== 0) return file;
+        if (file.type === 'image/gif') return file;
+        if (file.size <= 1400 * 1024) return file;
+
+        try {
+            const image = await loadImageForCompression(file);
+            const maxSide = 1920;
+            const scale = Math.min(1, maxSide / Math.max(image.width, image.height));
+            const width = Math.max(1, Math.round(image.width * scale));
+            const height = Math.max(1, Math.round(image.height * scale));
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            context.fillStyle = '#ffffff';
+            context.fillRect(0, 0, width, height);
+            context.drawImage(image, 0, 0, width, height);
+
+            const blob = await canvasToBlob(canvas, 'image/jpeg', 0.86);
+            if (!blob || blob.size >= file.size * 0.94) {
+                return file;
+            }
+
+            return new File(
+                [blob],
+                replaceFileExtension(file.name, 'jpg'),
+                { type: 'image/jpeg', lastModified: file.lastModified || Date.now() }
+            );
+        } catch (e) {
+            return file;
+        }
+    }
+
+    async function buildUploadFormData() {
+        const formData = new FormData(form);
+        formData.delete('attachments');
+        const files = imageInput.files ? Array.prototype.slice.call(imageInput.files) : [];
+        let optimizedCount = 0;
+
+        for (const file of files) {
+            const optimizedFile = await compressImageIfUseful(file);
+            if (optimizedFile !== file) {
+                optimizedCount++;
+            }
+            formData.append('attachments', optimizedFile, optimizedFile.name || file.name);
+        }
+
+        return { formData: formData, optimizedCount: optimizedCount };
+    }
+
+    function appendAttachments(wrap, item) {
+        const attachments = Array.isArray(item.attachments) ? item.attachments : [];
+        if (attachments.length === 0) return;
+
+        const container = document.createElement('div');
+        container.className = 'message-attachments attachment-count-' + Math.min(attachments.length, 3);
+
+        attachments.forEach(function (attachment) {
+            if (!attachment || !attachment.url) return;
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'message-attachment-link';
+
+            const image = document.createElement('img');
+            image.className = 'message-image';
+            image.src = attachment.url;
+            image.loading = 'eager';
+            link.addEventListener('click', function () {
+                openLightbox(attachment.url, attachment.originalFileName || 'Ảnh phản hồi');
+            });
+            image.alt = attachment.originalFileName || 'Ảnh phản hồi';
+
+            link.appendChild(image);
+            container.appendChild(link);
+        });
+
+        if (container.childNodes.length > 0) {
+            wrap.appendChild(container);
+        }
+    }
+
+    function extensionFromName(fileName) {
+        const safeName = fileName || '';
+        const dotIndex = safeName.lastIndexOf('.');
+        return dotIndex >= 0 ? safeName.substring(dotIndex + 1).toLowerCase() : '';
+    }
+
+    function isImageFile(file) {
+        return file && file.type && file.type.indexOf('image/') === 0;
+    }
+
+    function isImageAttachment(attachment) {
+        const contentType = (attachment.contentType || '').toLowerCase();
+        return attachment.image === true || contentType.indexOf('image/') === 0;
+    }
+
+    function isPdfAttachment(attachment) {
+        const contentType = (attachment.contentType || '').toLowerCase();
+        const extension = (attachment.extension || extensionFromName(attachment.originalFileName)).toLowerCase();
+        return attachment.pdf === true || contentType === 'application/pdf' || extension === 'pdf';
+    }
+
+    function fileKindByExtension(extension) {
+        const ext = (extension || '').toLowerCase();
+        if (ext === 'pdf') return 'pdf';
+        if (['doc', 'docx', 'rtf', 'odt'].indexOf(ext) >= 0) return 'word';
+        if (['xls', 'xlsx', 'xlsm', 'xlsb', 'csv', 'ods'].indexOf(ext) >= 0) return 'excel';
+        return 'file';
+    }
+
+    function fileLabelByKind(kind, extension) {
+        if (kind === 'pdf') return 'PDF';
+        if (kind === 'word') return 'WORD';
+        if (kind === 'excel') return (extension || '').toLowerCase() === 'csv' ? 'CSV' : 'EXCEL';
+        return (extension || 'FILE').toUpperCase();
+    }
+
+    function formatFileSize(size) {
+        if (!size || size <= 0) return '';
+        if (size < 1024) return size + ' B';
+        if (size < 1024 * 1024) return Math.round(size / 1024) + ' KB';
+        return (size / 1024 / 1024).toFixed(size >= 10 * 1024 * 1024 ? 0 : 1) + ' MB';
+    }
+
+    function selectedImageCount() {
+        return imageInput.files ? imageInput.files.length : 0;
+    }
+
+    function selectedImageFileCount() {
+        if (!imageInput.files) return 0;
+        return Array.prototype.slice.call(imageInput.files).filter(isImageFile).length;
+    }
+
+    function updateSendState() {
+        const hasText = input.value.trim().length > 0;
+        const hasFiles = selectedImageCount() > 0;
+        const tooManyFiles = selectedImageCount() > maxImages;
+        const submitting = form.dataset.submitting === 'true';
+        sendButton.disabled = submitting || tooManyFiles || (!hasText && !hasFiles);
+        if (tooManyFiles) {
+            statusElement.className = 'composer-status text-danger';
+            statusElement.textContent = 'Mỗi lần gửi tối đa ' + maxImages + ' file.';
+        } else if (!submitting && statusElement.textContent.indexOf('tối đa') >= 0) {
+            statusElement.textContent = '';
+        }
+    }
+
+    function renderImagePreview() {
+        revokePreviewUrls();
+        previewElement.innerHTML = '';
+        if (!imageInput.files || imageInput.files.length === 0) {
+            updateSendState();
+            return;
+        }
+
+        Array.prototype.forEach.call(imageInput.files, function (file) {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+
+            if (isImageFile(file)) {
+                const image = document.createElement('img');
+                const url = URL.createObjectURL(file);
+                previewUrls.push(url);
+                image.src = url;
+                image.alt = file.name || 'Ảnh đính kèm';
+                item.appendChild(image);
+            } else {
+                const extension = extensionFromName(file.name);
+                const kind = fileKindByExtension(extension);
+                const icon = document.createElement('div');
+                icon.className = 'preview-file-icon ' + kind;
+                icon.textContent = fileLabelByKind(kind, extension);
+                item.appendChild(icon);
+            }
+
+            const name = document.createElement('div');
+            name.className = 'preview-name';
+            name.textContent = file.name || 'File đính kèm';
+            item.appendChild(name);
+            previewElement.appendChild(item);
+        });
+
+        const clearButton = document.createElement('button');
+        clearButton.type = 'button';
+        clearButton.className = 'clear-attachments';
+        clearButton.textContent = 'Bỏ file';
+        clearButton.addEventListener('click', function () {
+            imageInput.value = '';
+            renderImagePreview();
+            input.focus();
+        });
+        previewElement.appendChild(clearButton);
+        updateSendState();
+    }
+
+    function appendFilesToSelection(files) {
+        const incomingFiles = Array.prototype.slice.call(files || []).filter(function (file) {
+            return file && file.size > 0;
+        });
+        if (incomingFiles.length === 0) return false;
+        if (typeof DataTransfer === 'undefined') {
+            statusElement.className = 'composer-status text-danger';
+            statusElement.textContent = 'Trình duyệt này không hỗ trợ dán file vào khung chat.';
+            return false;
+        }
+
+        const dataTransfer = new DataTransfer();
+        Array.prototype.slice.call(imageInput.files || []).forEach(function (file) {
+            dataTransfer.items.add(file);
+        });
+        incomingFiles.forEach(function (file) {
+            dataTransfer.items.add(file);
+        });
+        imageInput.files = dataTransfer.files;
+        renderImagePreview();
+        return true;
+    }
+
+    function extensionForImageType(type) {
+        const normalized = (type || '').toLowerCase();
+        if (normalized.indexOf('jpeg') >= 0 || normalized.indexOf('jpg') >= 0) return 'jpg';
+        if (normalized.indexOf('gif') >= 0) return 'gif';
+        if (normalized.indexOf('webp') >= 0) return 'webp';
+        if (normalized.indexOf('bmp') >= 0) return 'bmp';
+        return 'png';
+    }
+
+    function normalizedClipboardImage(file, index) {
+        if (!file) return file;
+        const hasUsableName = file.name && extensionFromName(file.name);
+        if (hasUsableName) return file;
+        const extension = extensionForImageType(file.type);
+        const fileName = 'zalo-clipboard-' + new Date().toISOString()
+            .replace(/[-:TZ.]/g, '').substring(0, 14) + '-' + (index + 1) + '.' + extension;
+        return new File([file], fileName, { type: file.type || 'image/' + extension, lastModified: Date.now() });
+    }
+
+    function clipboardImageFiles(event) {
+        const clipboard = event.clipboardData || window.clipboardData;
+        if (!clipboard) return [];
+        const files = [];
+        if (clipboard.items && clipboard.items.length) {
+            Array.prototype.forEach.call(clipboard.items, function (item) {
+                if (item.kind === 'file' && item.type && item.type.indexOf('image/') === 0) {
+                    const file = item.getAsFile();
+                    if (file) files.push(file);
+                }
+            });
+        }
+        if (files.length === 0 && clipboard.files && clipboard.files.length) {
+            Array.prototype.forEach.call(clipboard.files, function (file) {
+                if (isImageFile(file)) files.push(file);
+            });
+        }
+        return files.map(normalizedClipboardImage);
+    }
+
+    function handleAttachmentPaste(event) {
+        const files = clipboardImageFiles(event);
+        if (files.length === 0) return;
+        event.preventDefault();
+        if (appendFilesToSelection(files)) {
+            statusElement.className = 'composer-status text-success';
+            statusElement.textContent = 'Đã dán ' + files.length + ' ảnh từ clipboard.';
+            window.setTimeout(function () {
+                if (statusElement.textContent.indexOf('clipboard') >= 0) statusElement.textContent = '';
+            }, 1800);
+        }
+    }
+
+    async function buildUploadFormData() {
+        const formData = new FormData(form);
+        formData.delete('attachments');
+        const files = imageInput.files ? Array.prototype.slice.call(imageInput.files) : [];
+        let optimizedCount = 0;
+
+        for (const file of files) {
+            const optimizedFile = await compressImageIfUseful(file);
+            if (optimizedFile !== file) {
+                optimizedCount++;
+            }
+            formData.append('attachments', optimizedFile, optimizedFile.name || file.name);
+        }
+
+        return { formData: formData, optimizedCount: optimizedCount };
+    }
+
+    function appendAttachments(wrap, item) {
+        const attachments = Array.isArray(item.attachments) ? item.attachments : [];
+        if (attachments.length === 0) return;
+
+        const container = document.createElement('div');
+        container.className = 'message-attachments attachment-count-' + Math.min(attachments.length, 3);
+
+        attachments.forEach(function (attachment) {
+            if (!attachment || !attachment.url) return;
+            if (isImageAttachment(attachment)) {
+                const link = document.createElement('button');
+                link.type = 'button';
+                link.className = 'message-attachment-link';
+
+                const image = document.createElement('img');
+                image.className = 'message-image';
+                image.src = attachment.url;
+                image.loading = 'eager';
+                image.alt = attachment.originalFileName || 'Ảnh phản hồi';
+                link.addEventListener('click', function () {
+                    openLightbox(attachment.url, attachment.originalFileName || 'Ảnh phản hồi');
+                });
+
+                link.appendChild(image);
+                container.appendChild(link);
+                return;
+            }
+
+            const extension = (attachment.extension || extensionFromName(attachment.originalFileName)).toLowerCase();
+            const kind = fileKindByExtension(extension);
+            const card = document.createElement('a');
+            card.className = 'file-attachment-card';
+            card.href = attachment.url;
+            card.target = '_blank';
+            card.rel = 'noopener';
+            if (!isPdfAttachment(attachment)) {
+                card.download = attachment.originalFileName || '';
+            }
+
+            const icon = document.createElement('span');
+            icon.className = 'file-icon ' + kind;
+            icon.textContent = fileLabelByKind(kind, extension);
+
+            const info = document.createElement('span');
+            info.className = 'file-info';
+            const name = document.createElement('span');
+            name.className = 'file-name';
+            name.textContent = attachment.originalFileName || 'File đính kèm';
+            const meta = document.createElement('span');
+            meta.className = 'file-meta d-block';
+            meta.textContent = isPdfAttachment(attachment)
+                ? 'Bấm để mở PDF ở tab mới'
+                : 'Bấm để mở/tải file' + (attachment.fileSize ? ' · ' + formatFileSize(attachment.fileSize) : '');
+            info.appendChild(name);
+            info.appendChild(meta);
+            card.appendChild(icon);
+            card.appendChild(info);
+            container.appendChild(card);
+        });
+
+        if (container.childNodes.length > 0) {
+            wrap.appendChild(container);
+        }
+    }
+
+    input.addEventListener('paste', handleAttachmentPaste);
+
+    function messageNode(item) {
+        const mine = (item.createdByUser || '') === currentAccount;
+        const row = document.createElement('div');
+        row.className = 'message-row' + (mine ? ' mine' : '');
+
+        const wrap = document.createElement('div');
+        wrap.className = 'message-wrap';
+
+        const meta = document.createElement('div');
+        meta.className = 'message-meta';
+        const sender = item.createdByUser || 'Không rõ người gửi';
+        const time = item.createdByDate || 'Không rõ thời gian';
+        meta.textContent = sender + ' · ' + time;
+
+        const text = decodeStoredText(item.eventInformationResponse);
+        if (text.trim().length > 0) {
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.textContent = text;
+            wrap.appendChild(meta);
+            wrap.appendChild(bubble);
+        } else {
+            wrap.appendChild(meta);
+        }
+        appendAttachments(wrap, item);
+        row.appendChild(wrap);
+        return row;
+    }
+
+    function renderMessages(data, forceBottom) {
+        const keepBottom = forceBottom || firstLoad || isNearBottom();
+        const scrollPageToComposer = firstLoad && keepBottom;
+        shouldStickMessagesToBottom = keepBottom;
+        listElement.innerHTML = '';
+        if (!Array.isArray(data) || data.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'chat-empty';
+            empty.textContent = 'Chưa có phản hồi. Hãy bắt đầu trao đổi ở khung bên dưới.';
+            listElement.appendChild(empty);
+        } else {
+            data.slice().reverse().forEach(function (item) {
+                listElement.appendChild(messageNode(item));
+            });
+        }
+        if (keepBottom) {
+            keepMessagesPinnedToBottomAfterMediaLoad(scrollPageToComposer);
+        }
+        firstLoad = false;
+    }
+
+    function loadMessages(forceBottom) {
+        const url = window.location.href.replace('showEventResponseForm', 'showEventResponseFormRestful');
+        return $.ajax({ url: url, type: 'get', dataType: 'json' })
+            .done(function (data) {
+                renderMessages(data, forceBottom === true);
+                connectionState.className = 'badge bg-success';
+                connectionState.textContent = 'Đã kết nối';
+            })
+            .fail(function (xhr) {
+                if (xhr.status === 401 || xhr.status === 403
+                        || (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1)) {
+                    window.location.assign('/login?expired=true');
+                    return;
+                }
+                connectionState.className = 'badge bg-warning text-dark';
+                connectionState.textContent = 'Chưa cập nhật được';
+            });
+    }
+
+    function resizeInput() {
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 140) + 'px';
+    }
+
+    function endLightboxPointer(event) {
+        lightboxPointers.delete(event.pointerId);
+        lightboxPinchStart = null;
+        if (lightboxPointers.size === 1 && lightboxScale > 1) {
+            const remainingPoint = Array.from(lightboxPointers.values())[0];
+            lightboxDragStart = {
+                x: remainingPoint.x - lightboxPanX,
+                y: remainingPoint.y - lightboxPanY
+            };
+        } else {
+            lightboxDragStart = null;
+            lightboxViewport.classList.remove('is-dragging');
+        }
+    }
+
+    lightboxClose.addEventListener('click', closeLightbox);
+    lightboxZoomOut.addEventListener('click', function () {
+        setLightboxZoom(lightboxScale - .25);
+    });
+    lightboxZoomIn.addEventListener('click', function () {
+        setLightboxZoom(lightboxScale + .25);
+    });
+    lightboxReset.addEventListener('click', resetLightboxView);
+    lightboxImage.addEventListener('load', resetLightboxView);
+    lightboxViewport.addEventListener('wheel', function (event) {
+        if (!lightboxActive) return;
+        event.preventDefault();
+        setLightboxZoom(lightboxScale + (event.deltaY < 0 ? .25 : -.25),
+            event.clientX, event.clientY);
+    }, { passive: false });
+    lightboxViewport.addEventListener('dblclick', function (event) {
+        setLightboxZoom(lightboxScale === 1 ? 2 : 1, event.clientX, event.clientY);
+    });
+    lightboxViewport.addEventListener('pointerdown', function (event) {
+        if (!lightboxActive) return;
+        event.preventDefault();
+        lightboxViewport.setPointerCapture(event.pointerId);
+        lightboxPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (lightboxPointers.size === 1) {
+            lightboxDragStart = {
+                x: event.clientX - lightboxPanX,
+                y: event.clientY - lightboxPanY
+            };
+            if (lightboxScale > 1) lightboxViewport.classList.add('is-dragging');
+        } else if (lightboxPointers.size === 2) {
+            beginLightboxPinch();
+            lightboxViewport.classList.add('is-dragging');
+        }
+    });
+    lightboxViewport.addEventListener('pointermove', function (event) {
+        if (!lightboxPointers.has(event.pointerId)) return;
+        lightboxPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (lightboxPointers.size >= 2 && lightboxPinchStart) {
+            const points = Array.from(lightboxPointers.values());
+            const midpointX = (points[0].x + points[1].x) / 2;
+            const midpointY = (points[0].y + points[1].y) / 2;
+            const distance = lightboxPointerDistance();
+            if (lightboxPinchStart.distance > 0) {
+                setLightboxZoom(lightboxPinchStart.scale
+                    * distance / lightboxPinchStart.distance, midpointX, midpointY);
+            }
+            return;
+        }
+        if (lightboxDragStart && lightboxScale > 1) {
+            lightboxPanX = event.clientX - lightboxDragStart.x;
+            lightboxPanY = event.clientY - lightboxDragStart.y;
+            renderLightboxTransform();
+        }
+    });
+    lightboxViewport.addEventListener('pointerup', endLightboxPointer);
+    lightboxViewport.addEventListener('pointercancel', endLightboxPointer);
+    lightbox.addEventListener('click', function (event) {
+        if (event.target === lightbox) {
+            closeLightbox();
+        }
+    });
+    listElement.addEventListener('scroll', function () {
+        shouldStickMessagesToBottom = isNearBottom();
+    }, { passive: true });
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && lightboxActive) {
+            closeLightbox();
+        }
+        if (!lightboxActive) return;
+        if (event.key === '+' || event.key === '=') setLightboxZoom(lightboxScale + .25);
+        if (event.key === '-') setLightboxZoom(lightboxScale - .25);
+        if (event.key === '0') resetLightboxView();
+    });
+    window.addEventListener('popstate', function () {
+        if (lightboxActive) {
+            hideLightbox();
+        }
+    });
+
+    attachButton.addEventListener('click', function () { imageInput.click(); });
+    imageInput.addEventListener('change', renderImagePreview);
+
+    input.addEventListener('input', function () {
+        resizeInput();
+        updateSendState();
+    });
+    input.addEventListener('keydown', function (event) {
+        const composing = event.isComposing || event.keyCode === 229;
+        if (event.key === 'Enter' && !event.shiftKey && !composing) {
+            event.preventDefault();
+            if (!sendButton.disabled) {
+                if (form.requestSubmit) form.requestSubmit();
+                else sendButton.click();
+            }
+        }
+    });
+
+    $(form).on('submit', async function (event) {
+        event.preventDefault();
+        const content = input.value.trim();
+        const hasAttachments = selectedImageCount() > 0;
+        const hasImageFiles = selectedImageFileCount() > 0;
+        if ((!content && !hasAttachments) || form.dataset.submitting === 'true' || sendButton.disabled) return;
+
+        form.dataset.submitting = 'true';
+        updateSendState();
+        statusElement.className = 'composer-status text-muted';
+        statusElement.textContent = hasImageFiles ? 'Đang tối ưu ảnh...' : 'Đang gửi...';
+
+        let uploadFormData;
+        try {
+            const uploadPayload = await buildUploadFormData();
+            uploadFormData = uploadPayload.formData;
+            statusElement.textContent = uploadPayload.optimizedCount > 0
+                ? 'Đã tối ưu ' + uploadPayload.optimizedCount + ' ảnh, đang gửi...'
+                : 'Đang gửi...';
+        } catch (e) {
+            uploadFormData = new FormData(form);
+            statusElement.textContent = 'Đang gửi...';
+        }
+
+        $.ajax({
+            type: 'post',
+            url: form.action,
+            data: uploadFormData,
+            processData: false,
+            contentType: false,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).done(function () {
+            input.value = '';
+            imageInput.value = '';
+            renderImagePreview();
+            resizeInput();
+            statusElement.className = 'composer-status text-success';
+            statusElement.textContent = 'Đã gửi';
+            loadMessages(true);
+            window.setTimeout(function () { statusElement.textContent = ''; }, 1800);
+        }).fail(function (xhr) {
+            if (xhr.status === 401 || xhr.status === 403
+                    || (xhr.responseURL && xhr.responseURL.indexOf('/login') !== -1)) {
+                window.location.assign('/login?expired=true');
+                return;
+            }
+            const message = xhr.responseJSON && xhr.responseJSON.message
+                ? xhr.responseJSON.message
+                : 'Không thể gửi. Nội dung vẫn được giữ để bạn thử lại.';
+            statusElement.className = 'composer-status text-danger';
+            statusElement.textContent = message;
+        }).always(function () {
+            form.dataset.submitting = 'false';
+            updateSendState();
+            input.focus();
+        });
+    });
+
+    updateSendState();
+    loadMessages(true);
+    const eventSource = new EventSource('/home/employee/notifications/subscribe');
+    eventSource.addEventListener('refresh', function () { loadMessages(false); });
+    eventSource.onopen = function () {
+        connectionState.className = 'badge bg-success';
+        connectionState.textContent = 'Đã kết nối';
+    };
+    eventSource.onerror = function () {
+        connectionState.className = 'badge bg-light text-secondary';
+        connectionState.textContent = 'Đang kết nối lại...';
+    };
+    window.addEventListener('pageshow', scheduleBottomScroll);
+    window.addEventListener('load', scheduleBottomScroll);
+    window.addEventListener('orientationchange', function () {
+        scheduleBottomScroll();
+        if (lightboxActive) window.requestAnimationFrame(renderLightboxTransform);
+    });
+    window.addEventListener('resize', function () {
+        if (lightboxActive) window.requestAnimationFrame(renderLightboxTransform);
+    });
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+            if (isNearBottom()) {
+                scheduleBottomScroll();
+            }
+        });
+    }
+    window.addEventListener('beforeunload', function () {
+        revokePreviewUrls();
+        eventSource.close();
+    });
+});
+/*]]>*/
+</script>
+</body>
+</html>

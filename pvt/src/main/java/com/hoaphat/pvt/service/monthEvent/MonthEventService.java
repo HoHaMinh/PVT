@@ -1,12 +1,15 @@
 package com.hoaphat.pvt.service.monthEvent;
 
 import com.hoaphat.pvt.model.account.Account;
+import com.hoaphat.pvt.model.dto.DeadlineShiftOption;
 import com.hoaphat.pvt.model.event.MonthEvent;
 import com.hoaphat.pvt.model.event.ResponseEventInformation;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
 import com.hoaphat.pvt.service.response.IResponseEventInformationService;
+import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
+import com.hoaphat.pvt.service.priority.WorkPriorityService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +18,11 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class MonthEventService implements IMonthEventService {
@@ -30,6 +36,10 @@ public class MonthEventService implements IMonthEventService {
 
     @Autowired
     private IResponseEventInformationService responseEventInformationService;
+    @Autowired
+    private ResponseAttachmentStorageService responseAttachmentStorageService;
+    @Autowired
+    private WorkPriorityService workPriorityService;
     @Override
     public List<MonthEvent> getMonthEventList() {
         return monthEventRepository.findAll();
@@ -95,6 +105,26 @@ public class MonthEventService implements IMonthEventService {
         for (MonthEvent monthEvent : monthEvents) {
             monthEventRepository.save(monthEvent);
         }
+    }
+
+    @Override
+    @Transactional
+    public void addSelfAssignedEvent(String accountName, String description, LocalDateTime deadline) {
+        if (accountName == null || accountName.trim().isEmpty()) {
+            throw new IllegalArgumentException("Không xác định được tài khoản đang đăng nhập.");
+        }
+        Account account = accountRepository.findByAccountName(accountName.trim());
+        if (account == null) {
+            throw new IllegalArgumentException("Tài khoản đang đăng nhập không còn tồn tại.");
+        }
+
+        MonthEvent event = new MonthEvent();
+        event.setMonthEventDescription(description);
+        event.setMonthEventDeadline(deadline);
+        event.setMonthEventStatus(0);
+        event.setAccount(account);
+        validateAndPrepareNewEvent(event, 0, LocalDateTime.now());
+        monthEventRepository.save(event);
     }
 
     private void validateAndPrepareNewEvent(MonthEvent monthEvent, int expectedStatus,
@@ -172,6 +202,10 @@ public class MonthEventService implements IMonthEventService {
                 .filter(event -> !Boolean.TRUE.equals(event.getDeleted()))
                 .orElseThrow(() -> new IllegalArgumentException("Công việc không còn tồn tại."));
 
+        boolean previousAll = Boolean.TRUE.equals(existingEvent.getAll());
+        String previousAccountName = existingEvent.getAccount() == null
+                ? null : existingEvent.getAccount().getAccountName();
+
         existingEvent.setMonthEventDescription(editedEvent.getMonthEventDescription().trim());
         existingEvent.setMonthEventDeadline(editedEvent.getMonthEventDeadline());
 
@@ -191,15 +225,18 @@ public class MonthEventService implements IMonthEventService {
             existingEvent.setAccount(selectedAccount);
         }
 
+        boolean assignmentChanged = previousAll != Boolean.TRUE.equals(existingEvent.getAll())
+                || !java.util.Objects.equals(previousAccountName,
+                existingEvent.getAccount() == null ? null : existingEvent.getAccount().getAccountName());
+        if (assignmentChanged) {
+            // Chỉ bỏ ưu tiên của ngày hiện tại. Lịch sử các ngày trước phải còn
+            // để trang tổng hợp phản hồi có thể đối chiếu nhân viên đã làm theo ưu tiên nào.
+            workPriorityService.deleteTodayForEvent(existingEvent.getMonthEventId());
+        }
+
         monthEventRepository.save(existingEvent);
 
-        ResponseEventInformation response = new ResponseEventInformation();
-        response.setCreatedByUser(editedBy);
-        response.setCreatedByDate(LocalDateTime.now());
-        response.setEventInformationResponse("Báo cáo lại "
-                + existingEvent.getMonthEventDeadline().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
-        response.setMonthEvent(existingEvent);
-        responseEventInformationService.addResponseEventInformation(response);
+        addDeadlineChangeResponse(existingEvent, editedBy);
     }
 
     @Override
@@ -227,6 +264,40 @@ public class MonthEventService implements IMonthEventService {
 
     @Override
     @Transactional
+    public void moveToTrash(List<Integer> ids) {
+        List<MonthEvent> events = loadActivePersonalEventsForBulk(ids);
+        for (MonthEvent event : events) {
+            event.setDeleted(true);
+            monthEventRepository.save(event);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void shiftDeadlines(List<Integer> ids, DeadlineShiftOption shiftOption, String editedBy) {
+        if (shiftOption == null) {
+            throw new IllegalArgumentException("Vui lòng chọn khoảng thời gian dời deadline.");
+        }
+        if (editedBy == null || editedBy.trim().isEmpty()) {
+            throw new IllegalArgumentException("Không xác định được người sửa deadline.");
+        }
+        List<MonthEvent> events = loadActivePersonalEventsForBulk(ids);
+        for (MonthEvent event : events) {
+            if (event.getMonthEventDeadline() == null) {
+                throw new IllegalArgumentException("Công việc có mã " + event.getMonthEventId()
+                        + " không có deadline.");
+            }
+        }
+
+        for (MonthEvent event : events) {
+            event.setMonthEventDeadline(shiftOption.apply(event.getMonthEventDeadline()));
+            monthEventRepository.save(event);
+            addDeadlineChangeResponse(event, editedBy.trim());
+        }
+    }
+
+    @Override
+    @Transactional
     public void restoreFromTrash(Integer id) {
         validateEventId(id);
         MonthEvent event = findDeletedEvent(id);
@@ -240,6 +311,8 @@ public class MonthEventService implements IMonthEventService {
     public void permanentlyDelete(Integer id) {
         validateEventId(id);
         MonthEvent event = findDeletedEvent(id);
+        workPriorityService.deleteForEvent(id);
+        responseAttachmentStorageService.deleteFilesByMonthEventId(id);
         responseEventInformationRepository.deleteResponseById(id);
         monthEventRepository.delete(event);
     }
@@ -249,6 +322,8 @@ public class MonthEventService implements IMonthEventService {
     public int emptyTrash() {
         List<MonthEvent> deletedEvents = monthEventRepository.findDeletedEventsForUpdate();
         for (MonthEvent event : deletedEvents) {
+            workPriorityService.deleteForEvent(event.getMonthEventId());
+            responseAttachmentStorageService.deleteFilesByMonthEventId(event.getMonthEventId());
             responseEventInformationRepository.deleteResponseById(event.getMonthEventId());
             monthEventRepository.delete(event);
         }
@@ -268,6 +343,43 @@ public class MonthEventService implements IMonthEventService {
         if (id == null || id <= 0) {
             throw new IllegalArgumentException("Mã công việc không hợp lệ.");
         }
+    }
+
+    private List<MonthEvent> loadActivePersonalEventsForBulk(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ít nhất một công việc.");
+        }
+        Set<Integer> uniqueIds = new LinkedHashSet<Integer>();
+        for (Integer id : ids) {
+            validateEventId(id);
+            uniqueIds.add(id);
+        }
+
+        List<MonthEvent> events = new ArrayList<MonthEvent>();
+        for (Integer id : uniqueIds) {
+            MonthEvent event = monthEventRepository.findByIdForUpdate(id)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Công việc có mã " + id + " không còn tồn tại."));
+            if (Boolean.TRUE.equals(event.getDeleted())) {
+                throw new IllegalArgumentException("Công việc có mã " + id
+                        + " đã nằm trong Thư mục đã xóa.");
+            }
+            if (Boolean.TRUE.equals(event.getAll())) {
+                throw new IllegalArgumentException("Công việc Cả phòng không thể thao tác hàng loạt.");
+            }
+            events.add(event);
+        }
+        return events;
+    }
+
+    private void addDeadlineChangeResponse(MonthEvent event, String editedBy) {
+        ResponseEventInformation response = new ResponseEventInformation();
+        response.setCreatedByUser(editedBy);
+        response.setCreatedByDate(LocalDateTime.now());
+        response.setEventInformationResponse("Báo cáo lại "
+                + event.getMonthEventDeadline().format(DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy")));
+        response.setMonthEvent(event);
+        responseEventInformationService.addResponseEventInformation(response);
     }
 
     //    *Trang weekly task

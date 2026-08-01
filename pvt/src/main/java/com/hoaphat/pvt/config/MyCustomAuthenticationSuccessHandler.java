@@ -22,21 +22,27 @@ public class MyCustomAuthenticationSuccessHandler implements AuthenticationSucce
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String accountName = userDetails.getUsername(); // login ID — giữ nguyên không đổi
-        String displayName = accountName; // fallback nếu không tìm thấy
+        String accountName = userDetails.getUsername();
+        String canonicalAccountName = accountName;
+        String displayName = accountName;
 
         List<Account> accountList = accountService.findAll();
         for (int i = 0; i < accountList.size(); i++) {
-            if (accountName.equals(accountList.get(i).getAccountName())) {
-                String configuredName = accountList.get(i).getName();
+            Account account = accountList.get(i);
+            if (accountName != null
+                    && account.getAccountName() != null
+                    && accountName.equalsIgnoreCase(account.getAccountName())) {
+                canonicalAccountName = account.getAccountName();
+                String configuredName = account.getName();
                 if (configuredName != null && !configuredName.trim().isEmpty()) {
-                    displayName = configuredName.trim(); // chỉ ghi đè khi tên hiển thị hợp lệ
+                    displayName = configuredName.trim();
                 }
+                break;
             }
         }
 
-        request.getSession().setAttribute("username", displayName);    // tên hiển thị: "Hồ Hà Minh"
-        request.getSession().setAttribute("accountName", accountName); // login ID: "ho.ha.minh" ✅
+        request.getSession().setAttribute("username", displayName);
+        request.getSession().setAttribute("accountName", canonicalAccountName);
         response.sendRedirect("/home");
     }
 }

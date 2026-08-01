@@ -6,6 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 @Entity
@@ -200,11 +201,45 @@ public class MonthEvent {
     @Column(name = "is_deleted", nullable = false, columnDefinition = "boolean default false")
     private Boolean deleted = false;
 
+    @Transient
+    private Integer dailyPriority;
+
+    /** Chỉ có giá trị với công việc được hệ thống tự sinh. */
+    @Column(name = "automation_source", length = 30)
+    private String automationSource;
+
+    @Column(name = "automation_date")
+    private LocalDate automationDate;
+
     public Boolean getDeleted() {
         return deleted;
     }
 
     public void setDeleted(Boolean deleted) {
         this.deleted = deleted;
+    }
+
+    public Integer getDailyPriority() {
+        return dailyPriority;
+    }
+
+    public void setDailyPriority(Integer dailyPriority) {
+        this.dailyPriority = dailyPriority;
+    }
+
+    public String getAutomationSource() {
+        return automationSource;
+    }
+
+    public void setAutomationSource(String automationSource) {
+        this.automationSource = automationSource;
+    }
+
+    public LocalDate getAutomationDate() {
+        return automationDate;
+    }
+
+    public void setAutomationDate(LocalDate automationDate) {
+        this.automationDate = automationDate;
     }
 }

@@ -10,6 +10,8 @@ import com.hoaphat.pvt.repository.account.IAccountRoleRepository;
 import com.hoaphat.pvt.repository.account.IRoleRepository;
 import com.hoaphat.pvt.repository.event.IMonthEventRepository;
 import com.hoaphat.pvt.repository.event.IResponseEventInformationRepository;
+import com.hoaphat.pvt.service.priority.WorkPriorityService;
+import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,6 +37,10 @@ public class AccountService implements IAccountService {
     private IMonthEventRepository monthEventRepository;
     @Autowired
     private IResponseEventInformationRepository responseEventInformationRepository;
+    @Autowired
+    private WorkPriorityService workPriorityService;
+    @Autowired
+    private ResponseAttachmentStorageService responseAttachmentStorageService;
     @Override
     public List<Account> findAll() {
         return accountRepository.findAll();
@@ -174,6 +180,19 @@ public class AccountService implements IAccountService {
         return result;
     }
 
+    public String getDisplayName(String accountName) {
+        if (accountName == null || accountName.trim().isEmpty()) {
+            return "Không rõ";
+        }
+        String normalized = accountName.trim();
+        for (UserDisplayDTO user : getUserDisplayList()) {
+            if (normalized.equals(user.getAccountName())) {
+                return user.getDisplayName();
+            }
+        }
+        return normalized;
+    }
+
     private String getSafeAccountName(Account account) {
         if (account.getName() == null || account.getName().trim().isEmpty()) {
             return account.getAccountName() == null ? "Không rõ" : account.getAccountName();
@@ -197,9 +216,13 @@ public class AccountService implements IAccountService {
         List<MonthEvent> assignedEvents = monthEventRepository.findByAccount_AccountName(accountName);
         for (MonthEvent event : assignedEvents) {
             if (event != null && event.getMonthEventId() != null) {
+                workPriorityService.deleteForEvent(event.getMonthEventId());
+                responseAttachmentStorageService.deleteFilesByMonthEventId(event.getMonthEventId());
                 responseEventInformationRepository.deleteResponseById(event.getMonthEventId());
             }
         }
+
+        workPriorityService.deleteForAccount(accountName);
 
         // 1. Xóa role trước
         accountRoleRepository.deleteByAccount_AccountName(accountName);

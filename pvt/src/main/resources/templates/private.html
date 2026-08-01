@@ -116,6 +116,15 @@
             return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
         }
 
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         var activeDataRequest = null;
         var latestDataRequestId = 0;
 
@@ -187,6 +196,14 @@
             }
         }
 
+        function reloadAfterMidnight() {
+            var now = new Date();
+            var nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 2);
+            window.setTimeout(function () {
+                window.location.reload();
+            }, nextDay.getTime() - now.getTime());
+        }
+
         function isSessionExpired(xhr) {
             var contentType = xhr.getResponseHeader("Content-Type") || "";
             return xhr.status === 401 || xhr.status === 403 || contentType.indexOf("text/html") !== -1;
@@ -227,6 +244,26 @@
                     }
 
                     let result = '';
+                    var rowNumberOffset = 0;
+                    if (data.responseSummary) {
+                        rowNumberOffset = 1;
+                        var summaryTitle = escapeHtml(data.responseSummary.title);
+                        var summaryAccount = encodeURIComponent(data.responseSummary.accountName || selectedValue);
+                        var summaryDetail = data.responseSummary.responseCount > 0
+                            ? escapeHtml(data.responseSummary.responseCount + ' phản hồi trong '
+                                + data.responseSummary.taskCount + ' công việc')
+                            : 'Chưa có phản hồi hôm nay';
+                        result += `<tr class="table-primary align-middle response-summary-row">
+                            <td class="text-center fw-bold">1</td>
+                            <td class="text-start fw-bold">${summaryTitle}</td>
+                            <td></td>
+                            <td></td>
+                            <td class="text-start">${summaryDetail}</td>
+                            <td class="text-center">
+                                <a class="btn btn-sm btn-primary" href="/home/employee/response-summary?accountName=${summaryAccount}&period=TODAY">Xem</a>
+                            </td>
+                        </tr>`;
+                    }
                     for (let i = 0; i < data.monthEventList.length; i++) {
                         var now = new Date();
                         var deadlineString = data.monthEventList[i].monthEventDeadline;
@@ -241,9 +278,13 @@
                         var minutesDiff = Math.ceil(timeDiff / (1000 * 60));
                         var remindClass = '';
                         if (minutesDiff <= 0 && minutesDiff >= -60) { remindClass = 'remind fw-bold'; }
+                        var priorityValue = data.monthEventList[i].dailyPriority;
+                        var priorityPrefix = (priorityValue !== null && priorityValue !== undefined)
+                            ? `<span class="fw-bold text-danger me-1">(${priorityValue})</span>`
+                            : '';
                         result += `<tr class="${rowClass} align-middle">
-                            <td class="text-center">${i + 1}</td>
-                            <td class="text-start" style="min-width: 200px;">${data.monthEventList[i].monthEventDescription || 'Nội dung công việc cũ bị thiếu'}</td>`;
+                            <td class="text-center">${i + 1 + rowNumberOffset}</td>
+                            <td class="text-start" style="min-width: 200px;">${priorityPrefix}${escapeHtml(data.monthEventList[i].monthEventDescription || 'Nội dung công việc cũ bị thiếu')}</td>`;
                         if (data.monthEventList[i].registeredDay === '00:00 01-01-2023' || data.monthEventList[i].monthEventStatus != 0) {
                             result += `<td class="text-center text-muted">Không hiển thị</td>`;
                         } else {
@@ -253,7 +294,7 @@
                         if (!data.monthEventList[i].lastTimeResponse || data.monthEventList[i].lastTimeResponse === '00:00 01-01-2023') {
                             result += `<td class="text-start text-muted">Chưa có phản hồi</td>`;
                         } else {
-                            result += `<td class="text-start ${remindClass}">${data.monthEventList[i].lastPersonResponse} lúc ${data.monthEventList[i].lastTimeResponse}</td>`;
+                            result += `<td class="text-start ${remindClass}">${escapeHtml(data.monthEventList[i].lastPersonResponse)} lúc ${escapeHtml(data.monthEventList[i].lastTimeResponse)}</td>`;
                         }
                         let status = data.monthEventList[i].responseStatus;
                         let btnClass = (status === 0) ? 'btn-secondary' : (status === 2 ? 'btn-warning' : 'btn-success');
@@ -309,6 +350,7 @@
             window.addEventListener("resize", updateMobileTabSelector);
             updateMobileTabSelector();
             loadData(false); // Tải dữ liệu lần đầu khi mở trang
+            reloadAfterMidnight();
 
             window.addEventListener("popstate", function () {
                 selectTabFromUrl();
@@ -341,6 +383,8 @@
     <div class="container-fluid mt-3 px-3 px-md-4">
         <div th:if="${error}" class="alert alert-danger text-center fw-bold" role="alert"
              th:text="${error}"></div>
+        <div th:if="${mess}" class="alert alert-success text-center fw-bold" role="alert"
+             th:text="${mess}"></div>
         
         <div th:if="${not #lists.isEmpty(sercuritySchedule)}" class="alert alert-info shadow-sm mb-4" role="alert">
             <div th:each="security:${sercuritySchedule}" class="mb-1">
@@ -409,9 +453,29 @@
                 </tr>
                 </thead>
                 <tbody id="result">
+                <tr th:if="${responseSummaryPreview != null}" class="table-primary align-middle response-summary-row">
+                    <td class="text-center fw-bold">1</td>
+                    <td class="text-start fw-bold" th:text="${responseSummaryPreview.title}">Tổng hợp phản hồi</td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-start"
+                        th:text="${responseSummaryPreview.responseCount > 0
+                            ? responseSummaryPreview.responseCount + ' phản hồi trong ' + responseSummaryPreview.taskCount + ' công việc'
+                            : 'Chưa có phản hồi hôm nay'}"></td>
+                    <td class="text-center">
+                        <a class="btn btn-sm btn-primary"
+                           th:href="@{/home/employee/response-summary(accountName=${responseSummaryPreview.accountName},period='TODAY')}">Xem</a>
+                    </td>
+                </tr>
                 <tr th:each="list,iter:${monthEventListByTime}" class="align-middle">
-                    <td class="text-center" th:text="${iter.count}"></td>
-                    <td class="text-start" th:text="${list.getMonthEventDescription()}"></td>
+                    <td class="text-center"
+                        th:text="${iter.count + (responseSummaryPreview != null ? 1 : 0)}"></td>
+                    <td class="text-start">
+                        <span th:if="${list.getDailyPriority() != null}"
+                              class="fw-bold text-danger me-1"
+                              th:text="${'(' + list.getDailyPriority() + ')'}"></span>
+                        <span th:text="${list.getMonthEventDescription()}"></span>
+                    </td>
 
                     <td class="text-center text-muted"
                         th:if="${list.getRegisteredDay() == '00:00 01-01-2023' or list.getMonthEventStatus() == '1' or list.getMonthEventStatus() == '2'}"

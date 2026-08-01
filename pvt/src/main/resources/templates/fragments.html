@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,8 +13,10 @@
         <div class="container-fluid">
             <div class="row align-items-center">
                 <div class="col-8 col-md-9 text-center">
-                    <h1 class="text-white m-0 fs-5 fs-md-2 fw-bold text-uppercase" style="line-height: 1.2; letter-spacing: 1.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">
-                        Phòng Vật tư Ống thép Hòa Phát Đà Nẵng
+                    <h1 class="text-white m-0 fs-5 fs-md-2 fw-bold text-uppercase"
+                        style="line-height: 1.2; letter-spacing: 1.5px; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);"
+                        th:text="${siteName}">
+                        Ống thép Hòa Phát Đà Nẵng
                     </h1>
                 </div>
                 <!-- User Dropdown -->
@@ -62,13 +65,16 @@
                     <li class="nav-item">
                         <a class="nav-link font-style" th:href="@{/home/employee/private}">Lịch cần làm</a>
                     </li>
+                    <li class="nav-item" th:if="${debtAlertEnabled}">
+                        <a class="nav-link font-style" th:href="@{/home/employee/debt-alerts}">Cảnh báo công nợ</a>
+                    </li>
                     <li class="nav-item d-none d-lg-block">
                         <a class="nav-link font-style" th:href="@{/home/employee/video}">Lưu giữ video</a>
                     </li>
                     <li class="nav-item d-none d-lg-block">
                         <a class="nav-link font-style" th:href="@{/home/employee/image}">Lưu giữ hình ảnh</a>
                     </li>
-                    <li class="nav-item dropdown">
+                    <li class="nav-item dropdown" sec:authorize="hasRole('MANAGER')">
                         <a class="nav-link dropdown-toggle font-style" href="#" id="navbarDropdownMenuLink"
                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             Giao việc (chỉ quản lý)
@@ -76,10 +82,22 @@
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                             <li><a class="dropdown-item font-style" th:href="@{/home/manager/task}">Giao việc cá nhân</a></li>
                             <li><a class="dropdown-item font-style" th:href="@{/home/manager/weeklyTask}">Giao việc cá nhân lặp lại định kỳ</a></li>
+                            <li><a class="dropdown-item font-style fw-bold text-primary" th:href="@{/home/manager/priorities}">Quản lý ưu tiên công việc</a></li>
                             <li><a class="dropdown-item font-style" th:href="@{/home/manager/trash}">Thư mục đã xóa</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item font-style" th:href="@{/home/manager/create-account}">Tạo tài khoản</a></li>
                             <li><a class="dropdown-item font-style text-danger" th:href="@{/home/manager/delete-account}">Xóa tài khoản</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown"
+                        sec:authorize="hasRole('EMPLOYEE') and !hasRole('MANAGER')">
+                        <a class="nav-link dropdown-toggle font-style" href="#" id="employeeTaskDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Giao việc
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="employeeTaskDropdown">
+                            <li><a class="dropdown-item font-style" th:href="@{/home/employee/self-task}">Giao việc bản thân</a></li>
+                            <li><a class="dropdown-item font-style fw-bold text-primary" th:href="@{/home/employee/priorities}">Chọn ưu tiên công việc</a></li>
                         </ul>
                     </li>
                 </ul>

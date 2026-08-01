@@ -2,6 +2,7 @@ package com.hoaphat.pvt;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -17,14 +18,19 @@ public class PvtApplication {
         System.setProperty("file.encoding", "UTF-8");
         System.setProperty("java.awt.headless", "false");
         
-        SpringApplication.run(PvtApplication.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(PvtApplication.class, args);
+        String browserUrl = context.getEnvironment().getProperty(
+                "app.public-url", "http://localhost");
+        if (browserUrl == null || browserUrl.trim().isEmpty()) {
+            browserUrl = "http://localhost";
+        }
         
         if (SystemTray.isSupported()) { 
-            showTrayIcon(); 
+            showTrayIcon(browserUrl.trim());
         }
     }
 
-    private static void showTrayIcon() throws Exception {
+    private static void showTrayIcon(String browserUrl) throws Exception {
         SystemTray tray = SystemTray.getSystemTray();
         URL iconUrl = PvtApplication.class.getResource("/static/img/icon.png");
         Image image = Toolkit.getDefaultToolkit().getImage(iconUrl);
@@ -43,9 +49,10 @@ public class PvtApplication {
         trayIcon.setToolTip("PVT Server \u0111ang ch\u1ea1y t\u1ea1i localhost");
 
         // 2. Tính năng click đúp vào icon để mở nhanh trang quản lý
-        trayIcon.addActionListener(e -> { 
+        final String urlToOpen = browserUrl;
+        trayIcon.addActionListener(e -> {
             try { 
-                Desktop.getDesktop().browse(new java.net.URI("http://localhost")); 
+                Desktop.getDesktop().browse(new java.net.URI(urlToOpen));
             } catch (Exception ex) { 
                 ex.printStackTrace(); 
             } 

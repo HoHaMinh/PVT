@@ -29,13 +29,14 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("Không tồn tại account này");
         }
 
-        List<String> roles = accountRoleRepository.findAllRoleByUser(username);
+        String canonicalAccountName = account.getAccountName();
+        List<String> roles = accountRoleRepository.findAllRoleByUser(canonicalAccountName);
         List<GrantedAuthority> authorityList = new ArrayList<>();
         for (String roleName : roles) {
             authorityList.add(new SimpleGrantedAuthority(roleName));
         }
 
-        UserDetails userDetails = new User(username, account.getPassword(),authorityList);
+        UserDetails userDetails = new User(canonicalAccountName, account.getPassword(),authorityList);
         return userDetails;
     }
 }

@@ -205,6 +205,26 @@
         </div>
     </div>
 
+    <div class="container mt-3" th:if="${debtAlertSummary != null and debtAlertSummary.enabled}">
+        <a th:href="@{/home/employee/debt-alerts}" class="text-decoration-none">
+            <div class="alert shadow-sm mb-3"
+                 th:classappend="${debtAlertSummary.status == 'FAILED' or debtAlertSummary.status == 'CONFIG_ERROR'} ? ' alert-danger' : (${debtAlertSummary.alertCount > 0} ? ' alert-warning' : ' alert-info')">
+                <div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+                    <div class="flex-grow-1">
+                        <strong>💳 Cảnh báo công nợ</strong>
+                        <span th:if="${debtAlertSummary.status == 'RUNNING'}"> — Đang cập nhật từ Google Drive...</span>
+                        <span th:if="${debtAlertSummary.status != 'RUNNING' and debtAlertSummary.alertCount > 0}"
+                              th:text="${' — Có ' + debtAlertSummary.alertCount + ' hồ sơ cần chú ý'}"></span>
+                        <span th:if="${debtAlertSummary.status == 'SUCCESS' and debtAlertSummary.alertCount == 0}"> — Hôm nay không có hồ sơ cần cảnh báo</span>
+                        <span th:if="${debtAlertSummary.status == 'FAILED' or debtAlertSummary.status == 'CONFIG_ERROR'}"
+                              th:text="${' — ' + debtAlertSummary.message}"></span>
+                    </div>
+                    <span class="fw-bold">Xem chi tiết →</span>
+                </div>
+            </div>
+        </a>
+    </div>
+
     <!-- 🔥 QUAY LẠI DÙNG .home-banner NHƯ BAN ĐẦU CHO PC -->
     <div class="home-banner d-none d-md-block mt-2">
         <img th:src="@{/img/banner.webp}" alt="Banner Hòa Phát">
@@ -215,7 +235,7 @@
         <div class="welcome-content">
 	    <img th:src="@{/img/logo.png}" alt="Logo" class="welcome-logo">
             <h2 class="welcome-title">Hệ thống Quản lý Công việc</h2>
-            <p class="welcome-subtitle">Phòng Vật tư - Ống thép Hòa Phát Đà Nẵng</p>
+            <p class="welcome-subtitle" th:text="${siteName}">Ống thép Hòa Phát Đà Nẵng</p>
         </div>
     </div>
 
