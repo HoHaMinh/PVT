@@ -7,7 +7,8 @@ import java.util.Locale;
 
 public enum ResponseSummaryPeriod {
     TODAY("ngày hôm nay"),
-    YESTERDAY("ngày hôm trước"),
+    YESTERDAY("ngày hôm qua"),
+    TWO_DAYS_AGO("ngày hôm kia"),
     MORNING("từ sáng đến giờ"),
     AFTERNOON("từ chiều đến giờ");
 
@@ -36,6 +37,12 @@ public enum ResponseSummaryPeriod {
                         today.minusDays(1).atStartOfDay(),
                         todayStart,
                         today.minusDays(1));
+            case TWO_DAYS_AGO:
+                LocalDate twoDaysAgo = today.minusDays(2);
+                return new ResponseSummaryTimeRange(
+                        twoDaysAgo.atStartOfDay(),
+                        today.minusDays(1).atStartOfDay(),
+                        twoDaysAgo);
             case MORNING:
                 return new ResponseSummaryTimeRange(
                         todayStart,

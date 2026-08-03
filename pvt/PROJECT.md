@@ -2167,13 +2167,17 @@ Manager và employee đều được xem. Employee luôn bị backend ép xem ac
 đăng nhập dù tự sửa `accountName` trên URL. Manager được chọn account bất kỳ còn
 tồn tại và có thêm thao tác đổi deadline/xóa mềm nhiều mục.
 
-### 33.2. Bốn mốc thời gian
+### 33.2. Năm mốc thời gian
 
 Mọi mốc dùng `Clock` của ứng dụng với timezone `Asia/Ho_Chi_Minh` và cận cuối
 độc quyền để không đếm trùng:
 
 - `TODAY`: từ 00:00 hôm nay đến thời điểm mở trang.
-- `YESTERDAY`: trọn ngày lịch trước, từ 00:00 hôm trước đến trước 00:00 hôm nay.
+- `YESTERDAY`: hiển thị là “ngày hôm qua”, trọn ngày lịch trước, từ 00:00 hôm qua
+  đến trước 00:00 hôm nay.
+- `TWO_DAYS_AGO`: hiển thị là “ngày hôm kia”, trọn ngày lịch cách hiện tại 2 ngày,
+  từ 00:00 ngày hôm kia đến trước 00:00 ngày hôm qua. Mốc này dùng để sáng thứ 2
+  xem lại nhanh phản hồi ngày thứ 7 tuần trước vì chủ nhật nghỉ.
 - `MORNING`: từ 00:00 đến trước 12:00; nếu mở trước 12:00 thì kết thúc tại thời
   điểm mở trang.
 - `AFTERNOON`: từ 12:00 đến thời điểm mở trang; trước 12:00 thì danh sách rỗng.
@@ -2189,7 +2193,8 @@ Bảng ưu tiên v2.0 vốn đã có `daily_priority_selection.priority_date`; q
 dụng chỉ đọc ngày mới, không xóa ưu tiên cũ. Vì vậy:
 
 - Hôm nay/Từ sáng/Từ chiều đọc ưu tiên của ngày hiện tại.
-- Hôm trước đọc ưu tiên của ngày hôm trước.
+- Ngày hôm qua đọc ưu tiên của ngày hôm qua.
+- Ngày hôm kia đọc ưu tiên của ngày hôm kia.
 - Tiêu đề công việc hiển thị `(1)` đến `(7)` màu đỏ trước nội dung nếu có.
 - Việc Cả phòng không có ưu tiên.
 

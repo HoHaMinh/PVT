@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,6 +32,34 @@ class ResponseSummaryPeriodTest {
         assertEquals(LocalDateTime.of(2026, 7, 29, 0, 0), range.getStartInclusive());
         assertEquals(LocalDateTime.of(2026, 7, 30, 0, 0), range.getEndExclusive());
         assertEquals(LocalDate.of(2026, 7, 29), range.getPriorityDate());
+    }
+
+    @Test
+    void twoDaysAgoUsesAClosedOpenCalendarDay() {
+        LocalDateTime now = LocalDateTime.of(2026, 8, 3, 8, 0);
+
+        ResponseSummaryTimeRange range = ResponseSummaryPeriod.TWO_DAYS_AGO.resolve(now);
+
+        assertEquals(LocalDateTime.of(2026, 8, 1, 0, 0), range.getStartInclusive());
+        assertEquals(LocalDateTime.of(2026, 8, 2, 0, 0), range.getEndExclusive());
+        assertEquals(LocalDate.of(2026, 8, 1), range.getPriorityDate());
+    }
+
+    @Test
+    void displayLabelsUseNaturalVietnameseWording() {
+        assertEquals("ngày hôm qua", ResponseSummaryPeriod.YESTERDAY.getDisplayLabel());
+        assertEquals("ngày hôm kia", ResponseSummaryPeriod.TWO_DAYS_AGO.getDisplayLabel());
+    }
+
+    @Test
+    void dropdownKeepsRecentFullDaysBeforePartialDayRanges() {
+        assertEquals(Arrays.asList(
+                        ResponseSummaryPeriod.TODAY,
+                        ResponseSummaryPeriod.YESTERDAY,
+                        ResponseSummaryPeriod.TWO_DAYS_AGO,
+                        ResponseSummaryPeriod.MORNING,
+                        ResponseSummaryPeriod.AFTERNOON),
+                Arrays.asList(ResponseSummaryPeriod.values()));
     }
 
     @Test
@@ -63,5 +92,7 @@ class ResponseSummaryPeriodTest {
         assertEquals(ResponseSummaryPeriod.TODAY, ResponseSummaryPeriod.fromRequestValue("unknown"));
         assertEquals(ResponseSummaryPeriod.YESTERDAY,
                 ResponseSummaryPeriod.fromRequestValue("yesterday"));
+        assertEquals(ResponseSummaryPeriod.TWO_DAYS_AGO,
+                ResponseSummaryPeriod.fromRequestValue("two_days_ago"));
     }
 }
