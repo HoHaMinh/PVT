@@ -232,6 +232,18 @@
                             <label for="manualDeadline" class="form-label fw-bold">Deadline mới</label>
                             <input id="manualDeadline" name="manualDeadline" type="datetime-local"
                                    class="form-control mb-2" aria-describedby="manualDeadlineHelp">
+                            <div class="d-flex flex-wrap gap-2 mb-2" aria-label="Chọn nhanh buổi làm việc">
+                                <input class="btn-check" type="radio" name="manualTimePreset"
+                                       id="manualTimeMorning" value="11:00" autocomplete="off" checked>
+                                <label class="btn btn-outline-primary btn-sm" for="manualTimeMorning">
+                                    SA · 11:00
+                                </label>
+                                <input class="btn-check" type="radio" name="manualTimePreset"
+                                       id="manualTimeAfternoon" value="16:00" autocomplete="off">
+                                <label class="btn btn-outline-primary btn-sm" for="manualTimeAfternoon">
+                                    CH · 16:00
+                                </label>
+                            </div>
                             <div id="manualDeadlineHelp" class="small text-muted mb-3">
                                 Tất cả công việc đã chọn sẽ được đặt về cùng deadline này.
                             </div>
@@ -360,6 +372,35 @@
                 + twoDigits(date.getDate()) + '/' + twoDigits(date.getMonth() + 1) + '/' + date.getFullYear();
         }
 
+        function todayInputDate() {
+            var today = new Date();
+            return today.getFullYear() + '-' + twoDigits(today.getMonth() + 1)
+                + '-' + twoDigits(today.getDate());
+        }
+
+        function setManualDeadlineTime(timeValue) {
+            var input = document.getElementById('manualDeadline');
+            var datePart = input.value ? input.value.split('T')[0] : todayInputDate();
+            input.value = datePart + 'T' + timeValue;
+            renderDeadlinePreview();
+        }
+
+        function ensureManualDeadlineDefault() {
+            var input = document.getElementById('manualDeadline');
+            if (!input.value) {
+                document.getElementById('manualTimeMorning').checked = true;
+                setManualDeadlineTime('11:00');
+            }
+        }
+
+        function syncManualTimePreset() {
+            var input = document.getElementById('manualDeadline');
+            var timePart = input.value && input.value.indexOf('T') >= 0
+                ? input.value.split('T')[1] : '';
+            document.getElementById('manualTimeMorning').checked = timePart === '11:00';
+            document.getElementById('manualTimeAfternoon').checked = timePart === '16:00';
+        }
+
         function renderDeadlinePreview() {
             var tasks = selectedTasks();
             var modeInput = document.querySelector('input[name="deadlineMode"]:checked');
@@ -390,15 +431,25 @@
             manualSection.classList.toggle('d-none', !manualMode);
             shiftOption.required = !manualMode;
             manualDeadline.required = manualMode;
+            if (manualMode) ensureManualDeadlineDefault();
             renderDeadlinePreview();
         }
 
         deadlineButton.addEventListener('click', function () {
-            renderDeadlinePreview();
+            updateDeadlineMode();
             new bootstrap.Modal(document.getElementById('bulkDeadlineModal')).show();
         });
         document.getElementById('deadlineShiftOption').addEventListener('change', renderDeadlinePreview);
-        document.getElementById('manualDeadline').addEventListener('input', renderDeadlinePreview);
+        document.getElementById('manualDeadline').addEventListener('input', function () {
+            syncManualTimePreset();
+            renderDeadlinePreview();
+        });
+        Array.prototype.slice.call(document.querySelectorAll('input[name="manualTimePreset"]'))
+            .forEach(function (item) {
+                item.addEventListener('change', function () {
+                    if (item.checked) setManualDeadlineTime(item.value);
+                });
+            });
         Array.prototype.slice.call(document.querySelectorAll('input[name="deadlineMode"]'))
             .forEach(function (item) { item.addEventListener('change', updateDeadlineMode); });
 

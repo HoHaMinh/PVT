@@ -44,6 +44,12 @@ class ResponseSummaryUiContractTest {
         assertTrue(template.contains("type=\"datetime-local\""));
         assertTrue(template.contains("manualDeadlineSection"));
         assertTrue(template.contains("renderDeadlinePreview"));
+        assertTrue(template.contains("id=\"manualTimeMorning\""));
+        assertTrue(template.contains("value=\"11:00\""));
+        assertTrue(template.contains("id=\"manualTimeAfternoon\""));
+        assertTrue(template.contains("value=\"16:00\""));
+        assertTrue(template.contains("ensureManualDeadlineDefault"));
+        assertTrue(template.contains("todayInputDate"));
     }
 
     private String resource(String path) throws IOException {
