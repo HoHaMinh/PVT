@@ -221,6 +221,26 @@ class MonthEventServiceTest {
     }
 
     @Test
+    void manualBulkDeadlineUpdatesOnlyChangedTasksAndSkipsUnchangedResponseLog() {
+        LocalDateTime targetDeadline = LocalDateTime.of(2026, 8, 4, 16, 0);
+        MonthEvent morningTask = personalEvent(205, LocalDateTime.of(2026, 8, 4, 11, 0));
+        MonthEvent alreadyCorrectTask = personalEvent(206, targetDeadline);
+        when(monthEventRepository.findByIdForUpdate(205)).thenReturn(Optional.of(morningTask));
+        when(monthEventRepository.findByIdForUpdate(206)).thenReturn(Optional.of(alreadyCorrectTask));
+
+        int changedCount = monthEventService.setDeadlines(
+                Arrays.asList(205, 206), targetDeadline, "manager.one");
+
+        assertEquals(1, changedCount);
+        assertEquals(targetDeadline, morningTask.getMonthEventDeadline());
+        assertEquals(targetDeadline, alreadyCorrectTask.getMonthEventDeadline());
+        verify(monthEventRepository).save(morningTask);
+        verify(monthEventRepository, never()).save(alreadyCorrectTask);
+        verify(responseEventInformationService)
+                .addResponseEventInformation(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
     void restoreFromTrashMakesEventVisibleAndPreservesItsTypeAndResponses() {
         MonthEvent event = new MonthEvent();
         event.setMonthEventId(101);

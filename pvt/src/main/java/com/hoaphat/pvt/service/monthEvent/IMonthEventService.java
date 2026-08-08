@@ -34,6 +34,8 @@ public interface IMonthEventService {
 
     void shiftDeadlines(List<Integer> ids, DeadlineShiftOption shiftOption, String editedBy);
 
+    int setDeadlines(List<Integer> ids, LocalDateTime targetDeadline, String editedBy);
+
     void restoreFromTrash(Integer id);
 
     void permanentlyDelete(Integer id);

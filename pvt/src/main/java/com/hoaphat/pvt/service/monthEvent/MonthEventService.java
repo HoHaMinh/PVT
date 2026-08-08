@@ -298,6 +298,29 @@ public class MonthEventService implements IMonthEventService {
 
     @Override
     @Transactional
+    public int setDeadlines(List<Integer> ids, LocalDateTime targetDeadline, String editedBy) {
+        if (targetDeadline == null) {
+            throw new IllegalArgumentException("Vui lòng chọn deadline mới.");
+        }
+        if (editedBy == null || editedBy.trim().isEmpty()) {
+            throw new IllegalArgumentException("Không xác định được người sửa deadline.");
+        }
+        List<MonthEvent> events = loadActivePersonalEventsForBulk(ids);
+        int changedCount = 0;
+        for (MonthEvent event : events) {
+            if (targetDeadline.equals(event.getMonthEventDeadline())) {
+                continue;
+            }
+            event.setMonthEventDeadline(targetDeadline);
+            monthEventRepository.save(event);
+            addDeadlineChangeResponse(event, editedBy.trim());
+            changedCount++;
+        }
+        return changedCount;
+    }
+
+    @Override
+    @Transactional
     public void restoreFromTrash(Integer id) {
         validateEventId(id);
         MonthEvent event = findDeletedEvent(id);

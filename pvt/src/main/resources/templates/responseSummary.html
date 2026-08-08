@@ -203,11 +203,39 @@
                         <input type="hidden" name="accountName" th:value="${summary.accountName}">
                         <input type="hidden" name="period" th:value="${summary.period.name()}">
                         <div id="deadlineSelectedIds"></div>
-                        <label for="deadlineShiftOption" class="form-label fw-bold">Dời thêm</label>
-                        <select id="deadlineShiftOption" name="shiftOption" class="form-select mb-3" required>
-                            <option th:each="option : ${deadlineShiftOptions}"
-                                    th:value="${option.name()}" th:text="${option.displayLabel}"></option>
-                        </select>
+                        <fieldset class="mb-3">
+                            <legend class="form-label fw-bold mb-2">Cách đổi deadline</legend>
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="deadlineMode"
+                                           id="deadlineModeShift" value="SHIFT" checked>
+                                    <label class="form-check-label" for="deadlineModeShift">Dời thêm</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="deadlineMode"
+                                           id="deadlineModeManual" value="MANUAL_DEADLINE">
+                                    <label class="form-check-label" for="deadlineModeManual">Chọn deadline cụ thể</label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div id="deadlineShiftSection">
+                            <label for="deadlineShiftOption" class="form-label fw-bold">Dời thêm</label>
+                            <select id="deadlineShiftOption" name="shiftOption" class="form-select mb-3" required>
+                                <option th:each="option : ${deadlineShiftOptions}"
+                                        th:value="${option.name()}" th:text="${option.displayLabel}"></option>
+                            </select>
+                            <div class="small text-muted mb-3">
+                                “1 buổi”: trước 12h chuyển thành 16h cùng ngày; từ 12h trở đi chuyển thành 11h ngày kế tiếp.
+                            </div>
+                        </div>
+                        <div id="manualDeadlineSection" class="d-none">
+                            <label for="manualDeadline" class="form-label fw-bold">Deadline mới</label>
+                            <input id="manualDeadline" name="manualDeadline" type="datetime-local"
+                                   class="form-control mb-2" aria-describedby="manualDeadlineHelp">
+                            <div id="manualDeadlineHelp" class="small text-muted mb-3">
+                                Tất cả công việc đã chọn sẽ được đặt về cùng deadline này.
+                            </div>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered align-middle mb-0">
                                 <thead class="table-light">
@@ -219,9 +247,6 @@
                                 </thead>
                                 <tbody id="deadlinePreviewRows"></tbody>
                             </table>
-                        </div>
-                        <div class="small text-muted mt-2">
-                            “1 buổi”: trước 12h chuyển thành 16h cùng ngày; từ 12h trở đi chuyển thành 11h ngày kế tiếp.
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -337,15 +362,35 @@
 
         function renderDeadlinePreview() {
             var tasks = selectedTasks();
+            var modeInput = document.querySelector('input[name="deadlineMode"]:checked');
+            var mode = modeInput ? modeInput.value : 'SHIFT';
             var option = document.getElementById('deadlineShiftOption').value;
+            var manualDeadline = parseDeadline(document.getElementById('manualDeadline').value);
             hiddenEventIds(document.getElementById('deadlineSelectedIds'), tasks);
             document.getElementById('deadlinePreviewRows').innerHTML = tasks.map(function (task) {
                 var source = parseDeadline(task.deadline);
-                var nextLabel = source ? formatDeadline(shiftedDeadline(source, option)) : 'Không xác định';
+                var nextDeadline = mode === 'MANUAL_DEADLINE'
+                    ? manualDeadline
+                    : (source ? shiftedDeadline(source, option) : null);
+                var nextLabel = nextDeadline ? formatDeadline(nextDeadline) : 'Chưa chọn deadline';
                 return '<tr><td>' + escapeHtml(task.description) + '</td><td>'
                     + escapeHtml(task.deadlineLabel) + '</td><td class="fw-bold text-primary">'
                     + escapeHtml(nextLabel) + '</td></tr>';
             }).join('');
+        }
+
+        function updateDeadlineMode() {
+            var modeInput = document.querySelector('input[name="deadlineMode"]:checked');
+            var manualMode = modeInput && modeInput.value === 'MANUAL_DEADLINE';
+            var shiftSection = document.getElementById('deadlineShiftSection');
+            var manualSection = document.getElementById('manualDeadlineSection');
+            var shiftOption = document.getElementById('deadlineShiftOption');
+            var manualDeadline = document.getElementById('manualDeadline');
+            shiftSection.classList.toggle('d-none', manualMode);
+            manualSection.classList.toggle('d-none', !manualMode);
+            shiftOption.required = !manualMode;
+            manualDeadline.required = manualMode;
+            renderDeadlinePreview();
         }
 
         deadlineButton.addEventListener('click', function () {
@@ -353,6 +398,9 @@
             new bootstrap.Modal(document.getElementById('bulkDeadlineModal')).show();
         });
         document.getElementById('deadlineShiftOption').addEventListener('change', renderDeadlinePreview);
+        document.getElementById('manualDeadline').addEventListener('input', renderDeadlinePreview);
+        Array.prototype.slice.call(document.querySelectorAll('input[name="deadlineMode"]'))
+            .forEach(function (item) { item.addEventListener('change', updateDeadlineMode); });
 
         deleteButton.addEventListener('click', function () {
             var tasks = selectedTasks();

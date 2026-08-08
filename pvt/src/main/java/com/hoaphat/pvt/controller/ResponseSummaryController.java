@@ -17,6 +17,8 @@ import org.springframework.web.util.UriUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Controller
@@ -61,7 +63,10 @@ public class ResponseSummaryController {
     public String shiftDeadlines(@RequestParam("accountName") String accountName,
                                  @RequestParam("period") String periodValue,
                                  @RequestParam("eventIds") List<Integer> eventIds,
-                                 @RequestParam("shiftOption") String shiftValue,
+                                 @RequestParam(value = "deadlineMode", required = false,
+                                         defaultValue = "SHIFT") String deadlineMode,
+                                 @RequestParam(value = "shiftOption", required = false) String shiftValue,
+                                 @RequestParam(value = "manualDeadline", required = false) String manualDeadline,
                                  Principal principal,
                                  RedirectAttributes redirectAttributes) {
         ResponseSummaryPeriod period = ResponseSummaryPeriod.fromRequestValue(periodValue);
@@ -69,8 +74,14 @@ public class ResponseSummaryController {
             if (principal == null) {
                 return "redirect:/login?expired=true";
             }
-            int count = actionService.shiftDeadlines(accountName, period, eventIds,
-                    DeadlineShiftOption.fromRequestValue(shiftValue), principal.getName());
+            int count;
+            if ("MANUAL_DEADLINE".equalsIgnoreCase(deadlineMode)) {
+                count = actionService.setDeadlines(accountName, period, eventIds,
+                        parseManualDeadline(manualDeadline), principal.getName());
+            } else {
+                count = actionService.shiftDeadlines(accountName, period, eventIds,
+                        DeadlineShiftOption.fromRequestValue(shiftValue), principal.getName());
+            }
             notificationService.sendRefreshSignal();
             redirectAttributes.addFlashAttribute("mess",
                     "Đã đổi deadline cho " + count + " công việc.");
@@ -78,6 +89,17 @@ public class ResponseSummaryController {
             redirectAttributes.addFlashAttribute("error", error.getMessage());
         }
         return redirectToSummary(accountName, period);
+    }
+
+    private LocalDateTime parseManualDeadline(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn deadline mới.");
+        }
+        try {
+            return LocalDateTime.parse(value.trim());
+        } catch (DateTimeParseException error) {
+            throw new IllegalArgumentException("Deadline mới không đúng định dạng.");
+        }
     }
 
     @PostMapping("/home/manager/response-summary/delete")

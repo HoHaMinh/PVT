@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 
@@ -36,6 +37,24 @@ class ResponseSummaryActionServiceTest {
         assertEquals(2, count);
         verify(monthEventService).shiftDeadlines(
                 Arrays.asList(10, 11), DeadlineShiftOption.ONE_DAY, "manager.one");
+    }
+
+    @Test
+    void manualDeadlineSelectionIsDeduplicatedAndDelegatedOnce() {
+        LocalDateTime targetDeadline = LocalDateTime.of(2026, 8, 4, 16, 0);
+        when(responseSummaryService.getSelectableEventIds(
+                "employee.one", ResponseSummaryPeriod.TODAY))
+                .thenReturn(new LinkedHashSet<Integer>(Arrays.asList(10, 11)));
+        when(monthEventService.setDeadlines(
+                Arrays.asList(10, 11), targetDeadline, "manager.one"))
+                .thenReturn(2);
+
+        int count = service.setDeadlines("employee.one", ResponseSummaryPeriod.TODAY,
+                Arrays.asList(10, 10, 11), targetDeadline, "manager.one");
+
+        assertEquals(2, count);
+        verify(monthEventService).setDeadlines(
+                Arrays.asList(10, 11), targetDeadline, "manager.one");
     }
 
     @Test

@@ -33,6 +33,19 @@ class ResponseSummaryUiContractTest {
         assertTrue(template.contains("summary-back-button"));
     }
 
+    @Test
+    void bulkDeadlineDialogSupportsQuickShiftAndOneSharedManualDeadline() throws IOException {
+        String template = resource("/templates/responseSummary.html");
+
+        assertTrue(template.contains("name=\"deadlineMode\""));
+        assertTrue(template.contains("value=\"SHIFT\""));
+        assertTrue(template.contains("value=\"MANUAL_DEADLINE\""));
+        assertTrue(template.contains("name=\"manualDeadline\""));
+        assertTrue(template.contains("type=\"datetime-local\""));
+        assertTrue(template.contains("manualDeadlineSection"));
+        assertTrue(template.contains("renderDeadlinePreview"));
+    }
+
     private String resource(String path) throws IOException {
         try (InputStream input = getClass().getResourceAsStream(path)) {
             if (input == null) {

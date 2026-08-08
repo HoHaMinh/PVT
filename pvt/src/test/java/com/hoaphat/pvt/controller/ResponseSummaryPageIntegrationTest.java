@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 
 import static org.mockito.Mockito.verify;
@@ -123,6 +124,30 @@ class ResponseSummaryPageIntegrationTest {
 
         verify(actionService).shiftDeadlines("employee.one", ResponseSummaryPeriod.TODAY,
                 Collections.singletonList(100), DeadlineShiftOption.ONE_SESSION, "manager.one");
+        verify(notificationService).sendRefreshSignal();
+    }
+
+    @Test
+    void managerBulkManualDeadlineCallsTransactionServiceAndSendsOneRefresh() throws Exception {
+        LocalDateTime targetDeadline = LocalDateTime.of(2026, 8, 4, 16, 0);
+        when(actionService.setDeadlines("employee.one", ResponseSummaryPeriod.TODAY,
+                Collections.singletonList(100), targetDeadline, "manager.one"))
+                .thenReturn(1);
+
+        mockMvc.perform(post("/home/manager/response-summary/shift-deadlines")
+                        .param("accountName", "employee.one")
+                        .param("period", "TODAY")
+                        .param("eventIds", "100")
+                        .param("deadlineMode", "MANUAL_DEADLINE")
+                        .param("manualDeadline", "2026-08-04T16:00")
+                        .with(csrf())
+                        .with(user("manager.one").roles("MANAGER")))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/home/employee/response-summary?accountName=employee.one&period=TODAY"));
+
+        verify(actionService).setDeadlines("employee.one", ResponseSummaryPeriod.TODAY,
+                Collections.singletonList(100), targetDeadline, "manager.one");
         verify(notificationService).sendRefreshSignal();
     }
 

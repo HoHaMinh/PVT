@@ -6,6 +6,7 @@ import com.hoaphat.pvt.service.monthEvent.IMonthEventService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -30,6 +31,14 @@ public class ResponseSummaryActionService {
         List<Integer> selectedIds = validateSelection(accountName, period, requestedIds);
         monthEventService.shiftDeadlines(selectedIds, shiftOption, editedBy);
         return selectedIds.size();
+    }
+
+    @Transactional
+    public int setDeadlines(String accountName, ResponseSummaryPeriod period,
+                            Collection<Integer> requestedIds, LocalDateTime targetDeadline,
+                            String editedBy) {
+        List<Integer> selectedIds = validateSelection(accountName, period, requestedIds);
+        return monthEventService.setDeadlines(selectedIds, targetDeadline, editedBy);
     }
 
     @Transactional
