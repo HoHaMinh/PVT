@@ -719,10 +719,10 @@ Mở domain bằng cửa sổ ẩn danh đi thẳng tới trang đăng nhập PV
 | Thành phần | Cách chạy | Port/vai trò |
 |---|---|---|
 | `cloudflared agent` | Windows Service, tự chạy cùng Windows | Kết nối tới Cloudflare |
-| MySQL | Khởi động thủ công trong Laragon | `localhost:3306` |
-| Spring Boot | Khởi động thủ công bằng shortcut `Run web PVT` | `localhost:80` |
+| MySQL | Shortcut `Run web PVT` tự kiểm tra và khởi động `mysqld` ẩn nếu cần | `localhost:3306` |
+| Spring Boot | Khởi động thủ công bằng shortcut `Run web PVT` sau khi MySQL sẵn sàng | `localhost:80` |
 
-Laragon chỉ chạy MySQL ở port 3306. Không chạy Apache hoặc Nginx, nhờ đó không tranh chấp port 80 với embedded Tomcat.
+Máy OTHPDN vẫn dùng bộ MySQL của Laragon ở port 3306 nhưng không còn phụ thuộc Laragon khởi động dịch vụ. Launcher gọi trực tiếp `mysqld.exe` với đúng `my.ini`. Không chạy Apache hoặc Nginx, nhờ đó không tranh chấp port 80 với embedded Tomcat.
 
 Nếu một web server khác hoặc một bản PVT cũ đang giữ port 80, JAR mới sẽ không khởi động được.
 
@@ -748,25 +748,15 @@ Không lưu sẵn file `.lnk` trong Git vì shortcut chứa đường dẫn tuy�
 Nội dung cốt lõi của `run.vbs`:
 
 ```vbscript
-Option Explicit
+mysqlPort = 3306
+mysqlWaitSeconds = 60
 
-Dim WshShell, fso, strPath, jarPath, command
-Set WshShell = CreateObject("WScript.Shell")
-Set fso = CreateObject("Scripting.FileSystemObject")
-
-strPath = fso.GetParentFolderName(WScript.ScriptFullName)
-jarPath = fso.BuildPath(strPath, "pvt.jar")
-
-If Not fso.FileExists(jarPath) Then
-    MsgBox "pvt.jar was not found in:" & vbCrLf & strPath, _
-        vbCritical, "Run web PVT"
-    WScript.Quit 1
+If Not IsPortListening(mysqlPort) Then
+    If Not StartMySqlAndWait() Then
+        WScript.Quit 1
+    End If
 End If
 
-' Đảm bảo thư mục logs được tạo cạnh pvt.jar.
-WshShell.CurrentDirectory = strPath
-
-' Chạy ứng dụng nền với encoding UTF-8.
 command = "javaw -Dfile.encoding=UTF-8 -jar """ & jarPath & """"
 WshShell.Run command, 0, False
 ```
@@ -776,6 +766,9 @@ Hành vi:
 - Lấy thư mục chứa `run.vbs` làm thư mục triển khai.
 - Đặt working directory về thư mục triển khai để log được tạo cạnh `pvt.jar`.
 - Kiểm tra JAR có tên chính xác `pvt.jar` tồn tại trong cùng thư mục; nếu thiếu sẽ hiện thông báo.
+- Kiểm tra cổng `127.0.0.1:3306`; nếu chưa sẵn sàng thì gọi trực tiếp `E:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqld.exe` với `E:\laragon\bin\mysql\mysql-8.4.3-winx64\my.ini`.
+- Không tạo tiến trình MySQL thứ hai nếu đã thấy `mysqld.exe`; thay vào đó tiếp tục chờ cổng 3306.
+- Kiểm tra cổng mỗi giây trong tối đa 60 giây và chỉ chạy JAR sau khi MySQL thật sự nhận kết nối. Nếu hết thời gian, hiện lỗi và không chạy JAR.
 - Dùng `javaw` nên ứng dụng chạy nền, không mở console.
 - Truyền `-Dfile.encoding=UTF-8` ngay khi JVM khởi động.
 - Tham số `0` chạy cửa sổ ẩn.
@@ -786,8 +779,7 @@ Hành vi:
 
 Lưu ý:
 
-- Không nhấp `Run web PVT` nhiều lần khi chưa kiểm tra icon System Tray hoặc process Java.
-- Bản chạy thứ hai sẽ cố chiếm lại port 80 và có thể thất bại.
+- Có thể nhấp lại shortcut để kiểm tra: launcher không tạo thêm MySQL nếu cổng 3306 đã mở và không tạo thêm Java nếu đúng `pvt.jar` đang chạy.
 - Vì dùng `javaw`, lỗi khởi động không xuất hiện trong terminal.
 - Khi cần chẩn đoán, có thể tạm chạy:
 
@@ -817,23 +809,21 @@ Trình tự hiện tại là bán thủ công:
 
 1. Windows khởi động.
 2. `cloudflared agent` tự chạy vì Startup Type là `Automatic`.
-3. Người vận hành mở Laragon.
-4. Chỉ khởi động MySQL trên port 3306.
-5. Chờ MySQL sẵn sàng.
-6. Nhấp shortcut `Run web PVT`.
-7. `javaw` chạy `pvt.jar` nền.
-8. Chờ icon hoặc thông báo PVT khởi động thành công.
-9. Mở `https://othpdn.phongvattu.online`.
-10. Kiểm tra trang đăng nhập.
-11. Đăng nhập và kiểm tra dữ liệu, phản hồi và SSE.
+3. Người vận hành nhấp shortcut `Run web PVT`; không cần mở Laragon.
+4. Launcher kiểm tra cổng 3306 và tự chạy MySQL ẩn nếu database chưa hoạt động.
+5. Launcher chờ MySQL sẵn sàng, tối đa 60 giây.
+6. `javaw` chạy `pvt.jar` nền.
+7. Chờ icon hoặc thông báo PVT khởi động thành công.
+8. Mở `https://othpdn.phongvattu.online`.
+9. Kiểm tra trang đăng nhập.
+10. Đăng nhập và kiểm tra dữ liệu, phản hồi và SSE.
 
-Phải bật MySQL trước khi chạy JAR. Nếu Spring Boot không kết nối được MySQL trong lúc khởi động, ứng dụng có thể không lên hoàn chỉnh.
+Launcher phải xác nhận MySQL sẵn sàng trước khi chạy JAR. Nếu MySQL không mở cổng 3306 trong 60 giây, launcher dừng và không tạo process Java để tránh Spring Boot khởi động lỗi.
 
 `cloudflared agent` tự chạy không có nghĩa PVT tự chạy:
 
 - Tunnel có thể đã kết nối tới Cloudflare.
-- MySQL vẫn chưa chạy cho tới khi bật trong Laragon.
-- Spring Boot chưa chạy cho tới khi nhấp shortcut `Run web PVT`.
+- MySQL và Spring Boot vẫn chưa chạy cho tới khi nhấp shortcut `Run web PVT`.
 - Website có thể trả lỗi Cloudflare dù Tunnel vẫn hiển thị `Healthy`.
 
 ### 24.9. Trình tự dừng máy chủ
