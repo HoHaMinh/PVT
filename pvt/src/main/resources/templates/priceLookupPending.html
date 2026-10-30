@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra giá/xác nhận - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/price-lookup.css(v='20261015a')}">
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <main class="container-fluid px-3 px-md-4 my-4 price-page">
+        <div class="price-toolbar mb-3">
+            <div>
+                <h4 class="price-page__heading fw-bold mb-1">Tra giá/xác nhận</h4>
+                <div class="text-muted">Các hạng mục đang chờ chọn tên vật tư</div>
+            </div>
+            <button sec:authorize="hasRole('MANAGER')" type="button" class="btn btn-primary"
+                    data-bs-toggle="modal" data-bs-target="#createPriceRequestModal">
+                Cung cấp hạng mục cần tra giá
+            </button>
+        </div>
+
+        <div th:if="${mess}" class="alert alert-success fw-bold" th:text="${mess}"></div>
+        <div th:if="${error}" class="alert alert-danger fw-bold" th:text="${error}"></div>
+
+        <div class="employee-tabs mb-4" aria-label="Lọc theo nhân viên">
+            <a th:if="${isManager}" class="btn"
+               th:classappend="${selectedValue == null or selectedValue == ''} ? ' btn-primary' : ' btn-outline-primary'"
+               th:href="@{/home/employee/price-lookups}">Tất cả</a>
+            <th:block th:each="acc : ${userTabs}">
+                <a th:if="${isManager or accountName == acc.accountName}" class="btn text-truncate"
+                   th:classappend="${selectedValue == acc.accountName} ? ' btn-primary' : ' btn-outline-primary'"
+                   th:href="@{/home/employee/price-lookups(selectedValue=${acc.accountName})}"
+                   th:text="${acc.displayName}" th:title="${acc.displayName}"></a>
+            </th:block>
+        </div>
+
+        <div th:if="${#lists.isEmpty(pendingItems)}" class="empty-state rounded-2">
+            Không có hạng mục nào đang chờ xác nhận.
+        </div>
+
+        <form th:if="${not #lists.isEmpty(pendingItems)}" method="post"
+              th:action="@{/home/employee/price-lookups/confirm-batch}"
+              data-batch-confirmation data-loading-message="Đang xác nhận và tra giá các hạng mục đã chọn...">
+            <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+
+            <section th:each="item, itemStat : ${pendingItems}" class="lookup-item mb-3"
+                     th:attr="data-no-candidates=${#lists.isEmpty(item.candidates)}">
+                <input type="hidden" th:name="${'items[' + itemStat.index + '].itemId'}"
+                       th:value="${item.itemId}">
+                <div class="lookup-item__header d-flex flex-column flex-md-row justify-content-between gap-2">
+                    <div>
+                        <div class="lookup-keyword fw-bold" th:text="${item.displayName}"></div>
+                        <div class="lookup-meta mt-1">
+                            <span th:text="${item.assignedDisplayName}"></span>
+                            <span th:if="${isManager}" th:text="${' · ' + item.assignedAccountName}"></span>
+                        </div>
+                    </div>
+                    <div class="lookup-meta" th:text="${item.createdAtDisplay}"></div>
+                </div>
+                <div class="lookup-item__body">
+                    <div th:if="${item.statusMessage != null and !item.statusMessage.isEmpty()}"
+                         class="alert alert-warning py-2" th:text="${item.statusMessage}"></div>
+                    <div th:if="${#lists.isEmpty(item.candidates)}" class="no-candidate-note">
+                        Khi bấm Xác nhận, hạng mục này sẽ được lưu với kết quả
+                        <strong>Hiện chưa tìm thấy giá cơ sở</strong>.
+                    </div>
+                    <div th:if="${not #lists.isEmpty(item.candidates)}"
+                         class="lookup-selection-group" data-max-selections="12">
+                    <div class="candidate-grid mb-3">
+                        <div th:each="candidate : ${item.candidates}" class="candidate-option">
+                            <input class="form-check-input candidate-checkbox" type="checkbox"
+                                   th:name="${'items[' + itemStat.index + '].selectedCandidateIds'}"
+                                   th:id="${'candidate_' + candidate.candidateId}"
+                                   th:value="${candidate.candidateId}" th:checked="${candidate.selected}">
+                            <label th:for="${'candidate_' + candidate.candidateId}"
+                                   th:text="${candidate.materialName}"></label>
+                        </div>
+                    </div>
+                    <div class="no-suitable-option mb-3">
+                        <input class="form-check-input no-suitable-checkbox" type="checkbox" value="true"
+                               th:name="${'items[' + itemStat.index + '].noSuitableCandidate'}"
+                               th:id="${'no_suitable_' + item.itemId}">
+                        <label th:for="${'no_suitable_' + item.itemId}">
+                            Không có tên đề xuất nào phù hợp với tên hàng cần mua
+                        </label>
+                    </div>
+                    <div class="candidate-count">
+                        Đã chọn <strong data-selected-count
+                                       th:text="${#lists.size(item.candidates.?[selected])}">0</strong>
+                        / <span th:text="${#lists.size(item.candidates)}"></span> tên
+                    </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="batch-confirm-bar">
+                <div class="text-muted small">
+                    Chỉ các khung đã chọn sẽ được xử lý; khung chưa chọn vẫn được giữ lại.
+                </div>
+                <button type="submit" class="btn btn-primary px-4">Xác nhận</button>
+            </div>
+        </form>
+    </main>
+</div>
+
+<div sec:authorize="hasRole('MANAGER')" class="modal fade" id="createPriceRequestModal" tabindex="-1"
+     aria-labelledby="createPriceRequestTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" th:action="@{/home/manager/price-lookups}"
+                  data-loading-message="Đang tìm tên vật tư cho toàn bộ danh sách...">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPriceRequestTitle">Cung cấp hạng mục cần tra giá</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <label for="requestLines" class="form-label fw-bold">Danh sách hạng mục</label>
+                    <textarea id="requestLines" name="requestLines" class="form-control" rows="11" required
+                              placeholder="Lõi lọc sợi quấn AQUA - CPP 5 micromet 20 inch    aqua*cpp    DMINHHH"
+                              th:text="${requestLines}"></textarea>
+                    <div class="form-text">Mỗi dòng gồm tên hiển thị, keyword tra giá và ID nhân viên; các phần ngăn cách bằng phím Tab hoặc ít nhất 3 dấu cách.</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Tìm tên và phân công</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="lookupLoading" class="lookup-loading" role="status" aria-live="polite">
+    <div class="lookup-loading__content d-flex align-items-center gap-3">
+        <span class="spinner-border text-primary" aria-hidden="true"></span>
+        <strong id="lookupLoadingLabel">Đang xử lý...</strong>
+    </div>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script th:src="@{/js/price-lookup.js}"></script>
+<script th:if="${error != null and requestLines != null}">
+    document.addEventListener("DOMContentLoaded", function () {
+        new bootstrap.Modal(document.getElementById("createPriceRequestModal")).show();
+    });
+</script>
+</body>
+</html>

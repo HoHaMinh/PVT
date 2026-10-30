@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả tra giá - PVT</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" th:href="@{/css/price-lookup.css(v='20261013b')}">
+</head>
+<body class="bg-light">
+<div class="container-fluid p-0">
+    <div th:replace="~{fragments :: header}"></div>
+    <nav th:replace="~{fragments :: nav}"></nav>
+
+    <main class="container-fluid px-3 px-md-4 my-4 price-page">
+        <div class="price-toolbar mb-3">
+            <div>
+                <h4 class="price-page__heading fw-bold mb-1">Kết quả tra giá</h4>
+                <div class="text-muted">Lịch sử kết quả đã xác nhận</div>
+            </div>
+            <a class="btn btn-outline-primary" th:href="@{/home/employee/price-lookups}">Mở danh sách xác nhận</a>
+        </div>
+
+        <div class="employee-tabs mb-3" aria-label="Lọc theo nhân viên">
+            <a th:if="${isManager}" class="btn"
+               th:classappend="${selectedValue == null or selectedValue == ''} ? ' btn-primary' : ' btn-outline-primary'"
+               th:href="@{/home/employee/price-lookup-results(search=${search})}">Tất cả</a>
+            <th:block th:each="acc : ${userTabs}">
+                <a th:if="${isManager or accountName == acc.accountName}" class="btn text-truncate"
+                   th:classappend="${selectedValue == acc.accountName} ? ' btn-primary' : ' btn-outline-primary'"
+                   th:href="@{/home/employee/price-lookup-results(selectedValue=${acc.accountName},search=${search})}"
+                   th:text="${acc.displayName}" th:title="${acc.displayName}"></a>
+            </th:block>
+        </div>
+
+        <form method="get" th:action="@{/home/employee/price-lookup-results}" class="row g-2 mb-4">
+            <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+            <div class="col-12 col-md">
+                <label class="visually-hidden" for="resultSearch">Tìm kiếm kết quả</label>
+                <input id="resultSearch" type="search" class="form-control" name="search" th:value="${search}"
+                       placeholder="Tìm theo tên vật tư, nhà cung cấp">
+            </div>
+            <div class="col-12 col-md-auto d-grid">
+                <button class="btn btn-primary" type="submit">Tìm kiếm</button>
+            </div>
+        </form>
+
+        <div th:if="${resultPage.empty}" class="empty-state rounded-2">
+            Không có kết quả tra giá phù hợp.
+        </div>
+
+        <section th:each="item : ${resultPage.content}" class="result-item mb-3">
+            <div class="result-item__header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+                <div class="lookup-keyword fw-bold" th:text="${item.displayName}"></div>
+                <div class="result-time" th:text="${item.completedAtDisplay}"></div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered result-table">
+                    <thead>
+                    <tr>
+                        <th th:each="result : ${item.results}" th:text="${result.groupName}"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td th:each="result : ${item.results}" th:attr="data-region=${result.groupName}">
+                            <div th:if="${result.found}">
+                                <div class="result-price-line d-flex flex-nowrap align-items-center justify-content-between gap-2 mb-2">
+                                    <div class="price-copy-group d-flex flex-nowrap align-items-center gap-2">
+                                        <span class="price-value" th:text="${result.purchasePriceDisplay + ' đ'}"></span>
+                                        <button type="button" class="copy-button" title="Sao chép giá"
+                                                th:attr="data-copy=${result.purchasePriceDisplay}" aria-label="Sao chép giá"></button>
+                                    </div>
+                                    <span class="result-unit ms-auto text-end text-nowrap" th:text="${result.unitName}"></span>
+                                </div>
+                                <div class="fw-bold mb-2" th:text="${result.materialName}"></div>
+                                <div class="copy-row border-top pt-2">
+                                    <span><span class="text-muted">Ngày mua: </span><strong th:text="${result.purchaseDateDisplay}"></strong></span>
+                                    <button type="button" class="copy-button" title="Sao chép ngày mua"
+                                            th:attr="data-copy=${result.purchaseDateDisplay}" aria-label="Sao chép ngày mua"></button>
+                                </div>
+                                <div class="copy-row border-top pt-2 mt-2">
+                                    <strong th:text="${result.supplierName}"></strong>
+                                    <button type="button" class="copy-button" title="Sao chép nhà cung cấp"
+                                            th:attr="data-copy=${result.supplierName}" aria-label="Sao chép nhà cung cấp"></button>
+                                </div>
+                            </div>
+                            <div th:unless="${result.found}" class="text-muted py-3 text-center">Hiện chưa tìm thấy giá cơ sở</div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <nav th:if="${resultPage.totalPages > 1}" aria-label="Phân trang kết quả" class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item" th:classappend="${resultPage.first} ? ' disabled'">
+                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number - 1})}">Trước</a>
+                </li>
+                <li th:each="pageNumber : ${#numbers.sequence(0, resultPage.totalPages - 1)}" class="page-item"
+                    th:classappend="${pageNumber == resultPage.number} ? ' active'">
+                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${pageNumber})}"
+                       th:text="${pageNumber + 1}"></a>
+                </li>
+                <li class="page-item" th:classappend="${resultPage.last} ? ' disabled'">
+                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number + 1})}">Sau</a>
+                </li>
+            </ul>
+        </nav>
+    </main>
+</div>
+<script th:src="@{/js/bootstrap5.bundle.min.js}"></script>
+<script th:src="@{/js/price-lookup.js}"></script>
+</body>
+</html>

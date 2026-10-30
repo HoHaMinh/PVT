@@ -4,7 +4,7 @@
 
 Phần tích hợp này **không sửa và không gọi** `masterCheckAllFilesAndSendEmail()`.
 Trigger Gmail 7–8 giờ sáng tiếp tục chạy như trước. File
-`pvt-debt-webapp-addon.gs` là phần bổ sung chỉ đọc Google Sheets và trả JSON khi
+`PVT_WebApp.gs` là phần bổ sung chỉ đọc Google Sheets và trả JSON khi
 PVT chủ động yêu cầu; trong file không có lệnh `MailApp.sendEmail()`.
 
 PVT gọi ra Google qua HTTPS nên không cần mở port mới, không cần thêm route
@@ -42,8 +42,10 @@ Hàm Gmail cũ chỉ đọc A:C nên việc thêm D không làm thay đổi ch�
 
 1. Mở file master → **Extensions** → **Apps Script**.
 2. Không sửa file/hàm Gmail cũ.
-3. Bấm dấu `+` → **Script**, đặt tên `PVT_WebApp`.
-4. Copy toàn bộ `pvt-debt-webapp-addon.gs` vào file mới rồi Save.
+3. Mở file `PVT_WebApp.gs` hiện có; nếu chưa có thì bấm dấu `+` → **Script** và
+   đặt tên `PVT_WebApp`.
+4. Thay toàn bộ nội dung bằng file `PVT_WebApp.gs` trong thư mục tích hợp này rồi
+   Save. Không giữ hai bản có các hàm `doPost()` trùng tên trong cùng project.
 5. Vào **Project Settings** → **Script properties** → Add script property:
    - `PVT_MASTER_SPREADSHEET_ID`: chuỗi nằm giữa `/d/` và `/edit` trong URL file master.
    - `PVT_SHARED_TOKEN`: chuỗi bí mật dài, không dùng mật khẩu Gmail/MySQL.
@@ -120,15 +122,24 @@ Khi tắt, menu/trang Home không hiện và PVT không gọi Google.
 5. Thành công hoặc ngày nghỉ/Chủ Nhật thì không quét lại định kỳ trong ngày.
 6. Manager có thể mở **Cảnh báo công nợ** → **Quét lại Google Drive** bất kỳ lúc nào.
 
-Hibernate tự tạo ba bảng:
+Hibernate tự tạo năm bảng:
 
 - `debt_alert_sync`: trạng thái từng ngày.
 - `debt_alert_employee`: kết quả từng nhân viên.
 - `debt_alert_item`: các hồ sơ đến hạn/sắp đến hạn.
+- `debt_import_alert_item`: snapshot hồ sơ NK đã bước vào 10 ngày cảnh báo.
+- `debt_import_alert_ack`: xác nhận hồ sơ đã báo kế toán; dữ liệu này được giữ
+  qua các lần quét và qua ngày mới.
 
 Với mỗi account có cảnh báo, PVT tạo một công việc cá nhân deadline 16:00 hôm
 đó. Account không có hóa đơn cảnh báo sẽ không được tạo lịch. Quét lại cùng ngày
 cập nhật công việc hiện có, không tạo bản trùng.
+
+Với hồ sơ có cột O là `NK` và cột M còn phải thanh toán lớn hơn 0, Web App tính
+hạn sớm hơn giữa cột P + 90 ngày và cột Q + 45 ngày. Từ 10 ngày trước hạn, PVT
+hiện cảnh báo đỏ. Employee xem được nội dung cảnh báo của chính mình nhưng chỉ
+manager thấy và sử dụng nút **Đã báo kế toán**. Xác nhận xong cảnh báo không hiện
+lại dù hồ sơ vẫn chưa thanh toán hết.
 
 Kiểm tra log:
 

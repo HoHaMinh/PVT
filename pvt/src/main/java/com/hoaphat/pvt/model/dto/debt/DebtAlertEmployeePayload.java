@@ -14,6 +14,7 @@ public class DebtAlertEmployeePayload {
     private String status;
     private String message;
     private List<DebtAlertItemPayload> alerts = new ArrayList<>();
+    private List<DebtImportAlertPayload> importAlerts = new ArrayList<>();
 
     public String getAccountName() {
         return accountName;
@@ -94,4 +95,7 @@ public class DebtAlertEmployeePayload {
     public void setAlerts(List<DebtAlertItemPayload> alerts) {
         this.alerts = alerts;
     }
+
+    public List<DebtImportAlertPayload> getImportAlerts() { return importAlerts; }
+    public void setImportAlerts(List<DebtImportAlertPayload> importAlerts) { this.importAlerts = importAlerts; }
 }

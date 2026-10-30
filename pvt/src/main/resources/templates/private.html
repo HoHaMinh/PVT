@@ -48,6 +48,55 @@
             font-weight: 700;
             animation: response-summary-title-sparkle 4s ease-in-out infinite;
         }
+        .personal-daily-reminder {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: stretch;
+            gap: 0.75rem;
+            margin-top: 0.85rem;
+        }
+        .personal-reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 1 1 420px;
+            max-width: 760px;
+            min-height: 58px;
+            padding: 0.8rem 1rem;
+            border: 1px solid #a9cbee;
+            border-left: 5px solid #0d6efd;
+            border-radius: 0.6rem;
+            background: linear-gradient(135deg, #f4f8ff 0%, #eaf3ff 100%);
+            color: #084c9e;
+            font-size: 1.02rem;
+            font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 0.2rem 0.65rem rgba(5, 66, 140, 0.1);
+        }
+        .personal-reminder-item--debt {
+            border-color: #f1c58d;
+            border-left-color: #e67e22;
+            background: linear-gradient(135deg, #fffaf2 0%, #fff2df 100%);
+            color: #93410c;
+            box-shadow: 0 0.2rem 0.65rem rgba(166, 83, 12, 0.1);
+        }
+        .personal-reminder-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 30px;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #0d6efd;
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .personal-reminder-item--debt .personal-reminder-icon {
+            background: #e67e22;
+        }
         @keyframes response-summary-title-sparkle {
             0%, 72%, 100% {
                 text-shadow: none;
@@ -71,6 +120,18 @@
             }
         }
         @media (max-width: 767.98px) {
+            .personal-daily-reminder {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.6rem;
+            }
+            .personal-reminder-item {
+                width: 100%;
+                max-width: none;
+                min-height: 54px;
+                padding: 0.72rem 0.85rem;
+                font-size: 0.95rem;
+            }
             .tab-selector-shell.mobile-dropdown-mode #mobileTabToggle {
                 display: flex;
             }
@@ -459,6 +520,20 @@
                         </label>
                     </div>
                 </th:block>
+            </div>
+
+            <div th:if="${personalReminder != null and personalReminder.hasAny()}"
+                 class="personal-daily-reminder" role="status" aria-label="Nhắc việc cá nhân">
+                <div th:if="${personalReminder.priceLookupPending}"
+                     class="personal-reminder-item personal-reminder-item--price">
+                    <span class="personal-reminder-icon" aria-hidden="true">!</span>
+                    <span>Bạn có nội dung tra giá cần xác nhận.</span>
+                </div>
+                <div th:if="${personalReminder.importAlertPending}"
+                     class="personal-reminder-item personal-reminder-item--debt">
+                    <span class="personal-reminder-icon" aria-hidden="true">!</span>
+                    <span>Bạn có hóa đơn nhập khẩu cần báo kế toán do gần đến hạn theo ngày vận đơn/tờ khai.</span>
+                </div>
             </div>
         </div>
 

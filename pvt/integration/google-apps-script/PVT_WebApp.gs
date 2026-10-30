@@ -154,7 +154,8 @@ function pvtCollectDebtAlerts_() {
       reportMonth: "",
       status: "OK",
       message: "",
-      alerts: []
+      alerts: [],
+      importAlerts: []
     };
 
     if (!rawSpreadsheetId) {
@@ -195,6 +196,9 @@ function pvtCollectDebtAlerts_() {
       employeeResult.reportBatch = newest.batch;
       employeeResult.reportMonth = newest.month;
       employeeResult.alerts = pvtScanReport_(newest.sheet, today, targetDate, timeZone);
+      employeeResult.importAlerts = pvtScanImportAlerts_(
+        newest.sheet, today, timeZone, spreadsheetId
+      );
       if (!employeeResult.message) {
         employeeResult.message = employeeResult.alerts.length > 0
           ? "Có " + employeeResult.alerts.length + " hồ sơ cần chú ý."
@@ -211,8 +215,12 @@ function pvtCollectDebtAlerts_() {
   const totalAlerts = baseResponse.employees.reduce(function (sum, employee) {
     return sum + (employee.alerts ? employee.alerts.length : 0);
   }, 0);
+  const totalImportAlerts = baseResponse.employees.reduce(function (sum, employee) {
+    return sum + (employee.importAlerts ? employee.importAlerts.length : 0);
+  }, 0);
   baseResponse.message = "Đã đọc " + baseResponse.employees.length
-    + " nhân viên; có " + totalAlerts + " hồ sơ công nợ cần chú ý.";
+    + " nhân viên; có " + totalAlerts + " hồ sơ công nợ cần chú ý"
+    + " và " + totalImportAlerts + " hồ sơ NK cần báo kế toán.";
   return baseResponse;
 }
 
@@ -312,6 +320,122 @@ function pvtScanReport_(sheet, today, targetDate, timeZone) {
 
   alerts.sort(function (a, b) { return b.tPlus - a.tPlus; });
   return alerts;
+}
+
+/**
+ * Tìm hồ sơ nhập khẩu còn tiền phải thanh toán và đã bước vào khoảng cảnh
+ * báo 10 ngày trước hạn báo cáo NHNN.
+ *
+ * Hạn của một hồ sơ là ngày đến trước trong hai mốc còn dữ liệu:
+ * - Ngày vận đơn + 90 ngày (cột P).
+ * - Ngày tờ khai + 45 ngày (cột Q).
+ */
+function pvtScanImportAlerts_(sheet, today, timeZone, spreadsheetId) {
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 4) return [];
+
+  const rows = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
+  const alerts = [];
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+  let currentSection = "";
+
+  rows.forEach(function(row) {
+    const columnA = pvtText_(row[0]);
+    const sectionMatch = columnA.match(/^([IVX]+)\./);
+    if (sectionMatch) {
+      currentSection = sectionMatch[1] + ".";
+      return;
+    }
+
+    const supplier = pvtText_(row[1]);
+    const invoiceNumber = pvtText_(row[2]);
+    if (!supplier && !invoiceNumber) return;
+
+    const domesticOrImport = pvtText_(row[14]).toUpperCase().replace(/\s/g, "");
+    const remainingAmount = pvtNumericAmount_(row[12]);
+    if (domesticOrImport !== "NK" || remainingAmount <= 0) return;
+
+    const billOfLadingDate = pvtDateValue_(row[15]);
+    const customsDeclarationDate = pvtDateValue_(row[16]);
+    const deadlineCandidates = [];
+    if (billOfLadingDate) deadlineCandidates.push(pvtAddDays_(billOfLadingDate, 90));
+    if (customsDeclarationDate) deadlineCandidates.push(pvtAddDays_(customsDeclarationDate, 45));
+    // Chưa có cả hai ngày thì chưa thể tính đúng hạn pháp lý; không sinh một
+    // hạn giả. Dữ liệu sẽ được xét lại ở lần quét sau khi ngày được bổ sung.
+    if (deadlineCandidates.length === 0) return;
+
+    let regulatoryDeadline = deadlineCandidates[0];
+    for (let i = 1; i < deadlineCandidates.length; i++) {
+      if (deadlineCandidates[i] < regulatoryDeadline) regulatoryDeadline = deadlineCandidates[i];
+    }
+    regulatoryDeadline = pvtStartOfDay_(regulatoryDeadline);
+    const daysRemaining = Math.round(
+      (regulatoryDeadline.getTime() - pvtStartOfDay_(today).getTime()) / millisecondsPerDay
+    );
+    if (daysRemaining > 10) return;
+
+    const invoiceDate = pvtDateValue_(row[3]);
+    alerts.push({
+      alertKey: pvtImportAlertKey_(spreadsheetId, supplier, invoiceNumber, invoiceDate, timeZone),
+      section: currentSection,
+      itemOrder: pvtText_(row[0]),
+      supplier: supplier,
+      invoiceNumber: invoiceNumber,
+      remainingAmountDisplay: pvtAmount_(row[12]),
+      billOfLadingDate: pvtFormatOptionalDate_(billOfLadingDate, timeZone),
+      customsDeclarationDate: pvtFormatOptionalDate_(customsDeclarationDate, timeZone),
+      regulatoryDeadline: Utilities.formatDate(regulatoryDeadline, timeZone, "yyyy-MM-dd"),
+      daysRemaining: daysRemaining
+    });
+  });
+
+  alerts.sort(function(a, b) { return a.daysRemaining - b.daysRemaining; });
+  return alerts;
+}
+
+function pvtImportAlertKey_(spreadsheetId, supplier, invoiceNumber, invoiceDate, timeZone) {
+  const source = [
+    pvtText_(spreadsheetId).toLowerCase(),
+    pvtText_(supplier).toLowerCase(),
+    pvtText_(invoiceNumber).toLowerCase(),
+    pvtFormatOptionalDate_(invoiceDate, timeZone)
+  ].join("\u001f");
+  const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, source, Utilities.Charset.UTF_8);
+  return digest.map(function(value) {
+    const normalized = value < 0 ? value + 256 : value;
+    return ("0" + normalized.toString(16)).slice(-2);
+  }).join("");
+}
+
+function pvtDateValue_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) return pvtStartOfDay_(value);
+  const text = pvtText_(value);
+  if (!text) return null;
+  const match = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  if (!match) return null;
+  const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  return isNaN(parsed.getTime()) ? null : pvtStartOfDay_(parsed);
+}
+
+function pvtAddDays_(value, days) {
+  const result = pvtStartOfDay_(value);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function pvtFormatOptionalDate_(value, timeZone) {
+  return value instanceof Date && !isNaN(value.getTime())
+    ? Utilities.formatDate(value, timeZone, "yyyy-MM-dd")
+    : "";
+}
+
+function pvtNumericAmount_(value) {
+  if (typeof value === "number" && isFinite(value)) return value;
+  let text = pvtText_(value);
+  if (!text) return 0;
+  text = text.replace(/\s/g, "").replace(/\./g, "").replace(/,/g, ".").replace(/[^0-9.-]/g, "");
+  const parsed = Number(text);
+  return isFinite(parsed) ? parsed : 0;
 }
 
 function pvtIsHoliday_(checkDate, masterSpreadsheet, timeZone) {

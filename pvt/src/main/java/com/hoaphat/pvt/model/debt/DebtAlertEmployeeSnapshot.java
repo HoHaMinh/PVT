@@ -45,6 +45,9 @@ public class DebtAlertEmployeeSnapshot {
     @OneToMany(mappedBy = "employeeSnapshot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DebtAlertItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "employeeSnapshot", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<DebtImportAlertItem> importAlerts = new ArrayList<>();
+
     public Integer getEmployeeSnapshotId() {
         return employeeSnapshotId;
     }
@@ -144,5 +147,12 @@ public class DebtAlertEmployeeSnapshot {
     public void addItem(DebtAlertItem item) {
         item.setEmployeeSnapshot(this);
         items.add(item);
+    }
+
+    public List<DebtImportAlertItem> getImportAlerts() { return importAlerts; }
+    public void setImportAlerts(List<DebtImportAlertItem> importAlerts) { this.importAlerts = importAlerts; }
+    public void addImportAlert(DebtImportAlertItem item) {
+        item.setEmployeeSnapshot(this);
+        importAlerts.add(item);
     }
 }

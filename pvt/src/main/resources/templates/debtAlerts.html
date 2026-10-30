@@ -56,6 +56,54 @@
                   th:text="${' Tổng cộng: ' + debtDashboard.alertCount + ' hồ sơ.'}"></span>
         </div>
 
+        <section th:if="${debtDashboard.importAlertCount > 0}"
+                 class="alert alert-danger border-danger shadow-sm mb-4">
+            <div class="d-flex align-items-start gap-2 mb-2">
+                <div>
+                    <h5 class="alert-heading fw-bold mb-1">Cảnh báo hồ sơ nhập khẩu cần báo kế toán</h5>
+                    <div>
+                        Có <strong th:text="${debtDashboard.importAlertCount}"></strong> hồ sơ NK còn tiền phải
+                        thanh toán và chỉ còn tối đa 10 ngày đến hạn điều chỉnh báo cáo Ngân hàng Nhà nước.
+                    </div>
+                </div>
+            </div>
+
+            <div th:each="item : ${debtDashboard.importAlerts}"
+                 class="bg-white border border-danger rounded p-3 mt-3 text-dark">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                        <div class="fw-bold">
+                            <span th:text="${item.employeeName}"></span>
+                            <small th:if="${isManager}" class="text-muted"
+                                   th:text="${'(' + item.accountName + ')'}"></small>
+                            <span th:if="${item.section != null and !item.section.isEmpty()}"
+                                  class="badge bg-secondary ms-1" th:text="${'Mục ' + item.section}"></span>
+                        </div>
+                        <div class="mt-1">
+                            NCC: <strong th:text="${item.supplier}"></strong>
+                            · Hóa đơn: <strong th:text="${item.invoiceNumber}"></strong>
+                            · Còn phải thanh toán: <strong th:text="${item.remainingAmountDisplay}"></strong>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            Ngày vận đơn: <span th:text="${item.billOfLadingDate.isEmpty() ? 'chưa có' : item.billOfLadingDate}"></span>
+                            · Ngày tờ khai: <span th:text="${item.customsDeclarationDate.isEmpty() ? 'chưa có' : item.customsDeclarationDate}"></span>
+                            · Hạn phải điều chỉnh: <strong th:text="${item.regulatoryDeadline}"></strong>
+                            · <strong th:class="${item.deadlineClass}" th:text="${item.deadlineLabel}"></strong>
+                        </div>
+                    </div>
+                    <form th:if="${isManager}" method="post"
+                          th:action="@{/home/manager/debt-alerts/import-alerts/ack}"
+                          class="align-self-lg-center flex-shrink-0">
+                        <input type="hidden" name="alertKey" th:value="${item.alertKey}">
+                        <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Xác nhận hồ sơ này đã được báo cho kế toán?');">
+                            Đã báo kế toán
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
         <section th:each="employee : ${debtDashboard.employees}" class="card debt-card mb-4">
             <div class="card-body p-3 p-md-4">
                 <div class="d-flex flex-column flex-md-row justify-content-between gap-2 mb-3">

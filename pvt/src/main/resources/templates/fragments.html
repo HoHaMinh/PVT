@@ -65,6 +65,16 @@
                     <li class="nav-item">
                         <a class="nav-link font-style" th:href="@{/home/employee/private}">Lịch cần làm</a>
                     </li>
+                    <li class="nav-item dropdown" th:if="${priceLookupEnabled}">
+                        <a class="nav-link dropdown-toggle font-style" href="#" id="priceLookupDropdown"
+                           role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Tra giá
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="priceLookupDropdown">
+                            <li><a class="dropdown-item font-style" th:href="@{/home/employee/price-lookups}">Tra giá/xác nhận</a></li>
+                            <li><a class="dropdown-item font-style" th:href="@{/home/employee/price-lookup-results}">Kết quả tra giá</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item" th:if="${debtAlertEnabled}">
                         <a class="nav-link font-style" th:href="@{/home/employee/debt-alerts}">Cảnh báo công nợ</a>
                     </li>

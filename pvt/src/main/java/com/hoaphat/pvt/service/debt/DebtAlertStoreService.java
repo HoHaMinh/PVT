@@ -4,7 +4,9 @@ import com.hoaphat.pvt.config.DebtAlertProperties;
 import com.hoaphat.pvt.model.debt.*;
 import com.hoaphat.pvt.model.dto.debt.*;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
+import com.hoaphat.pvt.repository.debt.IDebtImportAlertAcknowledgementRepository;
 import com.hoaphat.pvt.repository.debt.IDebtAlertSyncRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +24,18 @@ public class DebtAlertStoreService {
     private static final DateTimeFormatter DATE_TIME_DISPLAY = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
 
     private final IDebtAlertSyncRepository syncRepository;
+    private final IDebtImportAlertAcknowledgementRepository importAcknowledgementRepository;
     private final IAccountRepository accountRepository;
     private final DebtAlertProperties properties;
     private final Clock clock;
 
     public DebtAlertStoreService(IDebtAlertSyncRepository syncRepository,
+                                 IDebtImportAlertAcknowledgementRepository importAcknowledgementRepository,
                                  IAccountRepository accountRepository,
                                  DebtAlertProperties properties,
                                  Clock clock) {
         this.syncRepository = syncRepository;
+        this.importAcknowledgementRepository = importAcknowledgementRepository;
         this.accountRepository = accountRepository;
         this.properties = properties;
         this.clock = clock;
@@ -98,9 +103,12 @@ public class DebtAlertStoreService {
         for (DebtAlertEmployeePayload employee : employeePayloads) {
             if (employee != null && employee.getAlerts() != null) {
                 totalAlerts += employee.getAlerts().size();
-                if (totalAlerts > MAX_ALERTS) {
-                    throw new IllegalArgumentException("Apps Script trả về quá nhiều dòng công nợ.");
-                }
+            }
+            if (employee != null && employee.getImportAlerts() != null) {
+                totalAlerts += employee.getImportAlerts().size();
+            }
+            if (totalAlerts > MAX_ALERTS) {
+                throw new IllegalArgumentException("Apps Script trả về quá nhiều dòng cảnh báo công nợ.");
             }
         }
 
@@ -110,7 +118,13 @@ public class DebtAlertStoreService {
                 sync.addEmployee(toEmployeeSnapshot(payload));
             }
         }
-        sync.setTotalAlerts(totalAlerts);
+        int ordinaryAlertCount = employeePayloads.stream()
+                .filter(Objects::nonNull)
+                .map(DebtAlertEmployeePayload::getAlerts)
+                .filter(Objects::nonNull)
+                .mapToInt(List::size)
+                .sum();
+        sync.setTotalAlerts(ordinaryAlertCount);
         sync.setStatus(DebtAlertSyncStatus.SUCCESS);
         sync.setLastSuccessAt(now());
         sync.setMessage(safe(response.getMessage(), 1000,
@@ -154,19 +168,109 @@ public class DebtAlertStoreService {
 
         String normalizedAccount = accountName == null ? "" : accountName.trim();
         List<DebtAlertEmployeeView> employeeViews = new ArrayList<>();
+        List<DebtImportAlertView> importAlertViews = new ArrayList<>();
         int visibleAlerts = 0;
         for (DebtAlertEmployeeSnapshot employee : sync.getEmployees()) {
             if (manager || normalizedAccount.equals(employee.getAccountName())) {
                 DebtAlertEmployeeView view = toEmployeeView(employee);
                 visibleAlerts += view.getItems().size();
                 employeeViews.add(view);
+                for (DebtImportAlertItem item : employee.getImportAlerts()) {
+                    importAlertViews.add(toImportAlertView(employee, item));
+                }
             }
         }
+        if (!importAlertViews.isEmpty()) {
+            List<String> keys = new ArrayList<>();
+            for (DebtImportAlertView view : importAlertViews) keys.add(view.getAlertKey());
+            Set<String> acknowledgedKeys = new HashSet<>();
+            for (DebtImportAlertAcknowledgement acknowledgement
+                    : importAcknowledgementRepository.findByAlertKeyIn(keys)) {
+                acknowledgedKeys.add(acknowledgement.getAlertKey());
+            }
+            importAlertViews.removeIf(view -> acknowledgedKeys.contains(view.getAlertKey()));
+        }
+        importAlertViews.sort(Comparator.comparing(DebtImportAlertView::getDaysRemaining,
+                Comparator.nullsLast(Comparator.naturalOrder())));
         employeeViews.sort(Comparator.comparing(DebtAlertEmployeeView::getEmployeeName,
                 Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
         dashboard.setEmployees(employeeViews);
         dashboard.setAlertCount(visibleAlerts);
+        dashboard.setImportAlerts(importAlertViews);
+        dashboard.setImportAlertCount(importAlertViews.size());
         return dashboard;
+    }
+
+    @Transactional
+    public void acknowledgeImportAlert(String rawAlertKey, String accountName, boolean manager) {
+        if (!manager) {
+            throw new AccessDeniedException("Chỉ quản lý được xác nhận đã báo kế toán.");
+        }
+        String alertKey = safe(rawAlertKey, 64, "").toLowerCase(Locale.ROOT);
+        if (!alertKey.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException("Mã cảnh báo NK không hợp lệ.");
+        }
+
+        DebtAlertSync sync = syncRepository.findByScanDate(today())
+                .orElseThrow(() -> new IllegalArgumentException("Chưa có dữ liệu cảnh báo công nợ hôm nay."));
+        String normalizedAccount = safe(accountName, 100, "");
+        boolean found = false;
+        for (DebtAlertEmployeeSnapshot employee : sync.getEmployees()) {
+            for (DebtImportAlertItem item : employee.getImportAlerts()) {
+                if (alertKey.equals(item.getAlertKey())) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+        if (!found) {
+            throw new IllegalArgumentException("Cảnh báo NK không còn tồn tại trong dữ liệu hôm nay.");
+        }
+
+        if (importAcknowledgementRepository.findByAlertKey(alertKey).isPresent()) return;
+        DebtImportAlertAcknowledgement acknowledgement = new DebtImportAlertAcknowledgement();
+        acknowledgement.setAlertKey(alertKey);
+        acknowledgement.setAcknowledgedBy(normalizedAccount.isEmpty() ? "unknown" : normalizedAccount);
+        acknowledgement.setAcknowledgedAt(now());
+        importAcknowledgementRepository.save(acknowledgement);
+    }
+
+    @Transactional(readOnly = true)
+    public Set<String> getPendingImportAlertAccountNamesToday() {
+        DebtAlertSync sync = syncRepository.findByScanDate(today()).orElse(null);
+        if (sync == null || sync.getStatus() != DebtAlertSyncStatus.SUCCESS) {
+            return Collections.emptySet();
+        }
+
+        Map<String, String> accountByAlertKey = new LinkedHashMap<>();
+        for (DebtAlertEmployeeSnapshot employee : sync.getEmployees()) {
+            String accountName = safe(employee.getAccountName(), 100, "");
+            if (accountName.isEmpty()) continue;
+            for (DebtImportAlertItem item : employee.getImportAlerts()) {
+                if (item != null && item.getAlertKey() != null
+                        && !item.getAlertKey().trim().isEmpty()) {
+                    accountByAlertKey.put(item.getAlertKey(), accountName);
+                }
+            }
+        }
+        if (accountByAlertKey.isEmpty()) return Collections.emptySet();
+
+        for (DebtImportAlertAcknowledgement acknowledgement
+                : importAcknowledgementRepository.findByAlertKeyIn(accountByAlertKey.keySet())) {
+            accountByAlertKey.remove(acknowledgement.getAlertKey());
+        }
+        return new LinkedHashSet<>(accountByAlertKey.values());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasPendingImportAlertForAccountToday(String accountName) {
+        String normalized = accountName == null ? "" : accountName.trim();
+        if (normalized.isEmpty()) return false;
+        for (String pendingAccount : getPendingImportAlertAccountNamesToday()) {
+            if (normalized.equalsIgnoreCase(pendingAccount)) return true;
+        }
+        return false;
     }
 
     private DebtAlertEmployeeSnapshot toEmployeeSnapshot(DebtAlertEmployeePayload payload) {
@@ -200,7 +304,35 @@ public class DebtAlertStoreService {
                 snapshot.addItem(toItem(alert));
             }
         }
+        List<DebtImportAlertPayload> importAlerts = payload.getImportAlerts() == null
+                ? Collections.emptyList() : payload.getImportAlerts();
+        for (DebtImportAlertPayload alert : importAlerts) {
+            if (alert != null) snapshot.addImportAlert(toImportAlert(alert));
+        }
         return snapshot;
+    }
+
+    private DebtImportAlertItem toImportAlert(DebtImportAlertPayload payload) {
+        String alertKey = safe(payload.getAlertKey(), 64, "").toLowerCase(Locale.ROOT);
+        if (!alertKey.matches("[0-9a-f]{64}")) {
+            throw new IllegalArgumentException("Apps Script trả về alertKey NK không hợp lệ.");
+        }
+        DebtImportAlertItem item = new DebtImportAlertItem();
+        item.setAlertKey(alertKey);
+        item.setSection(safe(payload.getSection(), 30, ""));
+        item.setItemOrder(safe(payload.getItemOrder(), 50, ""));
+        item.setSupplier(safe(payload.getSupplier(), 500, ""));
+        item.setInvoiceNumber(safe(payload.getInvoiceNumber(), 200, ""));
+        item.setRemainingAmountDisplay(safe(payload.getRemainingAmountDisplay(), 200, ""));
+        item.setBillOfLadingDate(parseOptionalDate(payload.getBillOfLadingDate()));
+        item.setCustomsDeclarationDate(parseOptionalDate(payload.getCustomsDeclarationDate()));
+        LocalDate deadline = parseOptionalDate(payload.getRegulatoryDeadline());
+        if (deadline == null) {
+            throw new IllegalArgumentException("Apps Script trả về regulatoryDeadline NK không hợp lệ.");
+        }
+        item.setRegulatoryDeadline(deadline);
+        item.setDaysRemaining((int) ChronoUnit.DAYS.between(today(), deadline));
+        return item;
     }
 
     private DebtAlertItem toItem(DebtAlertItemPayload payload) {
@@ -271,6 +403,39 @@ public class DebtAlertStoreService {
         } else {
             view.setTPlusLabel(item.getTPlus() + " (Còn " + Math.abs(item.getTPlus()) + " ngày)");
             view.setTPlusClass("text-success");
+        }
+        return view;
+    }
+
+    private DebtImportAlertView toImportAlertView(DebtAlertEmployeeSnapshot employee,
+                                                   DebtImportAlertItem item) {
+        DebtImportAlertView view = new DebtImportAlertView();
+        view.setAlertKey(item.getAlertKey());
+        view.setAccountName(employee.getAccountName());
+        view.setEmployeeName(employee.getEmployeeName());
+        view.setSection(item.getSection());
+        view.setItemOrder(item.getItemOrder());
+        view.setSupplier(item.getSupplier());
+        view.setInvoiceNumber(item.getInvoiceNumber());
+        view.setRemainingAmountDisplay(item.getRemainingAmountDisplay());
+        view.setBillOfLadingDate(formatDate(item.getBillOfLadingDate()));
+        view.setCustomsDeclarationDate(formatDate(item.getCustomsDeclarationDate()));
+        view.setRegulatoryDeadline(formatDate(item.getRegulatoryDeadline()));
+        Integer daysRemaining = item.getRegulatoryDeadline() == null ? null
+                : (int) ChronoUnit.DAYS.between(today(), item.getRegulatoryDeadline());
+        view.setDaysRemaining(daysRemaining);
+        if (daysRemaining == null) {
+            view.setDeadlineLabel("Không xác định được hạn");
+            view.setDeadlineClass("text-muted");
+        } else if (daysRemaining < 0) {
+            view.setDeadlineLabel("Đã quá hạn " + Math.abs(daysRemaining) + " ngày");
+            view.setDeadlineClass("text-danger");
+        } else if (daysRemaining == 0) {
+            view.setDeadlineLabel("Hết hạn hôm nay");
+            view.setDeadlineClass("text-danger");
+        } else {
+            view.setDeadlineLabel("Còn " + daysRemaining + " ngày");
+            view.setDeadlineClass(daysRemaining <= 3 ? "text-danger" : "text-warning");
         }
         return view;
     }

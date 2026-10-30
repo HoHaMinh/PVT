@@ -7,6 +7,8 @@ import com.hoaphat.pvt.model.debt.DebtAlertSyncStatus;
 import com.hoaphat.pvt.model.dto.debt.*;
 import com.hoaphat.pvt.repository.account.IAccountRepository;
 import com.hoaphat.pvt.repository.debt.IDebtAlertSyncRepository;
+import com.hoaphat.pvt.repository.debt.IDebtImportAlertAcknowledgementRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +27,7 @@ class DebtAlertStoreServiceTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 7, 7);
 
     @Mock private IDebtAlertSyncRepository syncRepository;
+    @Mock private IDebtImportAlertAcknowledgementRepository importAcknowledgementRepository;
     @Mock private IAccountRepository accountRepository;
 
     private DebtAlertStoreService service;
@@ -40,7 +43,8 @@ class DebtAlertStoreServiceTest {
                 ZonedDateTime.of(2026, 7, 7, 8, 30, 0, 0,
                         ZoneId.of("Asia/Ho_Chi_Minh")).toInstant(),
                 ZoneId.of("Asia/Ho_Chi_Minh"));
-        service = new DebtAlertStoreService(syncRepository, accountRepository, properties, clock);
+        service = new DebtAlertStoreService(syncRepository, importAcknowledgementRepository,
+                accountRepository, properties, clock);
         lenient().when(syncRepository.findByScanDate(TODAY)).thenReturn(Optional.empty());
     }
 
@@ -117,6 +121,39 @@ class DebtAlertStoreServiceTest {
         assertEquals(1, managerView.getAlertCount());
     }
 
+    @Test
+    void storesImportAlertAndHidesItAfterAcknowledgement() {
+        when(accountRepository.findByAccountName("dminhhh"))
+                .thenReturn(new Account("dminhhh", "password", "Hồ Hà Minh"));
+        DebtAlertApiResponse response = response("dminhhh", "2026-07-08", -1);
+        DebtImportAlertPayload importAlert = importAlert();
+        response.getEmployees().get(0).setImportAlerts(Collections.singletonList(importAlert));
+        ArgumentCaptor<DebtAlertSync> captor = ArgumentCaptor.forClass(DebtAlertSync.class);
+
+        service.saveResponse(response);
+
+        verify(syncRepository).save(captor.capture());
+        DebtAlertSync saved = captor.getValue();
+        assertEquals(1, saved.getEmployees().get(0).getImportAlerts().size());
+        when(syncRepository.findByScanDate(TODAY)).thenReturn(Optional.of(saved));
+        when(importAcknowledgementRepository.findByAlertKeyIn(anyCollection()))
+                .thenReturn(Collections.emptyList());
+        DebtAlertDashboard beforeAck = service.getDashboard("dminhhh", false, false);
+        assertEquals(1, beforeAck.getImportAlertCount());
+        assertEquals("Còn 8 ngày", beforeAck.getImportAlerts().get(0).getDeadlineLabel());
+
+        service.acknowledgeImportAlert(importAlert.getAlertKey(), "manager", true);
+
+        verify(importAcknowledgementRepository).save(any());
+    }
+
+    @Test
+    void employeeCannotAcknowledgeAnyImportAlert() {
+        assertThrows(AccessDeniedException.class,
+                () -> service.acknowledgeImportAlert(importAlert().getAlertKey(), "current.user", false));
+        verify(importAcknowledgementRepository, never()).save(any());
+    }
+
     private DebtAlertApiResponse response(String accountName, String dueDate, Integer tPlus) {
         DebtAlertEmployeePayload employee = new DebtAlertEmployeePayload();
         employee.setAccountName(accountName);
@@ -145,5 +182,20 @@ class DebtAlertStoreServiceTest {
         response.setDaysOffset(7);
         response.setEmployees(Collections.singletonList(employee));
         return response;
+    }
+
+    private DebtImportAlertPayload importAlert() {
+        DebtImportAlertPayload item = new DebtImportAlertPayload();
+        item.setAlertKey("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        item.setSection("II.");
+        item.setItemOrder("1");
+        item.setSupplier("Nhà cung cấp NK");
+        item.setInvoiceNumber("NK-01");
+        item.setRemainingAmountDisplay("100.000.000");
+        item.setBillOfLadingDate("2026-04-16");
+        item.setCustomsDeclarationDate("2026-05-31");
+        item.setRegulatoryDeadline("2026-07-15");
+        item.setDaysRemaining(8);
+        return item;
     }
 }

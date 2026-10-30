@@ -2,7 +2,7 @@
 
 > Tài liệu ngữ cảnh kỹ thuật và nghiệp vụ.
 > AI phải đọc toàn bộ file này trước khi phân tích hoặc sửa project.
-> Lần đối chiếu trực tiếp với source gần nhất: 08/07/2026.
+> Lần đối chiếu trực tiếp với source gần nhất: 15/10/2026.
 
 ## 1. Mục đích dự án
 
@@ -67,7 +67,7 @@ pvt/
 │   ├── othp/application.properties
 │   └── bd-la/application.properties
 ├── integration/google-apps-script/
-│   ├── pvt-debt-webapp-addon.gs
+│   ├── PVT_WebApp.gs
 │   └── README.md
 ├── database-null-audit.sql
 ├── account-birthday-update-template.sql
@@ -1774,13 +1774,38 @@ Hàm `masterCheckAllFilesAndSendEmail()` và trigger 07:00–08:00 hiện có ph
 giữ nguyên. Mã mới nằm riêng tại:
 
 ```text
-integration/google-apps-script/pvt-debt-webapp-addon.gs
+integration/google-apps-script/PVT_WebApp.gs
 ```
 
 File bổ sung không có `MailApp.sendEmail()`, không gọi hàm Gmail cũ và không dùng
 chung `isHoliday()` cũ vốn phụ thuộc active spreadsheet. Hàm mới mở file master
 bằng `PVT_MASTER_SPREADSHEET_ID` và dùng helper có prefix `pvt..._` để tránh đụng
 tên. Việc thêm tính năng PVT không thay đổi email/người nhận/lịch trigger cũ.
+
+Ngày 14/10/2026 đã nhận thêm bản sao mã Apps Script thực tế tại:
+
+```text
+E:/IT/Project/Cảnh báo công nợ/
+├── Canh bao cong no.gs
+├── Ket qua kiem tra cheo.gs
+├── Quan ly menu va nhan ban.gs
+└── PVT_WebApp.gs
+```
+
+- `Canh bao cong no.gs` là luồng Gmail độc lập: trigger gọi
+  `masterCheckAllFilesAndSendEmail()`, đọc cột A:C của `Danh sach nhan vien`,
+  chọn báo cáo mới nhất, quét mục II/III và gửi email. File này không truyền JSON
+  sang PVT.
+- `PVT_WebApp.gs` là endpoint Web App mà Spring Boot gọi bằng POST: xác thực
+  `PVT_SHARED_TOKEN`, đọc `PVT_MASTER_SPREADSHEET_ID`, dùng thêm Bravo ID tại cột
+  D và trả JSON. Đây mới là file quyết định dữ liệu nào được truyền từ Drive sang
+  PVT.
+- Ngày 14/10/2026, `PVT_WebApp.gs` trong thư mục công nợ đã được đồng bộ thành
+  bản đầy đủ đọc A:Q, trả cả `alerts[]` và `importAlerts[]`, gồm logic cảnh báo NK.
+  File được quản lý bằng Git tại `integration/google-apps-script/PVT_WebApp.gs`
+  là nguồn chuẩn; file cùng tên trong `E:/IT/Project/Cảnh báo công nợ/` là bản sao
+  thao tác để đưa lên Google Apps Script. Hai bản phải luôn có nội dung/hash giống
+  nhau, không tạo thêm file add-on thứ năm có các hàm trùng tên.
 
 ### 31.3. Cấu hình sheet master và quyền
 
@@ -1810,9 +1835,11 @@ Web App trả JSON gồm:
 - `success`, `skipped`, `scanDate`, `generatedAt`, `daysOffset`, `message`,
   `skipReason`.
 - `employees[]`: `accountName`, `employeeName`, ID/URL file, sheet/đợt/tháng báo
-  cáo, `status`, `message`, `alerts[]`.
+  cáo, `status`, `message`, `alerts[]`, `importAlerts[]`.
 - `alerts[]`: mục, TT, nhà cung cấp, hóa đơn, trị giá hiển thị, ngày đến hạn ISO
   `yyyy-MM-dd`, T+.
+- `importAlerts[]`: khóa SHA-256 ổn định của hồ sơ, mục/TT/NCC/số hóa đơn, số tiền
+  còn phải thanh toán, ngày vận đơn, ngày tờ khai, hạn pháp lý và số ngày còn lại.
 
 Web App giữ logic chọn sheet mới nhất, phát hiện trùng đợt/tháng, chỉ quét mục II
 và III, đọc B1 và bỏ qua Chủ Nhật/ngày trong `Lich nghi le`. Nó không gửi email.
@@ -1895,6 +1922,9 @@ Hibernate `ddl-auto=update` tạo:
   thời điểm thử/thành công và tổng cảnh báo.
 - `debt_alert_employee`: snapshot từng nhân viên/file/report.
 - `debt_alert_item`: từng hồ sơ công nợ thuộc snapshot nhân viên.
+- `debt_import_alert_item`: cảnh báo NK thuộc snapshot nhân viên của lần quét.
+- `debt_import_alert_ack`: khóa hồ sơ NK đã được xác nhận báo kế toán, người xác
+  nhận và thời điểm xác nhận. Bảng này không bị xóa khi resync/ngày mới.
 
 Resync cùng ngày thay danh sách con trong snapshot, không cộng trùng dữ liệu.
 Employee chỉ được lọc đúng `Principal.getName()`. Manager thấy toàn bộ nhân viên,
@@ -1910,6 +1940,15 @@ Khi `app.debt-alert.enabled=true`:
 - Home có thẻ tóm tắt trạng thái/số hồ sơ.
 - Trang chi tiết có bảng cùng các cột email: Mục, TT, Nhà cung cấp, Số hóa đơn,
   Trị giá, Ngày đến hạn, T+.
+- Ngay dưới phần tổng quan có khối đỏ cảnh báo hồ sơ nhập khẩu còn tiền phải trả
+  khi đã bước vào 10 ngày trước hạn. Hạn lấy ngày đến trước giữa `Ngày vận đơn +
+  90 ngày` và `Ngày tờ khai + 45 ngày`; nếu chỉ có một ngày hợp lệ thì dùng mốc
+  đó. Cảnh báo tiếp tục hiện khi quá hạn.
+- Nút **Đã báo kế toán** lưu xác nhận bền vững theo khóa hồ sơ. Sau khi xác nhận,
+  cảnh báo không hiện lại dù số tiền còn lại vẫn lớn hơn 0. Employee vẫn xem được
+  cảnh báo của chính mình nhưng không có quyền xác nhận; chỉ manager thấy nút và
+  được xác nhận hồ sơ. Endpoint xác nhận nằm dưới `/home/manager/**` và service
+  cũng từ chối mọi lời gọi không có quyền manager.
 - Manager có nút **Quét lại Google Drive** và thấy liên kết file/diagnostic mọi
   nhân viên.
 - Khi đang quét, trang tự reload 8 giây/lần; gọi Google không chặn request web.
@@ -1926,6 +1965,7 @@ controller/DebtAlertController.java
 model/debt/*
 model/dto/debt/*
 repository/debt/IDebtAlertSyncRepository.java
+repository/debt/IDebtImportAlertAcknowledgementRepository.java
 service/debt/DebtAlertAppsScriptClient.java
 service/debt/DebtAlertStoreService.java
 service/debt/DebtAlertSyncService.java
@@ -1963,6 +2003,45 @@ Nghiệm thu tối thiểu:
 5. Employee không thấy dữ liệu account khác; manager thấy tất cả.
 6. Chủ Nhật/ngày lễ hiển thị SKIPPED; lỗi mạng hiển thị FAILED và tự retry.
 7. Nút quét lại không tạo hai job đồng thời và resync không nhân đôi item.
+8. Hồ sơ NK còn tiền chỉ hiện từ 10 ngày trước mốc đến hạn sớm hơn; xác nhận xong
+   không hiện lại sau quét lại hoặc sang ngày mới.
+
+### 31.12. Project Apps Script kiểm tra chéo độc lập
+
+Hai file nguồn dùng để nhân bản file và kiểm tra chéo Google Sheets được lưu ngoài
+source Spring Boot tại:
+
+```text
+E:/IT/Project/Cảnh báo công nợ/
+├── Quan ly menu va nhan ban.gs
+└── Ket qua kiem tra cheo.gs
+```
+
+`Ket qua kiem tra cheo.gs` đọc biểu mẫu mới đến cột Q và áp dụng thêm ba quy tắc
+trước khi chạy đối chiếu II+III/I+II và VI+I+IV/V+VI:
+
+Các quy tắc mới không quét cố định từ một số dòng cụ thể. Chúng chỉ bắt đầu xử
+lý sau khi gặp tiêu đề mục La Mã `I.`, `II.`, ... giống logic kiểm tra chéo cũ;
+những dòng tiêu đề/cấu hình phía trên như `ĐỢT BÁO CÁO` phải được bỏ qua.
+
+1. Dòng hồ sơ có cột M (số tiền còn phải thanh toán) lớn hơn 0 không được nằm ở
+   mục I, IV, V hoặc VI.
+2. Dòng hồ sơ thực tế (có NCC hoặc số hóa đơn) bắt buộc điền cột O `Nội địa hay
+   NK`. TT hoặc số 0 do công thức trên dòng trống không làm dòng đó thành hồ sơ.
+   Nếu cột O là `NK` thì đồng thời bắt buộc điền cả cột P `Ngày vận đơn` và cột Q
+   `Ngày tờ khai`. Hai ngày phải là ô ngày hợp lệ của Google Sheets hoặc chuỗi
+   `dd/MM/yyyy`/`dd-MM-yyyy`; ngày không tồn tại như `31/02/2026` bị từ chối.
+3. Trên mỗi dòng hồ sơ, cột M `Số tiền còn lại` phải bằng cột E `Trị giá` trừ cột
+   K `Lũy kế đầu kỳ` rồi trừ cột L `Thanh toán đợt này`. E và M bắt buộc là số;
+   K/L được phép trống và khi đó được tính là 0. Sai lệch số học cho phép tối đa
+   0,01 để tránh lỗi biểu diễn số thập phân.
+4. Với cùng hóa đơn được nhận diện bằng NCC + số hóa đơn + ngày hóa đơn + trị giá,
+   cột K `Đầu kỳ lũy kế...` của báo cáo mới phải lớn hơn hoặc bằng báo cáo cũ.
+
+Ba quy tắc này chỉ thuộc công cụ kiểm tra chéo Google Drive, không được lưu vào
+database và không hiển thị tại trang cảnh báo PVT. Sau khi sửa file local phải cập
+nhật nội dung tương ứng trong project Google Apps Script rồi lưu/deploy theo quy
+trình Google; chỉ build JAR không tự cập nhật mã Apps Script trên Drive.
 
 ### 31.11. Lưu ý cập nhật JAR trên Windows
 
@@ -2285,3 +2364,195 @@ Quy trình triển khai giữ nguyên: backup database, tắt PVT bằng tray ic
 không còn tiến trình Java của JAR, chép JAR mới thành `pvt.jar`, chạy shortcut một
 lần rồi kiểm tra log/login/tab nhân viên. Nếu cần rollback, tắt bản mới và chép
 lại JAR backup trên; database không cần rollback vì release không đổi schema.
+
+## 34. Nhắc việc cá nhân đầu ngày trên trang Lịch cần làm
+
+### 34.1. Mục tiêu hiển thị
+
+Ngay dưới vùng tab nhân viên và phía trên bảng công việc, PVT có thể hiện tối đa
+hai thẻ cảnh báo cá nhân:
+
+```text
+Bạn có nội dung tra giá cần xác nhận.
+Bạn có hóa đơn nhập khẩu cần báo kế toán do gần đến hạn theo ngày vận đơn/tờ khai.
+```
+
+Câu nào có dữ liệu thì hiện, có cả hai thì hiện cả hai, không có thì không tạo
+khoảng cảnh báo rỗng. Thẻ Tra giá dùng nền xanh nhạt/viền xanh; thẻ hóa đơn NK
+dùng nền cam nhạt/viền cam. Cả hai có biểu tượng cảnh báo, chữ lớn dễ đọc và tự
+xếp một cột đủ chiều rộng trên mobile. Đây chỉ là lời nhắc dẫn người dùng sang
+chức năng tương ứng, không sao chép chi tiết hạng mục/hóa đơn vào bảng Lịch cần
+làm.
+
+### 34.2. Phạm vi tài khoản và chống lộ dữ liệu
+
+Lời nhắc luôn đọc bằng `Principal.getName()` của phiên đăng nhập:
+
+- Employee chỉ thấy snapshot của chính employee đó.
+- Manager cũng chỉ thấy snapshot của chính tài khoản manager.
+- Khi manager chuyển sang tab của Nga, Tín hoặc nhân viên khác, danh sách công việc
+  đổi theo tab nhưng lời nhắc cá nhân không đổi sang dữ liệu của nhân viên đó.
+- Giá trị `selectedValue` trên URL tuyệt đối không được dùng làm khóa đọc lời nhắc.
+
+### 34.3. Quy tắc snapshot một lần mỗi ngày
+
+`PersonalReminderCoordinator` chạy nền, mặc định thử lần đầu sau 20 giây và kiểm
+tra lại mỗi 60 giây. Nếu tích hợp công nợ đã cấu hình, coordinator phải chờ
+`DebtAlertSync` hôm nay đạt `SUCCESS` hoặc `SKIPPED` rồi mới chụp snapshot; nhờ vậy
+không khóa nhầm cờ hóa đơn NK ở trạng thái false khi Google Drive chưa quét xong.
+Nếu chức năng công nợ không cấu hình, phần Tra giá vẫn được chụp bình thường.
+
+Mỗi ngày chỉ tạo một bộ row, kể cả restart PVT nhiều lần. Nguồn hai cờ:
+
+- Tra giá: item được giao đúng `account_name`, có trạng thái
+  `PENDING_CONFIRMATION` hoặc `LOOKUP_FAILED`.
+- Hóa đơn NK: `debt_import_alert_item` thuộc snapshot đúng ngày và đúng
+  `account_name`, sau khi loại mọi `alert_key` đã có trong
+  `debt_import_alert_ack`.
+
+Nội dung mới phát sinh sau thời điểm snapshot không tự bật lời nhắc trong ngày;
+nó được xét lại ở snapshot ngày kế tiếp. Ngược lại, nếu người dùng đã xử lý hết
+nội dung được nhắc, lần mở trang tiếp theo sẽ tắt và lưu cờ false ngay để không
+nhắc sai; cờ false không được bật lại cho đến ngày mới. Snapshot cũ hơn 90 ngày
+được dọn tự động.
+
+### 34.4. Database, cấu hình và file chính
+
+Hibernate `ddl-auto=update` tạo bảng:
+
+```text
+personal_daily_reminder
+```
+
+Khóa duy nhất là `(reminder_date, account_name)`. Các cột nghiệp vụ gồm hai cờ
+`price_lookup_pending`, `import_alert_pending` và thời điểm `scanned_at`.
+
+Cấu hình mặc định trong JAR:
+
+```properties
+app.personal-reminder.startup-delay-ms=20000
+app.personal-reminder.retry-delay-ms=60000
+```
+
+Không bắt buộc chép hai dòng này vào `application.properties` ngoài JAR nếu dùng
+giá trị mặc định. File chính:
+
+```text
+model/reminder/PersonalDailyReminder.java
+model/reminder/PersonalReminderView.java
+repository/reminder/IPersonalDailyReminderRepository.java
+service/reminder/PersonalDailyReminderService.java
+service/reminder/PersonalReminderCoordinator.java
+controller/EventController.java
+templates/private.html
+```
+
+Rollback JAR cũ không cần rollback database: bản cũ không đọc bảng mới. Chỉ drop
+`personal_daily_reminder` nếu chắc chắn bỏ vĩnh viễn tính năng và đã backup.
+
+Build ngày 15/10/2026 đã chạy toàn bộ 123 test, 0 failure/error. Artifact:
+
+```text
+build/libs/pvt.jar
+SHA-256: AD831E560567A9A2CCED8E9A80B0BED4EAEB9B6574CC988FF406A6892EC22EA5
+```
+
+## 35. Tra giá và xác nhận nhiều hạng mục trong một lần
+
+### 35.1. Luồng nghiệp vụ
+
+Manager dùng **Cung cấp hạng mục cần tra giá** để nhập danh sách. Mỗi dòng gồm:
+
+```text
+Tên hiển thị    keyword tra giá    account_name nhân viên
+```
+
+PVT gọi Apps Script tìm các tên vật tư đề xuất, lưu từng hạng mục vào
+`price_lookup_item` và giao đúng `account_name`. Employee chỉ xem/xác nhận hạng
+mục của mình; manager có thể lọc và xử lý theo tab nhân viên hoặc tab Tất cả.
+
+Kết quả đã xử lý được xem tại **Tra giá > Kết quả tra giá**. Các bảng liên quan:
+
+```text
+price_lookup_batch
+price_lookup_item
+price_lookup_candidate
+price_lookup_result
+```
+
+### 35.2. Xác nhận hàng loạt trên trang chờ
+
+Trang `/home/employee/price-lookups` chỉ có **một nút Xác nhận** ở cuối toàn bộ
+danh sách. Nút không nằm trong từng khung và luôn được render sau hạng mục cuối
+cùng, kể cả khi trang vừa nhận thêm dữ liệu.
+
+Khi bấm:
+
+- Khung có ít nhất một tên vật tư được tick mới được gửi đi tra giá.
+- Khung có đề xuất nhưng chưa tick gì được giữ nguyên ở danh sách chờ.
+- Khung không có bất kỳ đề xuất nào được tự động hoàn thành và xuất hiện trong
+  tab kết quả với câu **Hiện chưa tìm thấy giá cơ sở**; không còn bị chuyển sang
+  `DISMISSED` rồi biến mất như logic cũ.
+- Mỗi khung có đề xuất luôn có thêm checkbox màu xanh
+  **Không có tên đề xuất nào phù hợp với tên hàng cần mua** ở dòng cuối. Chọn ô
+  này cũng tạo kết quả **Hiện chưa tìm thấy giá cơ sở**.
+- Checkbox “không phù hợp” và các checkbox tên vật tư loại trừ lẫn nhau bằng
+  JavaScript; backend cũng từ chối nếu request giả mạo gửi cả hai loại.
+- Giới hạn cũ tối đa 12 tên đề xuất/hạng mục vẫn giữ nguyên.
+
+Form dùng danh sách có chỉ số `items[n].itemId`,
+`items[n].selectedCandidateIds` và `items[n].noSuitableCandidate`. Backend luôn
+tải lại item/candidate từ database, không tin tên vật tư hay account gửi từ
+trình duyệt.
+
+### 35.3. Validation, lỗi và tính toàn vẹn
+
+`PriceLookupService.confirmBatch(...)` kiểm tra:
+
+- Tối đa 500 row form/lần gửi, không chấp nhận trùng `itemId`.
+- Employee không được xác nhận item của tài khoản khác.
+- Item phải còn ở `PENDING_CONFIRMATION` hoặc `LOOKUP_FAILED`.
+- Mọi candidate ID phải thực sự thuộc item tương ứng.
+- Không được đồng thời chọn candidate và chọn “không có tên phù hợp”.
+
+Nếu Apps Script lỗi ở một hạng mục, hạng mục đó trở thành `LOOKUP_FAILED` và vẫn
+được giữ lại để thử lại; các hạng mục khác trong cùng lần bấm vẫn được xử lý.
+Thông báo sau redirect ghi riêng số hạng mục hoàn thành và số hạng mục lỗi.
+
+Endpoint hiện dùng bởi giao diện:
+
+```text
+POST /home/employee/price-lookups/confirm-batch
+```
+
+Hai endpoint xác nhận đơn cũ vẫn được giữ để tương thích, nhưng template hiện
+không tạo nút riêng từng khung. Endpoint bỏ qua item không có đề xuất cũng đã đổi
+sang tạo kết quả “không có giá”, không còn đặt trạng thái `DISMISSED`.
+
+### 35.4. File chính, kiểm thử và artifact
+
+```text
+controller/PriceLookupController.java
+model/dto/price/PriceLookupBatchConfirmationForm.java
+model/dto/price/PriceLookupConfirmationRow.java
+model/dto/price/PriceLookupBatchConfirmationResult.java
+service/price/PriceLookupService.java
+templates/priceLookupPending.html
+templates/priceLookupResults.html
+static/js/price-lookup.js
+static/css/price-lookup.css
+```
+
+Kiểm thử quan trọng nằm trong `PriceLookupServiceTest` và
+`PriceLookupPageIntegrationTest`: xử lý hỗn hợp khung được chọn/không chọn/không
+có đề xuất, lựa chọn không có tên phù hợp, chống gửi hai lựa chọn mâu thuẫn,
+binding nhiều khung và xác nhận trang chỉ còn một nút cuối.
+
+Build ngày 30/10/2026 đã chạy toàn bộ **130 test**, 0 failure/error. Tính năng
+tra giá không thêm bảng/cột database mới. Bản build này đồng thời giới hạn nút
+**Đã báo kế toán** chỉ cho manager. Artifact:
+
+```text
+build/libs/pvt.jar
+SHA-256: 473E9894F11781A4EE1A638A386FFDD0F1C925F6A3930B4DFEAE2DD9F7534E12
+```

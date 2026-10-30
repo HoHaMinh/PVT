@@ -12,6 +12,7 @@ import com.hoaphat.pvt.config.ResponseChatProperties;
 import com.hoaphat.pvt.service.priority.WorkPriorityService;
 import com.hoaphat.pvt.service.response.ResponseAttachmentStorageService;
 import com.hoaphat.pvt.service.response.ResponseSummaryService;
+import com.hoaphat.pvt.service.reminder.PersonalDailyReminderService;
 import org.springframework.core.io.Resource;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.slf4j.Logger;
@@ -54,6 +55,7 @@ public class EventController {
     @Autowired private NotificationService notificationService;
     @Autowired private WorkPriorityService workPriorityService;
     @Autowired private ResponseSummaryService responseSummaryService;
+    @Autowired private PersonalDailyReminderService personalDailyReminderService;
 
     // 🔥 THÊM MỚI: API để giao diện kết nối vào "nghe" thông báo
     @GetMapping("/home/employee/notifications/subscribe")
@@ -62,8 +64,11 @@ public class EventController {
     }
 
     @GetMapping("/home/employee/private")
-    public ModelAndView showPrivate(Model model, @RequestParam(value = "selectedValue", required = false) Optional<String> accountName, HttpServletRequest request) {
-        String currentAccountName = (String) request.getSession().getAttribute("accountName");
+    public ModelAndView showPrivate(Model model,
+                                    @RequestParam(value = "selectedValue", required = false) Optional<String> accountName,
+                                    HttpServletRequest request,
+                                    Principal principal) {
+        String currentAccountName = principal == null ? "" : principal.getName();
         boolean isManager = request.isUserInRole("ROLE_MANAGER");
         model.addAttribute("isManager", isManager);
         String filter = isManager ? accountName.orElse("") : currentAccountName;
@@ -82,6 +87,8 @@ public class EventController {
         }
         model.addAttribute("userTabs", userTabs);
         model.addAttribute("accountName", currentAccountName);
+        model.addAttribute("personalReminder",
+                personalDailyReminderService.getTodayForAccount(currentAccountName));
         
         List<MonthEvent> data = monthEventService.getMonthEventListByFilter(now, filter);
         workPriorityService.applyTodayPriorities(data, filter);

@@ -13,7 +13,9 @@ public class DebtAlertDashboard {
     private String lastSuccessAt;
     private String message;
     private int alertCount;
+    private int importAlertCount;
     private List<DebtAlertEmployeeView> employees = new ArrayList<>();
+    private List<DebtImportAlertView> importAlerts = new ArrayList<>();
 
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
@@ -33,6 +35,10 @@ public class DebtAlertDashboard {
     public void setMessage(String message) { this.message = message; }
     public int getAlertCount() { return alertCount; }
     public void setAlertCount(int alertCount) { this.alertCount = alertCount; }
+    public int getImportAlertCount() { return importAlertCount; }
+    public void setImportAlertCount(int importAlertCount) { this.importAlertCount = importAlertCount; }
     public List<DebtAlertEmployeeView> getEmployees() { return employees; }
     public void setEmployees(List<DebtAlertEmployeeView> employees) { this.employees = employees; }
+    public List<DebtImportAlertView> getImportAlerts() { return importAlerts; }
+    public void setImportAlerts(List<DebtImportAlertView> importAlerts) { this.importAlerts = importAlerts; }
 }
