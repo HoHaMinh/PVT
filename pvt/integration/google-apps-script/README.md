@@ -172,3 +172,33 @@ Sau khi deploy, kiểm tra trigger trong Apps Script vẫn trỏ tới đúng
 
 Nếu muốn rollback riêng tính năng này, đặt `app.debt-alert.enabled=false` rồi
 restart PVT. Trigger Gmail cũ vẫn hoạt động kể cả khi PVT tắt.
+
+## 10. Tự động tạo sheet báo cáo đợt mới
+
+File `Tu dong tao file dot moi.gs` bổ sung menu **Công nợ > Tự động tạo file
+đợt mới** trong file nhân viên. Menu không hiện ở file master có sheet
+`Danh sach nhan vien`.
+
+Trước khi sửa dữ liệu, chức năng xác định sheet mới nhất theo tháng và đợt,
+kiểm tra trùng đợt/tháng rồi yêu cầu người dùng xác nhận. Riêng sau Đợt 5+6:
+
+- **Có**: tạo Đợt 7 cùng tháng.
+- **Không**: bỏ qua Đợt 7, tạo Đợt 1+2 tháng kế tiếp.
+- **Hủy**: dừng và không thay đổi dữ liệu.
+
+Sheet gần nhất được giữ nguyên. Sheet mới là bản sao của sheet này; mục III cũ
+được nối vào mục II mới, tự chèn thêm dòng nếu mục II thiếu chỗ. Nội dung các
+mục I, III, IV, V được xóa nhưng số dòng, định dạng và data validation được giữ.
+Chỉ sau khi bản sao xử lý thành công, các sheet báo cáo cũ hơn mới bị xóa.
+
+Khi đưa mã lên Apps Script của file/template nhân viên:
+
+1. Cập nhật `Quan ly menu va nhan ban.gs` để có menu mới.
+2. Tạo file Script tên `Tu dong tao file dot moi` và dán toàn bộ file `.gs`
+   tương ứng.
+3. Save, tải lại Google Sheets và chạy thử trên một bản sao dữ liệu trước.
+
+Ba luồng chọn báo cáo mới nhất (`Canh bao cong no.gs`, `Ket qua kiem tra
+cheo.gs`, `PVT_WebApp.gs`) cũng được cập nhật để hiểu tháng 1 mới hơn tháng 12
+trong vòng chuyển năm. Khi cập nhật `PVT_WebApp.gs`, cần tạo **New version** cho
+Web App như hướng dẫn ở mục 5.

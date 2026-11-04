@@ -259,17 +259,23 @@ function pvtFindNewestReport_(reports) {
     "Đợt 7": 4
   };
   let newest = null;
-  let maxValue = -1;
-
   reports.forEach(function (report) {
-    const monthNumber = parseInt(report.month.replace(/[^0-9]/g, ""), 10) || 0;
-    const value = monthNumber * 10 + (batchWeights[report.batch] || 0);
-    if (value > maxValue) {
-      maxValue = value;
+    if (!newest || pvtCompareReportRecency_(report, newest, batchWeights) > 0) {
       newest = report;
     }
   });
   return newest;
+}
+
+function pvtCompareReportRecency_(left, right, batchWeights) {
+  const leftMonth = parseInt(String(left.month).replace(/[^0-9]/g, ""), 10) || 0;
+  const rightMonth = parseInt(String(right.month).replace(/[^0-9]/g, ""), 10) || 0;
+  if (leftMonth === rightMonth) {
+    return (batchWeights[left.batch] || 0) - (batchWeights[right.batch] || 0);
+  }
+  if (leftMonth === 1 && rightMonth === 12) return 1;
+  if (leftMonth === 12 && rightMonth === 1) return -1;
+  return leftMonth - rightMonth;
 }
 
 function pvtScanReport_(sheet, today, targetDate, timeZone) {
