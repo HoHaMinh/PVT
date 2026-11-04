@@ -42,6 +42,15 @@ context.rolloverReports = [
   { periodCode: '1+2', month: 1, sheet: { getName: () => '1' } }
 ];
 assert.equal(evaluate('findNewestDebtReport_(rolloverReports).month'), 1);
+context.singleReport = [
+  { periodCode: '5+6', month: 10, sheet: { getName: () => '4' } }
+];
+assert.equal(evaluate('findNewestDebtReport_(singleReport).sheet.getName()'), '4');
+context.normalConsecutiveMonths = [
+  { periodCode: '7', month: 11, sheet: { getName: () => '11' } },
+  { periodCode: '1+2', month: 12, sheet: { getName: () => '12' } }
+];
+assert.equal(evaluate('findNewestDebtReport_(normalConsecutiveMonths).month'), 12);
 
 const sectionColumn = [
   ['BIÊN BẢN BÁO CÁO HÓA ĐƠN CÔNG NỢ'],
