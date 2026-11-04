@@ -9,7 +9,8 @@ import java.util.List;
 @Entity
 @Table(name = "price_lookup_item", indexes = {
         @Index(name = "idx_price_lookup_pending", columnList = "lookup_status,assigned_account_name"),
-        @Index(name = "idx_price_lookup_completed", columnList = "completed_at")
+        @Index(name = "idx_price_lookup_completed", columnList = "completed_at"),
+        @Index(name = "idx_price_lookup_deleted", columnList = "is_deleted,completed_at")
 })
 public class PriceLookupItem {
     private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy");
@@ -55,6 +56,15 @@ public class PriceLookupItem {
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
+
+    @Column(name = "is_deleted", nullable = false, columnDefinition = "boolean default false")
+    private Boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by", length = 100)
+    private String deletedBy;
 
     @OneToMany(mappedBy = "item", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("candidateId ASC")
@@ -104,6 +114,12 @@ public class PriceLookupItem {
     public void setConfirmedBy(String confirmedBy) { this.confirmedBy = confirmedBy; }
     public LocalDateTime getCompletedAt() { return completedAt; }
     public void setCompletedAt(LocalDateTime completedAt) { this.completedAt = completedAt; }
+    public boolean isDeleted() { return Boolean.TRUE.equals(deleted); }
+    public void setDeleted(Boolean deleted) { this.deleted = deleted; }
+    public LocalDateTime getDeletedAt() { return deletedAt; }
+    public void setDeletedAt(LocalDateTime deletedAt) { this.deletedAt = deletedAt; }
+    public String getDeletedBy() { return deletedBy; }
+    public void setDeletedBy(String deletedBy) { this.deletedBy = deletedBy; }
     public List<PriceLookupCandidate> getCandidates() { return candidates; }
     public void setCandidates(List<PriceLookupCandidate> candidates) { this.candidates = candidates; }
     public List<PriceLookupResult> getResults() { return results; }

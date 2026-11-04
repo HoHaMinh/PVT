@@ -94,6 +94,7 @@ class PriceLookupPageIntegrationTest {
     @Test
     void resultPageUsesDisplayNameAndCompactPriceLabels() throws Exception {
         PriceLookupItem item = new PriceLookupItem();
+        item.setItemId(51);
         item.setDisplayName("Lõi lọc sợi quấn AQUA - CPP 5 micromet 20 inch");
         item.setKeyword("aqua*cpp");
         item.setAssignedAccountName("dminhhh");
@@ -137,7 +138,81 @@ class PriceLookupPageIntegrationTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
                         "Hiện chưa tìm thấy giá cơ sở")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(
-                        "placeholder=\"Tìm theo tên vật tư, nhà cung cấp\"")));
+                        "placeholder=\"Tìm theo tên vật tư, nhà cung cấp\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "aria-label=\"Xóa kết quả tra giá\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "/home/employee/price-lookup-results/51/trash")));
+    }
+
+    @Test
+    void employeeCannotOpenDeletedPriceResultFolder() throws Exception {
+        mockMvc.perform(get("/home/manager/price-lookup-results/trash")
+                        .with(user("employee.one").roles("EMPLOYEE")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void managerDeletedResultPageReusesResultLayoutWithRestoreAndEmptyActions() throws Exception {
+        PriceLookupItem item = new PriceLookupItem();
+        item.setItemId(52);
+        item.setDisplayName("Vật tư đã xóa");
+        item.setAssignedAccountName("employee.one");
+        item.setStatus(PriceLookupStatus.COMPLETED);
+        item.setDeleted(true);
+        item.setCompletedAt(LocalDateTime.of(2026, 11, 4, 8, 55));
+        item.setResults(Collections.emptyList());
+        when(priceLookupService.searchDeletedResults(true, "", "", 0))
+                .thenReturn(new PageImpl<>(Collections.singletonList(item)));
+        when(accountService.getUserDisplayList()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/home/manager/price-lookup-results/trash")
+                        .with(user("manager").roles("MANAGER")))
+                .andExpect(status().isOk())
+                .andExpect(view().name("priceLookupResults"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Kết quả tra giá đã xóa")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Khôi phục")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "Làm sạch thư mục")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(
+                        "/home/manager/price-lookup-results/trash/52/restore")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("aria-label=\"Xóa kết quả tra giá\""))));
+    }
+
+    @Test
+    void assignedEmployeeCanSubmitResultDeletionAndKeepsCurrentFilters() throws Exception {
+        mockMvc.perform(post("/home/employee/price-lookup-results/53/trash")
+                        .with(user("employee.one").roles("EMPLOYEE"))
+                        .with(csrf())
+                        .param("selectedValue", "employee.one")
+                        .param("search", " vòng bi ")
+                        .param("page", "2"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/home/employee/price-lookup-results?selectedValue=employee.one&search=v%C3%B2ng+bi&page=2"));
+
+        verify(priceLookupService).moveResultToTrash(53, "employee.one", false);
+    }
+
+    @Test
+    void managerCanRestoreAndPermanentlyEmptyDeletedResultFolder() throws Exception {
+        when(priceLookupService.emptyDeletedResults(true)).thenReturn(3);
+
+        mockMvc.perform(post("/home/manager/price-lookup-results/trash/54/restore")
+                        .with(user("manager").roles("MANAGER"))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/home/manager/price-lookup-results/trash"));
+        mockMvc.perform(post("/home/manager/price-lookup-results/trash/empty")
+                        .with(user("manager").roles("MANAGER"))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(flash().attribute("mess", "Đã xóa hẳn 3 kết quả tra giá."));
+
+        verify(priceLookupService).restoreDeletedResult(54, true);
+        verify(priceLookupService).emptyDeletedResults(true);
     }
 
     @Test

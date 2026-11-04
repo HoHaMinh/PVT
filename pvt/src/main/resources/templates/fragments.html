@@ -73,6 +73,8 @@
                         <ul class="dropdown-menu" aria-labelledby="priceLookupDropdown">
                             <li><a class="dropdown-item font-style" th:href="@{/home/employee/price-lookups}">Tra giá/xác nhận</a></li>
                             <li><a class="dropdown-item font-style" th:href="@{/home/employee/price-lookup-results}">Kết quả tra giá</a></li>
+                            <li sec:authorize="hasRole('MANAGER')"><a class="dropdown-item font-style"
+                                th:href="@{/home/manager/price-lookup-results/trash}">Kết quả tra giá đã xóa</a></li>
                         </ul>
                     </li>
                     <li class="nav-item" th:if="${debtAlertEnabled}">

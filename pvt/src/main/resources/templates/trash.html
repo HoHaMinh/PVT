@@ -61,6 +61,21 @@
 
         <div th:if="${error}" class="alert alert-danger text-center fw-bold" role="alert" th:text="${error}"></div>
 
+        <form method="get" th:action="@{/home/manager/trash}" class="row g-2 mb-3">
+            <input type="hidden" name="size" th:value="${monthEventList != null ? monthEventList.size : 11}">
+            <div class="col-12 col-md">
+                <label class="visually-hidden" for="trashSearch">Tìm theo nội dung giao việc</label>
+                <input id="trashSearch" type="search" class="form-control" name="search" th:value="${search}"
+                       placeholder="Tìm theo nội dung giao việc">
+            </div>
+            <div class="col-12 col-md-auto d-grid">
+                <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+            </div>
+            <div th:if="${search != null and !search.isEmpty()}" class="col-12 col-md-auto d-grid">
+                <a class="btn btn-outline-secondary" th:href="@{/home/manager/trash}">Xóa bộ lọc</a>
+            </div>
+        </form>
+
         <div class="table-responsive mb-4">
             <table class="table table-hover table-bordered bg-white m-0">
                 <thead class="table-light">
@@ -73,7 +88,8 @@
                 </thead>
                 <tbody>
                 <tr th:if="${monthEventList == null or monthEventList.totalElements == 0}">
-                    <td colspan="4" class="text-center text-muted py-4">Thư mục đã xóa đang trống.</td>
+                    <td colspan="4" class="text-center text-muted py-4"
+                        th:text="${search != null and !search.isEmpty() ? 'Không tìm thấy công việc đã xóa phù hợp.' : 'Thư mục đã xóa đang trống.'}"></td>
                 </tr>
                 <tr th:each="list,iter : ${monthEventList}" class="align-middle">
                     <td class="text-center fw-bold text-muted"
@@ -84,10 +100,16 @@
                         <div class="action-buttons">
                             <form th:action="@{/home/manager/trash/delete/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
                                   onsubmit="return confirm('Xóa hẳn công việc này và toàn bộ phản hồi? Hành động này không thể hoàn tác.');">
+                                <input type="hidden" name="search" th:value="${search}">
+                                <input type="hidden" name="page" th:value="${currentPage}">
+                                <input type="hidden" name="size" th:value="${monthEventList.size}">
                                 <button type="submit" class="btn btn-sm btn-danger">Xóa hẳn</button>
                             </form>
                             <form th:action="@{/home/manager/trash/restore/{id}(id=${list.getMonthEventId()})}" method="post" style="margin: 0;"
                                   onsubmit="return confirm('Khôi phục công việc này về trạng thái Hiển thị?');">
+                                <input type="hidden" name="search" th:value="${search}">
+                                <input type="hidden" name="page" th:value="${currentPage}">
+                                <input type="hidden" name="size" th:value="${monthEventList.size}">
                                 <button type="submit" class="btn btn-sm btn-success">Khôi phục</button>
                             </form>
                         </div>
@@ -103,7 +125,7 @@
                     <li class="page-item" th:each="pageNumber : ${pageNumbers}"
                         th:classappend="${currentPage == pageNumber} ? 'active' : ''">
                         <a class="page-link"
-                           th:href="@{/home/manager/trash(page=${pageNumber},size=${monthEventList.size})}"
+                           th:href="@{/home/manager/trash(page=${pageNumber},size=${monthEventList.size},search=${search})}"
                            th:text="${pageNumber}"></a>
                     </li>
                 </ul>

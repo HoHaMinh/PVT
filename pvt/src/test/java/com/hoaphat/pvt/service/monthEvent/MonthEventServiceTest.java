@@ -16,6 +16,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -305,6 +308,19 @@ class MonthEventServiceTest {
         deletionOrder.verify(monthEventRepository).delete(first);
         deletionOrder.verify(responseEventInformationRepository).deleteResponseById(105);
         deletionOrder.verify(monthEventRepository).delete(second);
+    }
+
+    @Test
+    void deletedTaskSearchTrimsContentAndDelegatesPaging() {
+        PageRequest pageable = PageRequest.of(2, 11);
+        Page<MonthEvent> expected = new PageImpl<>(Collections.singletonList(new MonthEvent()));
+        when(monthEventRepository.searchDeletedEvents("báo cáo", pageable)).thenReturn(expected);
+
+        Page<MonthEvent> actual = monthEventService.searchDeletedMonthEvents(
+                pageable, "  báo cáo  ");
+
+        assertSame(expected, actual);
+        verify(monthEventRepository).searchDeletedEvents("báo cáo", pageable);
     }
 
     @Test

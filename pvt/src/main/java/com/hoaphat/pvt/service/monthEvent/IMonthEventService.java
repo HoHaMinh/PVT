@@ -28,6 +28,8 @@ public interface IMonthEventService {
 
     Page<MonthEvent> getDeletedMonthEventListWithPaging(Pageable pageable);
 
+    Page<MonthEvent> searchDeletedMonthEvents(Pageable pageable, String search);
+
     void moveToTrash(Integer id);
 
     void moveToTrash(List<Integer> ids);

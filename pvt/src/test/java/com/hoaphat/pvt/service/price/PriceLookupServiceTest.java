@@ -200,12 +200,87 @@ class PriceLookupServiceTest {
         verifyNoInteractions(client);
     }
 
+    @Test
+    void assignedEmployeeCanMoveOwnCompletedResultToTrash() {
+        PriceLookupItem item = completedItem(41, "employee.one");
+        when(itemRepository.findById(41)).thenReturn(Optional.of(item));
+
+        service.moveResultToTrash(41, "employee.one", false);
+
+        assertTrue(item.isDeleted());
+        assertNotNull(item.getDeletedAt());
+        assertEquals("employee.one", item.getDeletedBy());
+        verify(itemRepository).save(item);
+    }
+
+    @Test
+    void employeeCannotMoveAnotherEmployeesResultToTrash() {
+        PriceLookupItem item = completedItem(42, "employee.two");
+        when(itemRepository.findById(42)).thenReturn(Optional.of(item));
+
+        SecurityException error = assertThrows(SecurityException.class,
+                () -> service.moveResultToTrash(42, "employee.one", false));
+
+        assertTrue(error.getMessage().contains("nhân viên khác"));
+        assertFalse(item.isDeleted());
+        verify(itemRepository, never()).save(item);
+    }
+
+    @Test
+    void managerCanRestoreDeletedResultAndClearDeletionMetadata() {
+        PriceLookupItem item = completedItem(43, "employee.two");
+        item.setDeleted(true);
+        item.setDeletedAt(java.time.LocalDateTime.of(2026, 11, 4, 9, 0));
+        item.setDeletedBy("employee.two");
+        when(itemRepository.findById(43)).thenReturn(Optional.of(item));
+
+        service.restoreDeletedResult(43, true);
+
+        assertFalse(item.isDeleted());
+        assertNull(item.getDeletedAt());
+        assertNull(item.getDeletedBy());
+        verify(itemRepository).save(item);
+    }
+
+    @Test
+    void employeeCannotOpenOrRestoreDeletedResultFolder() {
+        assertThrows(SecurityException.class,
+                () -> service.searchDeletedResults(false, "employee.one", "", 0));
+        assertThrows(SecurityException.class,
+                () -> service.restoreDeletedResult(44, false));
+
+        verifyNoInteractions(itemRepository);
+    }
+
+    @Test
+    void managerCanPermanentlyEmptyDeletedResultFolder() {
+        PriceLookupItem first = completedItem(45, "employee.one");
+        PriceLookupItem second = completedItem(46, "employee.two");
+        first.setDeleted(true);
+        second.setDeleted(true);
+        when(itemRepository.findDeletedForUpdate()).thenReturn(Arrays.asList(first, second));
+
+        int deletedCount = service.emptyDeletedResults(true);
+
+        assertEquals(2, deletedCount);
+        verify(itemRepository).delete(first);
+        verify(itemRepository).delete(second);
+    }
+
     private PriceLookupItem pendingItem(int id, String accountName) {
         PriceLookupItem item = new PriceLookupItem();
         item.setItemId(id);
         item.setKeyword("keyword-" + id);
         item.setAssignedAccountName(accountName);
         item.setStatus(PriceLookupStatus.PENDING_CONFIRMATION);
+        return item;
+    }
+
+    private PriceLookupItem completedItem(int id, String accountName) {
+        PriceLookupItem item = new PriceLookupItem();
+        item.setItemId(id);
+        item.setAssignedAccountName(accountName);
+        item.setStatus(PriceLookupStatus.COMPLETED);
         return item;
     }
 

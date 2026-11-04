@@ -143,8 +143,78 @@ public class PriceLookupController {
                 context.accountName, context.manager, context.selectedAccount, normalizedSearch, page);
         model.addAttribute("resultPage", resultPage);
         model.addAttribute("search", normalizedSearch);
+        model.addAttribute("trashMode", false);
         addCommonModel(model, request, context);
         return "priceLookupResults";
+    }
+
+    @GetMapping("/home/manager/price-lookup-results/trash")
+    public String showDeletedResults(
+            @RequestParam(value = "selectedValue", required = false) String selectedValue,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            Model model, Principal principal, HttpServletRequest request) {
+        UserContext context = userContext(principal, request, selectedValue);
+        String normalizedSearch = search == null ? "" : search.trim();
+        Page<PriceLookupItem> resultPage = priceLookupService.searchDeletedResults(
+                context.manager, context.selectedAccount, normalizedSearch, page);
+        model.addAttribute("resultPage", resultPage);
+        model.addAttribute("search", normalizedSearch);
+        model.addAttribute("trashMode", true);
+        addCommonModel(model, request, context);
+        return "priceLookupResults";
+    }
+
+    @PostMapping("/home/employee/price-lookup-results/{itemId}/trash")
+    public String moveResultToTrash(
+            @PathVariable Integer itemId,
+            @RequestParam(value = "selectedValue", required = false) String selectedValue,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            Principal principal, HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        try {
+            priceLookupService.moveResultToTrash(itemId, principal.getName(),
+                    request.isUserInRole("ROLE_MANAGER"));
+            redirectAttributes.addFlashAttribute("mess", "Đã chuyển kết quả tra giá vào thư mục đã xóa.");
+        } catch (SecurityException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", safeMessage(e));
+        }
+        addResultViewState(selectedValue, search, page, redirectAttributes);
+        return "redirect:/home/employee/price-lookup-results";
+    }
+
+    @PostMapping("/home/manager/price-lookup-results/trash/{itemId}/restore")
+    public String restoreDeletedResult(
+            @PathVariable Integer itemId,
+            @RequestParam(value = "selectedValue", required = false) String selectedValue,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        try {
+            priceLookupService.restoreDeletedResult(itemId,
+                    request.isUserInRole("ROLE_MANAGER"));
+            redirectAttributes.addFlashAttribute("mess", "Đã khôi phục kết quả tra giá.");
+        } catch (SecurityException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", safeMessage(e));
+        }
+        addResultViewState(selectedValue, search, page, redirectAttributes);
+        return "redirect:/home/manager/price-lookup-results/trash";
+    }
+
+    @PostMapping("/home/manager/price-lookup-results/trash/empty")
+    public String emptyDeletedResults(HttpServletRequest request,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            int deletedCount = priceLookupService.emptyDeletedResults(
+                    request.isUserInRole("ROLE_MANAGER"));
+            redirectAttributes.addFlashAttribute("mess", deletedCount == 0
+                    ? "Thư mục kết quả tra giá đã xóa đang trống."
+                    : "Đã xóa hẳn " + deletedCount + " kết quả tra giá.");
+        } catch (SecurityException e) {
+            redirectAttributes.addFlashAttribute("error", safeMessage(e));
+        }
+        return "redirect:/home/manager/price-lookup-results/trash";
     }
 
     private UserContext userContext(Principal principal, HttpServletRequest request, String selectedValue) {
@@ -172,6 +242,17 @@ public class PriceLookupController {
     private void addSelectedValue(String selectedValue, RedirectAttributes redirectAttributes) {
         if (selectedValue != null && !selectedValue.trim().isEmpty()) {
             redirectAttributes.addAttribute("selectedValue", selectedValue.trim());
+        }
+    }
+
+    private void addResultViewState(String selectedValue, String search, int page,
+                                    RedirectAttributes redirectAttributes) {
+        addSelectedValue(selectedValue, redirectAttributes);
+        if (search != null && !search.trim().isEmpty()) {
+            redirectAttributes.addAttribute("search", search.trim());
+        }
+        if (page > 0) {
+            redirectAttributes.addAttribute("page", page);
         }
     }
 

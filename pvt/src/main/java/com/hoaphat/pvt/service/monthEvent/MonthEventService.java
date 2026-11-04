@@ -250,6 +250,12 @@ public class MonthEventService implements IMonthEventService {
     }
 
     @Override
+    public Page<MonthEvent> searchDeletedMonthEvents(Pageable pageable, String search) {
+        String normalizedSearch = search == null ? "" : search.trim();
+        return monthEventRepository.searchDeletedEvents(normalizedSearch, pageable);
+    }
+
+    @Override
     @Transactional
     public void moveToTrash(Integer id) {
         validateEventId(id);

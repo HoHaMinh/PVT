@@ -3,10 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kết quả tra giá - PVT</title>
+    <title th:text="${trashMode ? 'Kết quả tra giá đã xóa - PVT' : 'Kết quả tra giá - PVT'}">Kết quả tra giá - PVT</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap5.min.css}">
     <link rel="stylesheet" th:href="@{/css/home.css}">
-    <link rel="stylesheet" th:href="@{/css/price-lookup.css(v='20261013b')}">
+    <link rel="stylesheet" th:href="@{/css/price-lookup.css(v='20261104a')}">
 </head>
 <body class="bg-light">
 <div class="container-fluid p-0">
@@ -16,25 +16,48 @@
     <main class="container-fluid px-3 px-md-4 my-4 price-page">
         <div class="price-toolbar mb-3">
             <div>
-                <h4 class="price-page__heading fw-bold mb-1">Kết quả tra giá</h4>
-                <div class="text-muted">Lịch sử kết quả đã xác nhận</div>
+                <h4 class="price-page__heading fw-bold mb-1"
+                    th:text="${trashMode ? 'Kết quả tra giá đã xóa' : 'Kết quả tra giá'}"></h4>
+                <div class="text-muted"
+                     th:text="${trashMode ? 'Các kết quả vẫn được giữ cho đến khi làm sạch thư mục' : 'Lịch sử kết quả đã xác nhận'}"></div>
             </div>
-            <a class="btn btn-outline-primary" th:href="@{/home/employee/price-lookups}">Mở danh sách xác nhận</a>
+            <a th:unless="${trashMode}" class="btn btn-outline-primary"
+               th:href="@{/home/employee/price-lookups}">Mở danh sách xác nhận</a>
+            <div th:if="${trashMode}" class="d-flex flex-wrap gap-2">
+                <a class="btn btn-outline-primary" th:href="@{/home/employee/price-lookup-results}">Trở lại kết quả tra giá</a>
+                <form method="post" th:action="@{/home/manager/price-lookup-results/trash/empty}"
+                      onsubmit="return confirm('Xóa hẳn toàn bộ kết quả tra giá trong thư mục? Hành động này không thể hoàn tác.');">
+                    <button type="submit" class="btn btn-danger"
+                            th:disabled="${resultPage == null or resultPage.totalElements == 0}">Làm sạch thư mục</button>
+                </form>
+            </div>
         </div>
 
+        <div th:if="${mess}" class="alert alert-success fw-bold" th:text="${mess}"></div>
+        <div th:if="${error}" class="alert alert-danger fw-bold" th:text="${error}"></div>
+
         <div class="employee-tabs mb-3" aria-label="Lọc theo nhân viên">
-            <a th:if="${isManager}" class="btn"
+            <a th:if="${isManager and !trashMode}" class="btn"
                th:classappend="${selectedValue == null or selectedValue == ''} ? ' btn-primary' : ' btn-outline-primary'"
                th:href="@{/home/employee/price-lookup-results(search=${search})}">Tất cả</a>
+            <a th:if="${isManager and trashMode}" class="btn"
+               th:classappend="${selectedValue == null or selectedValue == ''} ? ' btn-primary' : ' btn-outline-primary'"
+               th:href="@{/home/manager/price-lookup-results/trash(search=${search})}">Tất cả</a>
             <th:block th:each="acc : ${userTabs}">
-                <a th:if="${isManager or accountName == acc.accountName}" class="btn text-truncate"
+                <a th:if="${!trashMode and (isManager or accountName == acc.accountName)}" class="btn text-truncate"
                    th:classappend="${selectedValue == acc.accountName} ? ' btn-primary' : ' btn-outline-primary'"
                    th:href="@{/home/employee/price-lookup-results(selectedValue=${acc.accountName},search=${search})}"
+                   th:text="${acc.displayName}" th:title="${acc.displayName}"></a>
+                <a th:if="${trashMode and isManager}" class="btn text-truncate"
+                   th:classappend="${selectedValue == acc.accountName} ? ' btn-primary' : ' btn-outline-primary'"
+                   th:href="@{/home/manager/price-lookup-results/trash(selectedValue=${acc.accountName},search=${search})}"
                    th:text="${acc.displayName}" th:title="${acc.displayName}"></a>
             </th:block>
         </div>
 
-        <form method="get" th:action="@{/home/employee/price-lookup-results}" class="row g-2 mb-4">
+        <form method="get"
+              th:action="${trashMode ? '/home/manager/price-lookup-results/trash' : '/home/employee/price-lookup-results'}"
+              class="row g-2 mb-4">
             <input type="hidden" name="selectedValue" th:value="${selectedValue}">
             <div class="col-12 col-md">
                 <label class="visually-hidden" for="resultSearch">Tìm kiếm kết quả</label>
@@ -47,13 +70,36 @@
         </form>
 
         <div th:if="${resultPage.empty}" class="empty-state rounded-2">
-            Không có kết quả tra giá phù hợp.
+            <span th:text="${trashMode ? 'Không có kết quả tra giá đã xóa phù hợp.' : 'Không có kết quả tra giá phù hợp.'}"></span>
         </div>
 
         <section th:each="item : ${resultPage.content}" class="result-item mb-3">
             <div class="result-item__header d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
                 <div class="lookup-keyword fw-bold" th:text="${item.displayName}"></div>
-                <div class="result-time" th:text="${item.completedAtDisplay}"></div>
+                <div class="result-header-actions d-flex align-items-center gap-2 ms-md-auto">
+                    <div class="result-time text-nowrap" th:text="${item.completedAtDisplay}"></div>
+                    <form th:unless="${trashMode}" method="post"
+                          th:action="@{/home/employee/price-lookup-results/{id}/trash(id=${item.itemId})}"
+                          onsubmit="return confirm('Chuyển kết quả tra giá này vào thư mục đã xóa?');">
+                        <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+                        <input type="hidden" name="search" th:value="${search}">
+                        <input type="hidden" name="page" th:value="${resultPage.number}">
+                        <button type="submit" class="btn btn-sm btn-outline-danger result-delete-button"
+                                title="Xóa kết quả tra giá" aria-label="Xóa kết quả tra giá">
+                            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                                <path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm-2 6h10l-1 12H8L7 9Zm3 2v7h2v-7h-2Zm4 0v7h2v-7h-2Z"/>
+                            </svg>
+                        </button>
+                    </form>
+                    <form th:if="${trashMode}" method="post"
+                          th:action="@{/home/manager/price-lookup-results/trash/{id}/restore(id=${item.itemId})}"
+                          onsubmit="return confirm('Khôi phục kết quả tra giá này?');">
+                        <input type="hidden" name="selectedValue" th:value="${selectedValue}">
+                        <input type="hidden" name="search" th:value="${search}">
+                        <input type="hidden" name="page" th:value="${resultPage.number}">
+                        <button type="submit" class="btn btn-sm btn-success">Khôi phục</button>
+                    </form>
+                </div>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered result-table">
@@ -97,15 +143,19 @@
         <nav th:if="${resultPage.totalPages > 1}" aria-label="Phân trang kết quả" class="mt-4">
             <ul class="pagination justify-content-center">
                 <li class="page-item" th:classappend="${resultPage.first} ? ' disabled'">
-                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number - 1})}">Trước</a>
+                    <a th:unless="${trashMode}" class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number - 1})}">Trước</a>
+                    <a th:if="${trashMode}" class="page-link" th:href="@{/home/manager/price-lookup-results/trash(selectedValue=${selectedValue},search=${search},page=${resultPage.number - 1})}">Trước</a>
                 </li>
                 <li th:each="pageNumber : ${#numbers.sequence(0, resultPage.totalPages - 1)}" class="page-item"
                     th:classappend="${pageNumber == resultPage.number} ? ' active'">
-                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${pageNumber})}"
+                    <a th:unless="${trashMode}" class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${pageNumber})}"
+                       th:text="${pageNumber + 1}"></a>
+                    <a th:if="${trashMode}" class="page-link" th:href="@{/home/manager/price-lookup-results/trash(selectedValue=${selectedValue},search=${search},page=${pageNumber})}"
                        th:text="${pageNumber + 1}"></a>
                 </li>
                 <li class="page-item" th:classappend="${resultPage.last} ? ' disabled'">
-                    <a class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number + 1})}">Sau</a>
+                    <a th:unless="${trashMode}" class="page-link" th:href="@{/home/employee/price-lookup-results(selectedValue=${selectedValue},search=${search},page=${resultPage.number + 1})}">Sau</a>
+                    <a th:if="${trashMode}" class="page-link" th:href="@{/home/manager/price-lookup-results/trash(selectedValue=${selectedValue},search=${search},page=${resultPage.number + 1})}">Sau</a>
                 </li>
             </ul>
         </nav>

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import javax.transaction.Transactional;
@@ -51,6 +52,15 @@ public interface IMonthEventRepository extends JpaRepository<MonthEvent, Integer
     @Query(value = "select m from MonthEvent m where m.deleted = true order by m.monthEventDeadline, m.monthEventId asc",
             countQuery = "select count(m) from MonthEvent m where m.deleted = true")
     Page<MonthEvent> findDeletedEvents(Pageable pageable);
+
+    @Query(value = "select m from MonthEvent m where m.deleted = true "
+            + "and (:search = '' or lower(coalesce(m.monthEventDescription, '')) "
+            + "like lower(concat('%', :search, '%'))) "
+            + "order by m.monthEventDeadline, m.monthEventId asc",
+            countQuery = "select count(m) from MonthEvent m where m.deleted = true "
+                    + "and (:search = '' or lower(coalesce(m.monthEventDescription, '')) "
+                    + "like lower(concat('%', :search, '%')))")
+    Page<MonthEvent> searchDeletedEvents(@Param("search") String search, Pageable pageable);
 
     @Query("select m from MonthEvent m where m.deleted = true order by m.monthEventDeadline, m.monthEventId asc")
     List<MonthEvent> findDeletedEvents();

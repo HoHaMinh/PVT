@@ -317,6 +317,73 @@ public class PriceLookupService {
                 normalizedSearch, PageRequest.of(Math.max(0, page), 20));
     }
 
+    @Transactional(readOnly = true)
+    public Page<PriceLookupItem> searchDeletedResults(boolean manager,
+                                                      String selectedAccount,
+                                                      String search, int page) {
+        requireManager(manager);
+        String filter = selectedAccount == null ? "" : selectedAccount.trim();
+        String normalizedSearch = search == null ? "" : search.trim();
+        return itemRepository.searchDeletedCompleted(PriceLookupStatus.COMPLETED, filter,
+                normalizedSearch, PageRequest.of(Math.max(0, page), 20));
+    }
+
+    @Transactional
+    public void moveResultToTrash(Integer itemId, String currentAccount, boolean manager) {
+        PriceLookupItem item = loadCompletedItem(itemId);
+        if (!manager && !Objects.equals(item.getAssignedAccountName(), currentAccount)) {
+            throw new SecurityException("Bạn không có quyền xóa kết quả tra giá của nhân viên khác.");
+        }
+        if (item.isDeleted()) {
+            throw new IllegalArgumentException("Kết quả tra giá đã nằm trong thư mục đã xóa.");
+        }
+        item.setDeleted(true);
+        item.setDeletedAt(LocalDateTime.now());
+        item.setDeletedBy(currentAccount == null ? "" : currentAccount.trim());
+        itemRepository.save(item);
+    }
+
+    @Transactional
+    public void restoreDeletedResult(Integer itemId, boolean manager) {
+        requireManager(manager);
+        PriceLookupItem item = loadCompletedItem(itemId);
+        if (!item.isDeleted()) {
+            throw new IllegalArgumentException("Kết quả tra giá không nằm trong thư mục đã xóa.");
+        }
+        item.setDeleted(false);
+        item.setDeletedAt(null);
+        item.setDeletedBy(null);
+        itemRepository.save(item);
+    }
+
+    @Transactional
+    public int emptyDeletedResults(boolean manager) {
+        requireManager(manager);
+        List<PriceLookupItem> deletedItems = itemRepository.findDeletedForUpdate();
+        for (PriceLookupItem item : deletedItems) {
+            itemRepository.delete(item);
+        }
+        return deletedItems.size();
+    }
+
+    private PriceLookupItem loadCompletedItem(Integer itemId) {
+        if (itemId == null || itemId <= 0) {
+            throw new IllegalArgumentException("Mã kết quả tra giá không hợp lệ.");
+        }
+        PriceLookupItem item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Kết quả tra giá không còn tồn tại."));
+        if (item.getStatus() != PriceLookupStatus.COMPLETED) {
+            throw new IllegalArgumentException("Hạng mục này chưa có kết quả tra giá hoàn chỉnh.");
+        }
+        return item;
+    }
+
+    private void requireManager(boolean manager) {
+        if (!manager) {
+            throw new SecurityException("Chỉ quản lý được sử dụng thư mục kết quả tra giá đã xóa.");
+        }
+    }
+
     private List<ParsedLine> parseLines(String rawInput) {
         if (rawInput == null || rawInput.trim().isEmpty()) {
             throw new IllegalArgumentException("Hãy nhập ít nhất một hạng mục cần tra giá.");

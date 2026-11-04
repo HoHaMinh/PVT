@@ -33,13 +33,16 @@ public class TrashController {
     public String showTrash(Model model,
                             @RequestParam("page") Optional<Integer> page,
                             @RequestParam("size") Optional<Integer> size,
+                            @RequestParam(value = "search", required = false) String search,
                             HttpServletRequest request) {
         int currentPage = page.orElse(1);
-        Page<MonthEvent> deletedEvents = monthEventService.getDeletedMonthEventListWithPaging(
-                PageRequest.of(currentPage - 1, size.orElse(11),
-                        Sort.by("monthEventDeadline").ascending()));
+        String normalizedSearch = search == null ? "" : search.trim();
+        Page<MonthEvent> deletedEvents = monthEventService.searchDeletedMonthEvents(
+                PageRequest.of(Math.max(0, currentPage - 1), size.orElse(11),
+                        Sort.by("monthEventDeadline").ascending()), normalizedSearch);
 
         model.addAttribute("currentPage", currentPage);
+        model.addAttribute("search", normalizedSearch);
         model.addAttribute("monthEventList", deletedEvents);
         if (deletedEvents.getTotalPages() > 1) {
             model.addAttribute("pageNumbers", IntStream.rangeClosed(1, deletedEvents.getTotalPages())
@@ -65,7 +68,11 @@ public class TrashController {
     }
 
     @PostMapping("/home/manager/trash/restore/{id}")
-    public String restore(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String restore(@PathVariable Integer id,
+                          @RequestParam(value = "search", required = false) String search,
+                          @RequestParam(value = "page", defaultValue = "1") int page,
+                          @RequestParam(value = "size", defaultValue = "11") int size,
+                          RedirectAttributes redirectAttributes) {
         try {
             monthEventService.restoreFromTrash(id);
             redirectAttributes.addFlashAttribute("mess", "Khôi phục công việc thành công và đã chuyển sang trạng thái Hiển thị.");
@@ -73,11 +80,16 @@ public class TrashController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
+        addTrashViewState(search, page, size, redirectAttributes);
         return "redirect:/home/manager/trash";
     }
 
     @PostMapping("/home/manager/trash/delete/{id}")
-    public String permanentlyDelete(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String permanentlyDelete(@PathVariable Integer id,
+                                    @RequestParam(value = "search", required = false) String search,
+                                    @RequestParam(value = "page", defaultValue = "1") int page,
+                                    @RequestParam(value = "size", defaultValue = "11") int size,
+                                    RedirectAttributes redirectAttributes) {
         try {
             monthEventService.permanentlyDelete(id);
             redirectAttributes.addFlashAttribute("mess", "Đã xóa hẳn công việc và toàn bộ phản hồi liên quan.");
@@ -85,6 +97,7 @@ public class TrashController {
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
+        addTrashViewState(search, page, size, redirectAttributes);
         return "redirect:/home/manager/trash";
     }
 
@@ -111,5 +124,14 @@ public class TrashController {
             return "redirect:/home/employee/private";
         }
         return "redirect:/home/manager/task";
+    }
+
+    private void addTrashViewState(String search, int page, int size,
+                                   RedirectAttributes redirectAttributes) {
+        if (search != null && !search.trim().isEmpty()) {
+            redirectAttributes.addAttribute("search", search.trim());
+        }
+        if (page > 1) redirectAttributes.addAttribute("page", page);
+        if (size != 11) redirectAttributes.addAttribute("size", size);
     }
 }

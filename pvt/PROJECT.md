@@ -2556,3 +2556,37 @@ tra giá không thêm bảng/cột database mới. Bản build này đồng th�
 build/libs/pvt.jar
 SHA-256: 473E9894F11781A4EE1A638A386FFDD0F1C925F6A3930B4DFEAE2DD9F7534E12
 ```
+
+## 36. Thư mục kết quả tra giá đã xóa và tìm kiếm công việc đã xóa
+
+Trang **Tra giá > Kết quả tra giá** có nút thùng rác ở cuối dòng tiêu đề của
+từng kết quả. Đây là xóa mềm: kết quả được đánh dấu bằng `is_deleted`, lưu thời
+điểm/người xóa và không còn xuất hiện trong danh sách kết quả đang dùng.
+
+- Manager được xóa kết quả của mọi nhân viên.
+- Employee chỉ được xóa kết quả được phân công cho chính mình. Backend kiểm tra
+  lại quyền sở hữu, không chỉ dựa vào việc ẩn/hiện nút trên giao diện.
+- Chỉ manager thấy menu **Kết quả tra giá đã xóa** và truy cập được trang này.
+- Trang đã xóa dùng nguyên bố cục kết quả tra giá, thay nút thùng rác bằng nút
+  **Khôi phục** và có nút **Làm sạch thư mục** để xóa hẳn toàn bộ dữ liệu đã xóa.
+- Bộ lọc nhân viên, tìm kiếm và phân trang được giữ khi xóa/khôi phục.
+
+`price_lookup_item` có thêm ba cột; Hibernate `ddl-auto=update` tự bổ sung khi
+chạy JAR mới:
+
+```text
+is_deleted boolean not null default false
+deleted_at datetime nullable
+deleted_by varchar(100) nullable
+```
+
+Trang quản lý **Thư mục đã xóa** của công việc có thêm ô tìm kiếm theo
+`month_event_description` (Nội dung giao việc). Từ khóa được giữ khi phân trang,
+khôi phục hoặc xóa hẳn một công việc.
+
+Build ngày 04/11/2026 đã chạy toàn bộ **142 test**, 0 failure/error. Artifact:
+
+```text
+build/libs/pvt.jar
+SHA-256: 069F538DBD276C70F9E0F6DC61D629CBC9179C6DE3B0C13CBE38FDE0FA7B1EC8
+```
