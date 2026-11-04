@@ -172,4 +172,17 @@ for (const code of ['I', 'III', 'IV', 'V']) {
 }
 assert.equal(context.transformSheet.rows[transformedSections.VI.startRow - 1][1], 'VI-NCC');
 
+context.namingSpreadsheet = { getSheetByName: () => null };
+assert.equal(
+  evaluate('buildNextDebtReportSheetName_(namingSpreadsheet, {periodCode:"1+2",month:11})'),
+  'Đợt 1+2 T11'
+);
+context.duplicateNamingSpreadsheet = {
+  getSheetByName: (name) => name === 'Đợt 1+2 T11' ? {} : null
+};
+assert.throws(
+  () => evaluate('buildNextDebtReportSheetName_(duplicateNamingSpreadsheet, {periodCode:"1+2",month:11})'),
+  /Đã tồn tại sheet/
+);
+
 console.log('next-debt-report tests passed');

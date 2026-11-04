@@ -352,22 +352,12 @@ function parseDebtReportMonth_(value) {
 }
 
 function buildNextDebtReportSheetName_(spreadsheet, nextPeriod) {
-  const numericNames = spreadsheet.getSheets().map(function(sheet) {
-    const name = sheet.getName().trim();
-    return /^\d+$/.test(name) ? Number(name) : 0;
-  });
-  let nextNumber = Math.max.apply(null, [0].concat(numericNames)) + 1;
-  while (spreadsheet.getSheetByName(String(nextNumber))) nextNumber++;
-  if (numericNames.some(function(number) { return number > 0; })) return String(nextNumber);
-
-  const baseName = "Đợt " + nextPeriod.periodCode + " T" + nextPeriod.month;
-  let candidate = baseName;
-  let suffix = 2;
-  while (spreadsheet.getSheetByName(candidate)) {
-    candidate = baseName + " (" + suffix + ")";
-    suffix++;
+  const sheetName = "Đợt " + nextPeriod.periodCode + " T" + nextPeriod.month;
+  if (spreadsheet.getSheetByName(sheetName)) {
+    throw new Error("Đã tồn tại sheet tên \"" + sheetName
+      + "\". Hãy kiểm tra dữ liệu trước khi tạo đợt mới.");
   }
-  return candidate;
+  return sheetName;
 }
 
 function nextDebtReportErrorMessage_(error) {

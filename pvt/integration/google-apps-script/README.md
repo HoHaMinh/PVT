@@ -190,6 +190,7 @@ Sheet gần nhất được giữ nguyên. Sheet mới là bản sao của sheet
 được nối vào mục II mới, tự chèn thêm dòng nếu mục II thiếu chỗ. Nội dung các
 mục I, III, IV, V được xóa nhưng số dòng, định dạng và data validation được giữ.
 Chỉ sau khi bản sao xử lý thành công, các sheet báo cáo cũ hơn mới bị xóa.
+Tên sheet mới luôn theo mẫu `Đợt <đợt> T<tháng>`, ví dụ `Đợt 1+2 T11`.
 
 Khi đưa mã lên Apps Script của file/template nhân viên:
 
